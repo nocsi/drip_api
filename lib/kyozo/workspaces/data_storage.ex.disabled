@@ -1,0 +1,769 @@
+defmodule Kyozo.Workspaces.DataStorage do
+  @derive {Jason.Encoder, only: [:id, :file_id, :storage_resource_id, :relationship_type, :media_type, :is_primary, :metadata, :created_at, :updated_at]}
+  
+  @moduledoc """
+  Data storage resource implementing the AbstractStorage pattern.
+  
+  This resource manages storage for structured data files, providing data-specific
+  storage capabilities with support for schema validation, indexing, querying,
+  and transformation.
+  
+  ## Supported MIME Types
+  
+  - JSON: application/json, application/ld+json
+  - XML: application/xml, text/xml
+  - CSV: text/csv, application/csv
+  - Structured data: application/yaml, text/yaml
+  - Database formats: application/x-sqlite3, application/sql
+  - Serialized data: application/x-protobuf, application/avro
+  - Configuration: application/toml, text/x-ini
+  
+  ## Storage Backend Selection
+  
+  - Small structured files (<1MB): Git for version control
+  - Large datasets (>1MB): S3 for scalability
+  - Frequently queried data: Disk with indexing
+  - Temporary/processed data: RAM for speed
+  
+  ## Automatic Processing
+  
+  - Schema extraction and validation
+  - Data indexing for search
+  - Format conversion and normalization
+  - Statistical analysis and profiling
+  - Relationship detection
+  """
+
+  use Kyozo.Storage.AbstractStorage,
+    media_type: :data,
+    storage_backends: [:git, :s3, :disk, :ram]
+
+  require Ash.Query
+
+  postgres do
+    table "data_storages"
+    repo Kyozo.Repo
+
+    references do
+      reference :file, on_delete: :delete, index?: true
+      reference :storage_resource, on_delete: :delete, index?: true
+    end
+
+    custom_indexes do
+      index [:file_id, :storage_resource_id], unique: true
+      index [:file_id, :is_primary]
+      index [:file_id, :relationship_type]
+      index [:storage_resource_id]
+      index [:media_type, :relationship_type]
+      index [:processing_status]
+      index [:created_at]
+    end
+  end
+
+  json_api do
+    type "data_storage"
+
+    routes do
+      base "/data_storages"
+      get :read
+      index :list_data_storages
+      post :create_data_storage
+      patch :update_data_storage
+      delete :destroy
+    end
+  end
+
+  graphql do
+    type :data_storage
+
+    queries do
+      get :get_data_storage, :read
+      list :list_data_storages, :list_data_storages
+    end
+
+    mutations do
+      create :create_data_storage, :create_data_storage
+      update :update_data_storage, :update_data_storage
+      destroy :destroy_data_storage, :destroy
+    end
+  end
+
+  # Implement AbstractStorage callbacks
+  @impl true
+  def supported_mime_types do
+    [
+      # JSON formats
+      "application/json",
+      "application/ld+json",
+      "application/json-patch+json",
+      "application/merge-patch+json",
+      
+      # XML formats
+      "application/xml",
+      "text/xml",
+      "application/soap+xml",
+      "application/xhtml+xml",
+      
+      # Tabular data
+      "text/csv",
+      "application/csv",
+      "text/tab-separated-values",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      
+      # Configuration and markup
+      "application/yaml",
+      "text/yaml",
+      "application/toml",
+      "text/x-ini",
+      "application/x-properties",
+      
+      # Database formats
+      "application/x-sqlite3",
+      "application/sql",
+      "text/x-sql",
+      
+      # Serialized formats
+      "application/x-protobuf",
+      "application/avro",
+      "application/x-msgpack",
+      "application/x-parquet",
+      
+      # Log formats
+      "text/x-log",
+      "application/x-ndjson",
+      "application/jsonlines",
+      
+      # Scientific data
+      "application/x-hdf",
+      "application/x-netcdf",
+      "text/x-r",
+      "application/x-stata-dta"
+    ]
+  end
+
+  @impl true 
+  def default_storage_backend, do: :git
+
+  @impl true
+  def validate_content(content, metadata) do
+    mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
+    
+    cond do
+      mime_type not in supported_mime_types() ->
+        {:error, "Unsupported data MIME type: #{mime_type}"}
+        
+      byte_size(content) > 1024 * 1024 * 1024 ->
+        {:error, "Data file too large (max 1GB)"}
+        
+      byte_size(content) == 0 ->
+        {:error, "Data file is empty"}
+        
+      not valid_data_format?(content, mime_type) ->
+        {:error, "Invalid data format or corrupted file"}
+        
+      true -> 
+        :ok
+    end
+  end
+
+  @impl true
+  def transform_content(content, metadata) do
+    mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
+    
+    case extract_data_metadata(content, mime_type) do
+      {:ok, data_metadata} ->
+        # Normalize and validate the data
+        case normalize_data(content, mime_type, data_metadata) do
+          {:ok, normalized_content, normalization_info} ->
+            updated_metadata = Map.merge(metadata, %{
+              data_info: data_metadata,
+              normalization_info: normalization_info,
+              processed_at: DateTime.utc_now(),
+              indexing_required: requires_indexing?(mime_type, data_metadata)
+            })
+            {:ok, normalized_content, updated_metadata}
+            
+          {:error, reason} ->
+            # Fall back to original content if normalization fails
+            updated_metadata = Map.merge(metadata, %{
+              data_info: data_metadata,
+              processed_at: DateTime.utc_now(),
+              normalization_error: reason
+            })
+            {:ok, content, updated_metadata}
+        end
+        
+      {:error, reason} ->
+        {:error, "Failed to process data: #{reason}"}
+    end
+  end
+
+  @impl true  
+  def storage_options(backend, metadata) do
+    mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
+    data_info = Map.get(metadata, :data_info, %{})
+    file_size = Map.get(data_info, :file_size, 0)
+    record_count = Map.get(data_info, :record_count, 0)
+    
+    base_options = %{
+      mime_type: mime_type,
+      media_type: :data
+    }
+    
+    case backend do
+      :git ->
+        Map.merge(base_options, %{
+          commit_message: "Update data file",
+          branch: "main",
+          enable_lfs: file_size > 100 * 1024 * 1024,  # Use LFS for large files
+          track_changes: is_text_based?(mime_type)
+        })
+        
+      :s3 ->
+        storage_class = cond do
+          record_count > 1_000_000 -> "STANDARD_IA"  # Large datasets
+          Map.get(metadata, :relationship_type) == :backup -> "GLACIER"
+          Map.get(metadata, :relationship_type) == :archive -> "DEEP_ARCHIVE"
+          true -> "STANDARD"
+        end
+        
+        Map.merge(base_options, %{
+          storage_class: storage_class,
+          server_side_encryption: "AES256",
+          metadata: %{
+            record_count: record_count,
+            schema_hash: Map.get(data_info, :schema_hash),
+            data_format: mime_type,
+            compressed: Map.get(data_info, :is_compressed, false)
+          },
+          enable_select: is_queryable_format?(mime_type)
+        })
+        
+      :disk ->
+        Map.merge(base_options, %{
+          create_directory: true,
+          organize_by_type: true,
+          path_template: "data/{format}/{year}/{month}/{filename}",
+          enable_indexing: requires_indexing?(mime_type, data_info),
+          compression: should_compress?(mime_type, file_size)
+        })
+        
+      :ram ->
+        Map.merge(base_options, %{
+          ttl: 7200,  # 2 hours for processed data
+          compress: file_size > 1024 * 1024,
+          serialize_format: :erlang_term
+        })
+        
+      _ ->
+        base_options
+    end
+  end
+
+  @impl true
+  def select_storage_backend(content, metadata) do
+    file_size = byte_size(content)
+    mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
+    relationship_type = Map.get(metadata, :relationship_type, :primary)
+    data_info = Map.get(metadata, :data_info, %{})
+    
+    cond do
+      # Processed/temporary data goes to RAM
+      relationship_type in [:cache, :processed] ->
+        :ram
+        
+      # Small structured text files go to Git for version control
+      file_size < 10 * 1024 * 1024 and is_text_based?(mime_type) ->
+        :git
+        
+      # Large datasets go to S3 for analytics capabilities
+      file_size > 100 * 1024 * 1024 or Map.get(data_info, :record_count, 0) > 100_000 ->
+        :s3
+        
+      # Medium-sized data files go to disk
+      true ->
+        :disk
+    end
+  end
+
+  # Additional data-specific actions
+  actions do
+    create :create_with_schema_validation do
+      argument :file_id, :uuid, allow_nil?: false
+      argument :content, :string, allow_nil?: false
+      argument :filename, :string, allow_nil?: false
+      argument :mime_type, :string
+      argument :schema, :map
+      argument :validation_strict, :boolean, default: false
+
+      change set_attribute(:is_primary, true)
+      change set_attribute(:relationship_type, :primary)
+      change relate_to_file()
+      change {__MODULE__.Changes.ValidateSchema, []}
+    end
+
+    action :query_data, :map do
+      argument :query, :string, allow_nil?: false
+      argument :query_language, :string, default: "sql"
+      argument :limit, :integer, default: 100
+      argument :offset, :integer, default: 0
+      
+      run {__MODULE__.Actions.QueryData, []}
+    end
+
+    action :extract_schema, :map do
+      argument :sample_size, :integer, default: 1000
+      
+      run {__MODULE__.Actions.ExtractSchema, []}
+    end
+
+    action :convert_format, :struct do
+      argument :target_format, :string, allow_nil?: false
+      argument :conversion_options, :map, default: %{}
+      
+      run {__MODULE__.Actions.ConvertFormat, []}
+    end
+
+    action :index_data, :map do
+      argument :index_columns, {:array, :string}
+      argument :index_options, :map, default: %{}
+      
+      run {__MODULE__.Actions.IndexData, []}
+    end
+
+    action :analyze_data, :map do
+      argument :analysis_type, :string, default: "basic"
+      
+      run {__MODULE__.Actions.AnalyzeData, []}
+    end
+
+    action :validate_integrity, :map do
+      run {__MODULE__.Actions.ValidateIntegrity, []}
+    end
+
+    action :merge_datasets, :struct do
+      argument :other_data_storage_ids, {:array, :uuid}, allow_nil?: false
+      argument :merge_strategy, :string, default: "union"
+      argument :key_columns, {:array, :string}
+      
+      run {__MODULE__.Actions.MergeDatasets, []}
+    end
+  end
+
+  # Additional relationships specific to data
+  relationships do
+    belongs_to :file, Kyozo.Workspaces.File do
+      allow_nil? false
+      attribute_writable? true
+      public? true
+    end
+
+    # Self-referential relationships for different formats/views
+    has_many :converted_formats, __MODULE__ do
+      destination_attribute :file_id
+      source_attribute :file_id
+      filter expr(relationship_type == :format)
+    end
+
+    has_many :processed_versions, __MODULE__ do
+      destination_attribute :file_id
+      source_attribute :file_id
+      filter expr(relationship_type == :processed)
+    end
+
+    belongs_to :source_data, __MODULE__ do
+      allow_nil? true
+      public? true
+    end
+  end
+
+  # Data-specific calculations
+  calculations do
+    import Kyozo.Storage.AbstractStorage.CommonCalculations
+
+    storage_info()
+    content_preview()
+    
+    calculate :data_info, :map do
+      load [:metadata, :storage_resource]
+
+      calculation fn data_storages, _context ->
+        Enum.map(data_storages, fn data ->
+          metadata = data.metadata || %{}
+          data_info = Map.get(metadata, :data_info, %{})
+          storage = data.storage_resource
+          
+          %{
+            format: storage.mime_type,
+            file_size: storage.file_size,
+            record_count: Map.get(data_info, :record_count, 0),
+            column_count: Map.get(data_info, :column_count, 0),
+            schema_hash: Map.get(data_info, :schema_hash),
+            has_header: Map.get(data_info, :has_header, false),
+            delimiter: Map.get(data_info, :delimiter),
+            encoding: Map.get(data_info, :encoding, "utf-8"),
+            is_compressed: Map.get(data_info, :is_compressed, false),
+            compression_ratio: Map.get(data_info, :compression_ratio, 1.0),
+            data_types: Map.get(data_info, :data_types, []),
+            null_count: Map.get(data_info, :null_count, 0),
+            unique_count: Map.get(data_info, :unique_count, 0)
+          }
+        end)
+      end
+    end
+
+    calculate :query_capabilities, :map do
+      load [:storage_resource, :metadata]
+
+      calculation fn data_storages, _context ->
+        Enum.map(data_storages, fn data ->
+          storage = data.storage_resource
+          metadata = data.metadata || %{}
+          data_info = Map.get(metadata, :data_info, %{})
+          
+          %{
+            supports_sql: is_queryable_format?(storage.mime_type),
+            supports_indexing: requires_indexing?(storage.mime_type, data_info),
+            supports_joins: is_relational_format?(storage.mime_type),
+            supports_aggregation: true,
+            supports_filtering: true,
+            estimated_query_time: estimate_query_time(storage.file_size, Map.get(data_info, :record_count, 0)),
+            available_indexes: Map.get(metadata, "indexes", [])
+          }
+        end)
+      end
+    end
+
+    calculate :schema_info, :map do
+      load [:metadata]
+
+      calculation fn data_storages, _context ->
+        Enum.map(data_storages, fn data ->
+          metadata = data.metadata || %{}
+          data_info = Map.get(metadata, :data_info, %{})
+          schema = Map.get(data_info, :schema, %{})
+          
+          %{
+            version: Map.get(schema, :version, "1.0"),
+            columns: Map.get(schema, :columns, []),
+            constraints: Map.get(schema, :constraints, []),
+            indexes: Map.get(schema, :indexes, []),
+            relationships: Map.get(schema, :relationships, []),
+            last_updated: Map.get(schema, :last_updated),
+            validation_errors: Map.get(metadata, "validation_errors", [])
+          }
+        end)
+      end
+    end
+
+    calculate :quality_score, :float do
+      load [:metadata]
+
+      calculation fn data_storages, _context ->
+        Enum.map(data_storages, fn data ->
+          metadata = data.metadata || %{}
+          data_info = Map.get(metadata, :data_info, %{})
+          
+          # Calculate data quality score based on various factors
+          completeness = 1.0 - (Map.get(data_info, :null_count, 0) / max(1, Map.get(data_info, :record_count, 1)))
+          consistency = if Map.get(metadata, "validation_errors") == [], do: 1.0, else: 0.7
+          uniqueness = Map.get(data_info, :unique_count, 0) / max(1, Map.get(data_info, :record_count, 1))
+          
+          (completeness + consistency + uniqueness) / 3.0
+        end)
+      end
+    end
+  end
+
+  # Data-specific validations
+  validations do
+    validate present([:file_id, :storage_resource_id])
+    validate one_of(:relationship_type, [:primary, :format, :processed, :backup, :cache, :index])
+    validate {__MODULE__.Validations.ValidateDataFormat, []}
+    validate {__MODULE__.Validations.ValidateDataSize, []}
+  end
+
+  # Private helper functions
+  defp valid_data_format?(content, mime_type) do
+    case mime_type do
+      "application/json" ->
+        case Jason.decode(content) do
+          {:ok, _} -> true
+          {:error, _} -> false
+        end
+        
+      "application/xml" ->
+        # Basic XML validation - in real implementation use proper XML parser
+        String.contains?(content, "<") and String.contains?(content, ">")
+        
+      "text/csv" ->
+        # Basic CSV validation
+        String.contains?(content, ",") or String.contains?(content, "\n")
+        
+      "application/yaml" ->
+        # Basic YAML validation - in real implementation use YAML parser
+        not String.starts_with?(String.trim(content), "<")
+        
+      _ ->
+        true  # Assume valid for other formats
+    end
+  end
+
+  defp extract_data_metadata(content, mime_type) do
+    case mime_type do
+      "application/json" ->
+        case Jason.decode(content) do
+          {:ok, data} when is_list(data) ->
+            {:ok, %{
+              record_count: length(data),
+              column_count: if(length(data) > 0, do: map_size(List.first(data)), else: 0),
+              schema: infer_json_schema(data),
+              file_size: byte_size(content),
+              is_compressed: false
+            }}
+          {:ok, data} when is_map(data) ->
+            {:ok, %{
+              record_count: 1,
+              column_count: map_size(data),
+              schema: infer_json_schema([data]),
+              file_size: byte_size(content),
+              is_compressed: false
+            }}
+          {:error, reason} ->
+            {:error, "Invalid JSON: #{reason}"}
+        end
+        
+      "text/csv" ->
+        lines = String.split(content, "\n", trim: true)
+        {:ok, %{
+          record_count: length(lines) - 1,  # Assuming header
+          column_count: if(length(lines) > 0, do: length(String.split(List.first(lines), ",")), else: 0),
+          has_header: true,
+          delimiter: ",",
+          file_size: byte_size(content),
+          is_compressed: false
+        }}
+        
+      _ ->
+        {:ok, %{
+          file_size: byte_size(content),
+          record_count: 0,
+          column_count: 0,
+          is_compressed: false
+        }}
+    end
+  end
+
+  defp normalize_data(content, _mime_type, _data_metadata) do
+    # In a real implementation, this would perform data normalization
+    # For now, return the content as-is
+    {:ok, content, %{normalized: false, reason: "No normalization rules defined"}}
+  end
+
+  defp infer_json_schema(data) when is_list(data) and length(data) > 0 do
+    sample = List.first(data)
+    columns = Enum.map(sample, fn {key, value} ->
+      %{
+        name: key,
+        type: infer_type(value),
+        nullable: true
+      }
+    end)
+    
+    %{
+      type: "object",
+      columns: columns,
+      version: "1.0"
+    }
+  end
+  defp infer_json_schema(_), do: %{}
+
+  defp infer_type(value) when is_integer(value), do: "integer"
+  defp infer_type(value) when is_float(value), do: "number"
+  defp infer_type(value) when is_boolean(value), do: "boolean"
+  defp infer_type(value) when is_binary(value), do: "string"
+  defp infer_type(value) when is_list(value), do: "array"
+  defp infer_type(value) when is_map(value), do: "object"
+  defp infer_type(_), do: "unknown"
+
+  defp requires_indexing?(mime_type, data_info) do
+    record_count = Map.get(data_info, :record_count, 0)
+    
+    # Index large datasets or specific formats
+    record_count > 10_000 or mime_type in ["application/json", "text/csv"]
+  end
+
+  defp is_text_based?(mime_type) do
+    String.starts_with?(mime_type, "text/") or 
+    mime_type in ["application/json", "application/xml", "application/yaml"]
+  end
+
+  defp is_queryable_format?(mime_type) do
+    mime_type in ["application/json", "text/csv", "application/x-sqlite3"]
+  end
+
+  defp is_relational_format?(mime_type) do
+    mime_type in ["application/x-sqlite3", "application/sql"]
+  end
+
+  defp should_compress?(mime_type, file_size) do
+    is_text_based?(mime_type) and file_size > 1024 * 1024  # Compress text files > 1MB
+  end
+
+  defp estimate_query_time(file_size, record_count) do
+    base_time = file_size / (10 * 1024 * 1024)  # 10MB per second base rate
+    record_penalty = record_count / 100_000  # Additional time for large record counts
+    
+    max(0.1, base_time + record_penalty)
+  end
+
+  # Change modules
+  defmodule Changes do
+    defmodule RelateToFile do
+      use Ash.Resource.Change
+
+      def change(changeset, _opts, _context) do
+        file_id = Ash.Changeset.get_argument(changeset, :file_id)
+        if file_id do
+          Ash.Changeset.change_attribute(changeset, :file_id, file_id)
+        else
+          changeset
+        end
+      end
+    end
+
+    defmodule ValidateSchema do
+      use Ash.Resource.Change
+
+      def change(changeset, _opts, _context) do
+        schema = Ash.Changeset.get_argument(changeset, :schema)
+        validation_strict = Ash.Changeset.get_argument(changeset, :validation_strict)
+        
+        if schema do
+          metadata = %{
+            schema_validation: %{
+              provided_schema: schema,
+              strict_mode: validation_strict,
+              validated_at: DateTime.utc_now()
+            }
+          }
+          
+          Ash.Changeset.change_attribute(changeset, :metadata, metadata)
+        else
+          changeset
+        end
+      end
+    end
+  end
+
+  # Action modules
+  defmodule Actions do
+    defmodule QueryData do
+      use Ash.Resource.Action
+
+      def run(_data_storage, input, _context) do
+        query = input.arguments.query
+        query_language = input.arguments.query_language
+        limit = input.arguments.limit
+        
+        # This would implement actual data querying
+        # For now, return a placeholder result
+        {:ok, %{
+          query: query,
+          language: query_language,
+          result_count: 0,
+          execution_time: 0.1,
+          results: [],
+          metadata: %{limit: limit}
+        }}
+      end
+    end
+
+    defmodule ExtractSchema do
+      use Ash.Resource.Action
+
+      def run(_data_storage, input, _context) do
+        sample_size = input.arguments.sample_size
+        
+        # This would extract actual schema from the data
+        {:ok, %{
+          schema_version: "1.0",
+          columns: [],
+          sample_size: sample_size,
+          confidence: 0.95,
+          extracted_at: DateTime.utc_now()
+        }}
+      end
+    end
+
+    defmodule AnalyzeData do
+      use Ash.Resource.Action
+
+      def run(_data_storage, input, _context) do
+        analysis_type = input.arguments.analysis_type
+        
+        # This would perform actual data analysis
+        {:ok, %{
+          analysis_type: analysis_type,
+          summary_statistics: %{
+            mean: 0,
+            median: 0,
+            std_dev: 0,
+            min: 0,
+            max: 0
+          },
+          data_quality: %{
+            completeness: 1.0,
+            consistency: 1.0,
+            validity: 1.0
+          },
+          recommendations: []
+        }}
+      end
+    end
+  end
+
+  # Validation modules
+  defmodule Validations do
+    defmodule ValidateDataFormat do
+      use Ash.Resource.Validation
+
+      def validate(changeset, _opts, _context) do
+        case Ash.Changeset.get_attribute(changeset, :storage_resource_id) do
+          nil -> :ok
+          storage_id ->
+            case Ash.get(Kyozo.Storage.StorageResource, storage_id) do
+              {:ok, storage} ->
+                if storage.mime_type in Kyozo.Workspaces.DataStorage.supported_mime_types() do
+                  :ok
+                else
+                  {:error, field: :storage_resource_id, message: "Unsupported data format: #{storage.mime_type}"}
+                end
+              {:error, _} ->
+                {:error, field: :storage_resource_id, message: "Invalid storage resource"}
+            end
+        end
+      end
+    end
+
+    defmodule ValidateDataSize do
+      use Ash.Resource.Validation
+
+      def validate(changeset, _opts, _context) do
+        metadata = Ash.Changeset.get_attribute(changeset, :metadata) || %{}
+        data_info = Map.get(metadata, :data_info, %{})
+        record_count = Map.get(data_info, :record_count, 0)
+
+        if record_count > 10_000_000 do  # 10 million records
+          {:error, field: :metadata, message: "Dataset too large (max 10 million records)"}
+        else
+          :ok
+        end
+      end
+    end
+  end
+
+  # Helper function to create the relate_to_file change
+  defp relate_to_file, do: {__MODULE__.Changes.RelateToFile, []}
+end

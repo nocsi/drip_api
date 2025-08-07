@@ -1,0 +1,18 @@
+{
+  "name": "kyozo-notebook",
+  "version": "1.0.0",
+  "description": "Svelte notebook editor component for Kyozo",
+  "type": "module",
+  "dependencies": {
+    "@tiptap/core": "^2.1.7",
+    "@tiptap/starter-kit": "^2.1.7",
+    "@tiptap/extension-markdown": "^2.1.7",
+    "@tiptap/extension-code-block-lowlight": "^2.1.7",
+    "elim": "latest",
+    "svelte": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

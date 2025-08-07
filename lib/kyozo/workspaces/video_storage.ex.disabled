@@ -1,0 +1,661 @@
+defmodule Kyozo.Workspaces.VideoStorage do
+  @derive {Jason.Encoder, only: [:id, :file_id, :storage_resource_id, :relationship_type, :media_type, :is_primary, :metadata, :created_at, :updated_at]}
+  
+  @moduledoc """
+  Video storage resource implementing the AbstractStorage pattern.
+  
+  This resource manages storage for video files, providing video-specific
+  storage capabilities with support for transcoding, thumbnails, streaming,
+  and metadata extraction.
+  
+  ## Supported MIME Types
+  
+  - Web formats: video/mp4, video/webm, video/ogg
+  - Professional formats: video/quicktime, video/x-msvideo, video/x-ms-wmv
+  - Modern codecs: video/av1, video/h264, video/h265
+  
+  ## Storage Backend Selection
+  
+  - Small videos (<100MB): Disk for quick access
+  - Large videos (>100MB): S3 for scalability and streaming
+  - Thumbnails/previews: Disk or RAM for speed
+  - Archive/backup: S3 with Glacier storage class
+  
+  ## Automatic Processing
+  
+  - Video thumbnail generation
+  - Metadata extraction (duration, resolution, codec)
+  - Transcoding to web-friendly formats
+  - Streaming manifest generation
+  - Preview clip creation
+  """
+
+  use Kyozo.Storage.AbstractStorage,
+    media_type: :video,
+    storage_backends: [:s3, :disk, :ram]
+
+  require Ash.Query
+
+  postgres do
+    table "video_storages"
+    repo Kyozo.Repo
+
+    references do
+      reference :file, on_delete: :delete, index?: true
+      reference :storage_resource, on_delete: :delete, index?: true
+    end
+
+    custom_indexes do
+      index [:file_id, :storage_resource_id], unique: true
+      index [:file_id, :is_primary]
+      index [:file_id, :relationship_type]
+      index [:storage_resource_id]
+      index [:media_type, :relationship_type]
+      index [:processing_status]
+      index [:created_at]
+    end
+  end
+
+  json_api do
+    type "video_storage"
+
+    routes do
+      base "/video_storages"
+      get :read
+      index :list_video_storages
+      post :create_video_storage
+      patch :update_video_storage
+      delete :destroy
+    end
+  end
+
+  graphql do
+    type :video_storage
+
+    queries do
+      get :get_video_storage, :read
+      list :list_video_storages, :list_video_storages
+    end
+
+    mutations do
+      create :create_video_storage, :create_video_storage
+      update :update_video_storage, :update_video_storage
+      destroy :destroy_video_storage, :destroy
+    end
+  end
+
+  # Implement AbstractStorage callbacks
+  @impl true
+  def supported_mime_types do
+    [
+      # Web-friendly formats
+      "video/mp4",
+      "video/webm",
+      "video/ogg",
+      
+      # Common formats
+      "video/quicktime",
+      "video/x-msvideo",  # AVI
+      "video/x-ms-wmv",   # WMV
+      "video/x-flv",      # Flash Video
+      "video/3gpp",       # 3GP
+      "video/3gpp2",      # 3G2
+      
+      # Professional formats
+      "video/x-matroska", # MKV
+      "video/mp2t",       # MPEG Transport Stream
+      "video/mpeg",       # MPEG-1/2
+      "video/x-m4v",      # iTunes Video
+      
+      # Modern codecs
+      "video/av1",
+      "video/h264",
+      "video/h265",
+      "video/vp8",
+      "video/vp9",
+      
+      # Raw formats
+      "video/x-raw",
+      "video/prores",
+      "video/dnxhd"
+    ]
+  end
+
+  @impl true 
+  def default_storage_backend, do: :s3
+
+  @impl true
+  def validate_content(content, metadata) do
+    mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
+    
+    cond do
+      mime_type not in supported_mime_types() ->
+        {:error, "Unsupported video MIME type: #{mime_type}"}
+        
+      byte_size(content) > 10 * 1024 * 1024 * 1024 ->
+        {:error, "Video too large (max 10GB)"}
+        
+      byte_size(content) < 1024 ->
+        {:error, "Video file too small, possibly corrupted"}
+        
+      not valid_video_header?(content, mime_type) ->
+        {:error, "Invalid video file header"}
+        
+      true -> 
+        :ok
+    end
+  end
+
+  @impl true
+  def transform_content(content, metadata) do
+    mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
+    
+    # Extract video metadata
+    case extract_video_metadata(content, mime_type) do
+      {:ok, video_metadata} ->
+        updated_metadata = Map.merge(metadata, %{
+          video_info: video_metadata,
+          processed_at: DateTime.utc_now(),
+          processing_required: needs_transcoding?(mime_type, video_metadata)
+        })
+        
+        # For now, return original content
+        # In a real implementation, this might transcode the video
+        {:ok, content, updated_metadata}
+        
+      {:error, reason} ->
+        {:error, "Failed to process video: #{reason}"}
+    end
+  end
+
+  @impl true  
+  def storage_options(backend, metadata) do
+    mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
+    video_info = Map.get(metadata, :video_info, %{})
+    file_size = Map.get(video_info, :file_size, 0)
+    duration = Map.get(video_info, :duration, 0)
+    
+    base_options = %{
+      mime_type: mime_type,
+      media_type: :video
+    }
+    
+    case backend do
+      :s3 ->
+        storage_class = cond do
+          file_size > 1024 * 1024 * 1024 -> "STANDARD_IA"  # Large files
+          duration > 3600 -> "STANDARD_IA"  # Long videos
+          Map.get(metadata, :relationship_type) == :backup -> "GLACIER"
+          true -> "STANDARD"
+        end
+        
+        Map.merge(base_options, %{
+          storage_class: storage_class,
+          server_side_encryption: "AES256",
+          metadata: %{
+            width: Map.get(video_info, :width, 0),
+            height: Map.get(video_info, :height, 0),
+            duration: duration,
+            bitrate: Map.get(video_info, :bitrate, 0),
+            codec: Map.get(video_info, :video_codec, "unknown"),
+            format: mime_type
+          },
+          multipart_threshold: 100 * 1024 * 1024,  # 100MB
+          enable_acceleration: true
+        })
+        
+      :disk ->
+        Map.merge(base_options, %{
+          create_directory: true,
+          organize_by_date: true,
+          path_template: "videos/{year}/{month}/{day}/{filename}",
+          enable_streaming: true
+        })
+        
+      :ram ->
+        Map.merge(base_options, %{
+          ttl: 1800,  # 30 minutes for previews
+          compress: false  # Don't compress video data
+        })
+        
+      _ ->
+        base_options
+    end
+  end
+
+  @impl true
+  def select_storage_backend(content, metadata) do
+    file_size = byte_size(content)
+    relationship_type = Map.get(metadata, :relationship_type, :primary)
+    video_info = Map.get(metadata, :video_info, %{})
+    duration = Map.get(video_info, :duration, 0)
+    
+    cond do
+      # Thumbnails and previews go to disk/RAM
+      relationship_type in [:thumbnail, :preview, :cache] ->
+        if file_size < 10 * 1024 * 1024, do: :ram, else: :disk
+        
+      # Short videos under 100MB can go to disk
+      file_size < 100 * 1024 * 1024 and duration < 300 ->
+        :disk
+        
+      # Everything else goes to S3 for streaming support
+      true ->
+        :s3
+    end
+  end
+
+  # Additional video-specific actions
+  actions do
+    create :create_with_processing do
+      argument :file_id, :uuid, allow_nil?: false
+      argument :content, :string, allow_nil?: false
+      argument :filename, :string, allow_nil?: false
+      argument :mime_type, :string
+      argument :generate_thumbnails, :boolean, default: true
+      argument :transcode_web_formats, :boolean, default: true
+
+      change set_attribute(:is_primary, true)
+      change set_attribute(:relationship_type, :primary)
+      change set_attribute(:processing_status, :pending)
+      change relate_to_file()
+      change {__MODULE__.Changes.ScheduleProcessing, []}
+    end
+
+    action :generate_thumbnails, {:array, :struct} do
+      argument :timestamps, {:array, :integer}, default: [0, 30, 60, 120]  # seconds
+      argument :size, :string, default: "320x240"
+      
+      run {__MODULE__.Actions.GenerateThumbnails, []}
+    end
+
+    action :transcode_video, :struct do
+      argument :target_format, :string, allow_nil?: false
+      argument :quality, :string, default: "medium"
+      argument :resolution, :string
+      argument :target_bitrate, :integer
+      
+      run {__MODULE__.Actions.TranscodeVideo, []}
+    end
+
+    action :extract_audio, :struct do
+      argument :format, :string, default: "mp3"
+      argument :bitrate, :integer, default: 128
+      
+      run {__MODULE__.Actions.ExtractAudio, []}
+    end
+
+    action :create_preview_clip, :struct do
+      argument :start_time, :integer, allow_nil?: false  # seconds
+      argument :duration, :integer, default: 10  # seconds
+      argument :include_audio, :boolean, default: true
+      
+      run {__MODULE__.Actions.CreatePreviewClip, []}
+    end
+
+    action :generate_streaming_manifest, :map do
+      argument :formats, {:array, :string}, default: ["hls", "dash"]
+      argument :qualities, {:array, :string}, default: ["360p", "720p", "1080p"]
+      
+      run {__MODULE__.Actions.GenerateStreamingManifest, []}
+    end
+
+    action :analyze_content, :map do
+      run {__MODULE__.Actions.AnalyzeContent, []}
+    end
+  end
+
+  # Additional relationships specific to videos
+  relationships do
+    belongs_to :file, Kyozo.Workspaces.File do
+      allow_nil? false
+      attribute_writable? true
+      public? true
+    end
+
+    # Self-referential relationships for different formats
+    has_many :transcoded_versions, __MODULE__ do
+      destination_attribute :file_id
+      source_attribute :file_id
+      filter expr(relationship_type == :format)
+    end
+
+    has_many :thumbnails, __MODULE__ do
+      destination_attribute :file_id
+      source_attribute :file_id
+      filter expr(relationship_type == :thumbnail)
+    end
+
+    belongs_to :original_video, __MODULE__ do
+      allow_nil? true
+      public? true
+    end
+  end
+
+  # Video-specific calculations
+  calculations do
+    import Kyozo.Storage.AbstractStorage.CommonCalculations
+
+    storage_info()
+    content_preview()
+    
+    calculate :video_info, :map do
+      load [:metadata, :storage_resource]
+
+      calculation fn video_storages, _context ->
+        Enum.map(video_storages, fn video ->
+          metadata = video.metadata || %{}
+          video_info = Map.get(metadata, :video_info, %{})
+          storage = video.storage_resource
+          
+          %{
+            width: Map.get(video_info, :width, 0),
+            height: Map.get(video_info, :height, 0),
+            duration: Map.get(video_info, :duration, 0),
+            duration_formatted: format_duration(Map.get(video_info, :duration, 0)),
+            bitrate: Map.get(video_info, :bitrate, 0),
+            frame_rate: Map.get(video_info, :frame_rate, 0),
+            video_codec: Map.get(video_info, :video_codec, "unknown"),
+            audio_codec: Map.get(video_info, :audio_codec, "unknown"),
+            format: storage.mime_type,
+            file_size: storage.file_size,
+            aspect_ratio: calculate_aspect_ratio(Map.get(video_info, :width, 0), Map.get(video_info, :height, 0)),
+            has_audio: Map.get(video_info, :has_audio, false),
+            is_streamable: is_streamable_format?(storage.mime_type)
+          }
+        end)
+      end
+    end
+
+    calculate :processing_info, :map do
+      load [:metadata, :processing_status, :processing_error]
+
+      calculation fn video_storages, _context ->
+        Enum.map(video_storages, fn video ->
+          metadata = video.metadata || %{}
+          processing_info = Map.get(metadata, :processing_info, %{})
+          
+          %{
+            status: video.processing_status,
+            error: video.processing_error,
+            progress: Map.get(processing_info, :progress, 0),
+            estimated_completion: Map.get(processing_info, :estimated_completion),
+            tasks_completed: Map.get(processing_info, :tasks_completed, []),
+            tasks_pending: Map.get(processing_info, :tasks_pending, [])
+          }
+        end)
+      end
+    end
+
+    calculate :streaming_urls, :map do
+      load [:transcoded_versions, :storage_resource]
+
+      calculation fn video_storages, _context ->
+        Enum.map(video_storages, fn video ->
+          base_url = "/storage/#{video.storage_resource_id}"
+          
+          transcoded_urls = Enum.reduce(video.transcoded_versions || [], %{}, fn version, acc ->
+            version_metadata = version.metadata || %{}
+            quality = Map.get(version_metadata, "quality", "unknown")
+            Map.put(acc, quality, "#{base_url}/stream")
+          end)
+          
+          %{
+            original: "#{base_url}/download",
+            streaming: transcoded_urls,
+            hls_manifest: "#{base_url}/playlist.m3u8",
+            dash_manifest: "#{base_url}/manifest.mpd"
+          }
+        end)
+      end
+    end
+
+    calculate :thumbnail_urls, {:array, :string} do
+      load [:thumbnails]
+
+      calculation fn video_storages, _context ->
+        Enum.map(video_storages, fn video ->
+          Enum.map(video.thumbnails || [], fn thumb ->
+            "/storage/#{thumb.storage_resource_id}/download"
+          end)
+        end)
+      end
+    end
+
+    calculate :is_web_ready, :boolean do
+      load [:storage_resource, :transcoded_versions]
+
+      calculation fn video_storages, _context ->
+        Enum.map(video_storages, fn video ->
+          storage = video.storage_resource
+          web_formats = ["video/mp4", "video/webm"]
+          
+          has_web_format = storage.mime_type in web_formats
+          has_transcoded_versions = length(video.transcoded_versions || []) > 0
+          
+          has_web_format or has_transcoded_versions
+        end)
+      end
+    end
+  end
+
+  # Video-specific validations
+  validations do
+    validate present([:file_id, :storage_resource_id])
+    validate one_of(:relationship_type, [:primary, :format, :thumbnail, :preview, :backup, :cache])
+    validate {__MODULE__.Validations.ValidateVideoDimensions, []}
+    validate {__MODULE__.Validations.ValidateVideoFormat, []}
+    validate {__MODULE__.Validations.ValidateVideoDuration, []}
+  end
+
+  # Private helper functions
+  defp valid_video_header?(<<0x00, 0x00, 0x00, _, "ftyp", _::binary>>, "video/mp4"), do: true
+  defp valid_video_header?(<<0x1A, 0x45, 0xDF, 0xA3, _::binary>>, "video/webm"), do: true
+  defp valid_video_header?(<<0x1A, 0x45, 0xDF, 0xA3, _::binary>>, "video/x-matroska"), do: true
+  defp valid_video_header?(<<"OggS", _::binary>>, "video/ogg"), do: true
+  defp valid_video_header?(<<"RIFF", _::binary-size(4), "AVI ", _::binary>>, "video/x-msvideo"), do: true
+  defp valid_video_header?(_, _), do: false
+
+  defp extract_video_metadata(content, mime_type) do
+    # This would integrate with FFmpeg or similar library
+    # For now, return basic metadata
+    {:ok, %{
+      width: 1920,
+      height: 1080,
+      duration: 120,  # seconds
+      bitrate: 5000000,  # bits per second
+      frame_rate: 30.0,
+      video_codec: "h264",
+      audio_codec: "aac",
+      file_size: byte_size(content),
+      format: mime_type,
+      has_audio: true,
+      channels: 2,
+      sample_rate: 44100
+    }}
+  end
+
+  defp needs_transcoding?(mime_type, video_info) do
+    web_ready_formats = ["video/mp4", "video/webm"]
+    bitrate = Map.get(video_info, :bitrate, 0)
+    
+    not (mime_type in web_ready_formats) or bitrate > 10_000_000
+  end
+
+  defp format_duration(seconds) when is_integer(seconds) do
+    hours = div(seconds, 3600)
+    minutes = div(rem(seconds, 3600), 60)
+    secs = rem(seconds, 60)
+    
+    cond do
+      hours > 0 -> "#{hours}:#{pad_zero(minutes)}:#{pad_zero(secs)}"
+      true -> "#{minutes}:#{pad_zero(secs)}"
+    end
+  end
+  defp format_duration(_), do: "00:00"
+
+  defp pad_zero(num) when num < 10, do: "0#{num}"
+  defp pad_zero(num), do: "#{num}"
+
+  defp calculate_aspect_ratio(0, _), do: 0
+  defp calculate_aspect_ratio(_, 0), do: 0
+  defp calculate_aspect_ratio(width, height), do: width / height
+
+  defp is_streamable_format?(mime_type) do
+    mime_type in ["video/mp4", "video/webm", "video/ogg"]
+  end
+
+  # Change modules
+  defmodule Changes do
+    defmodule RelateToFile do
+      use Ash.Resource.Change
+
+      def change(changeset, _opts, _context) do
+        file_id = Ash.Changeset.get_argument(changeset, :file_id)
+        if file_id do
+          Ash.Changeset.change_attribute(changeset, :file_id, file_id)
+        else
+          changeset
+        end
+      end
+    end
+
+    defmodule ScheduleProcessing do
+      use Ash.Resource.Change
+
+      def change(changeset, _opts, _context) do
+        generate_thumbnails = Ash.Changeset.get_argument(changeset, :generate_thumbnails)
+        transcode_web_formats = Ash.Changeset.get_argument(changeset, :transcode_web_formats)
+        
+        processing_tasks = []
+        
+        processing_tasks = if generate_thumbnails do
+          ["generate_thumbnails" | processing_tasks]
+        else
+          processing_tasks
+        end
+        
+        processing_tasks = if transcode_web_formats do
+          ["transcode_web_formats" | processing_tasks]
+        else
+          processing_tasks
+        end
+        
+        metadata = %{
+          processing_info: %{
+            tasks_pending: processing_tasks,
+            tasks_completed: [],
+            progress: 0,
+            scheduled_at: DateTime.utc_now()
+          }
+        }
+        
+        Ash.Changeset.change_attribute(changeset, :metadata, metadata)
+      end
+    end
+  end
+
+  # Action modules
+  defmodule Actions do
+    defmodule GenerateThumbnails do
+      use Ash.Resource.Action
+
+      def run(video_storage, input, _context) do
+        timestamps = input.arguments.timestamps
+        size = input.arguments.size
+        
+        # This would integrate with FFmpeg to generate actual thumbnails
+        # For now, return placeholder results
+        thumbnails = Enum.map(timestamps, fn timestamp ->
+          %{
+            timestamp: timestamp,
+            size: size,
+            status: "pending",
+            created_at: DateTime.utc_now()
+          }
+        end)
+        
+        {:ok, thumbnails}
+      end
+    end
+
+    defmodule AnalyzeContent do
+      use Ash.Resource.Action
+
+      def run(_video_storage, _input, _context) do
+        # This would analyze video content for various metadata
+        {:ok, %{
+          scenes: [],
+          faces_detected: 0,
+          motion_score: 0.5,
+          audio_levels: %{average: -20, peak: -6},
+          quality_score: 8.5,
+          content_warnings: []
+        }}
+      end
+    end
+  end
+
+  # Validation modules
+  defmodule Validations do
+    defmodule ValidateVideoDimensions do
+      use Ash.Resource.Validation
+
+      def validate(changeset, _opts, _context) do
+        metadata = Ash.Changeset.get_attribute(changeset, :metadata) || %{}
+        video_info = Map.get(metadata, :video_info, %{})
+        width = Map.get(video_info, :width, 0)
+        height = Map.get(video_info, :height, 0)
+
+        cond do
+          width > 8192 or height > 8192 ->
+            {:error, field: :metadata, message: "Video dimensions too large (max 8K)"}
+          width < 1 or height < 1 ->
+            {:error, field: :metadata, message: "Invalid video dimensions"}
+          true ->
+            :ok
+        end
+      end
+    end
+
+    defmodule ValidateVideoFormat do
+      use Ash.Resource.Validation
+
+      def validate(changeset, _opts, _context) do
+        case Ash.Changeset.get_attribute(changeset, :storage_resource_id) do
+          nil -> :ok
+          storage_id ->
+            case Ash.get(Kyozo.Storage.StorageResource, storage_id) do
+              {:ok, storage} ->
+                if storage.mime_type in Kyozo.Workspaces.VideoStorage.supported_mime_types() do
+                  :ok
+                else
+                  {:error, field: :storage_resource_id, message: "Unsupported video format: #{storage.mime_type}"}
+                end
+              {:error, _} ->
+                {:error, field: :storage_resource_id, message: "Invalid storage resource"}
+            end
+        end
+      end
+    end
+
+    defmodule ValidateVideoDuration do
+      use Ash.Resource.Validation
+
+      def validate(changeset, _opts, _context) do
+        metadata = Ash.Changeset.get_attribute(changeset, :metadata) || %{}
+        video_info = Map.get(metadata, :video_info, %{})
+        duration = Map.get(video_info, :duration, 0)
+
+        if duration > 14400 do  # 4 hours
+          {:error, field: :metadata, message: "Video duration too long (max 4 hours)"}
+        else
+          :ok
+        end
+      end
+    end
+  end
+
+  # Helper function to create the relate_to_file change
+  defp relate_to_file, do: {__MODULE__.Changes.RelateToFile, []}
+end

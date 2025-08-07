@@ -1,0 +1,1011 @@
+openapi: 3.1.0
+info:
+  title: kyozo.runner.v2
+paths:
+  /kyozo.runner.v2.RunnerService/CreateSession:
+    post:
+      tags:
+        - kyozo.runner.v2.RunnerService
+      summary: CreateSession
+      operationId: kyozo.runner.v2.RunnerService.CreateSession
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kyozo.runner.v2.CreateSessionRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kyozo.runner.v2.CreateSessionResponse'
+  /kyozo.runner.v2.RunnerService/GetSession:
+    post:
+      tags:
+        - kyozo.runner.v2.RunnerService
+      summary: GetSession
+      operationId: kyozo.runner.v2.RunnerService.GetSession
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kyozo.runner.v2.GetSessionRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kyozo.runner.v2.GetSessionResponse'
+  /kyozo.runner.v2.RunnerService/ListSessions:
+    post:
+      tags:
+        - kyozo.runner.v2.RunnerService
+      summary: ListSessions
+      operationId: kyozo.runner.v2.RunnerService.ListSessions
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kyozo.runner.v2.ListSessionsRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kyozo.runner.v2.ListSessionsResponse'
+  /kyozo.runner.v2.RunnerService/UpdateSession:
+    post:
+      tags:
+        - kyozo.runner.v2.RunnerService
+      summary: UpdateSession
+      operationId: kyozo.runner.v2.RunnerService.UpdateSession
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kyozo.runner.v2.UpdateSessionRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kyozo.runner.v2.UpdateSessionResponse'
+  /kyozo.runner.v2.RunnerService/DeleteSession:
+    post:
+      tags:
+        - kyozo.runner.v2.RunnerService
+      summary: DeleteSession
+      operationId: kyozo.runner.v2.RunnerService.DeleteSession
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kyozo.runner.v2.DeleteSessionRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kyozo.runner.v2.DeleteSessionResponse'
+  /kyozo.runner.v2.RunnerService/MonitorEnvStore: {}
+  /kyozo.runner.v2.RunnerService/Execute: {}
+  /kyozo.runner.v2.RunnerService/ResolveProgram:
+    post:
+      tags:
+        - kyozo.runner.v2.RunnerService
+      summary: ResolveProgram
+      description: |-
+        ResolveProgram resolves variables from a script or a list of commands
+         using the provided sources, which can be a list of environment variables,
+         a session, or a project.
+         For now, the resolved variables are only the exported ones using `export`.
+      operationId: kyozo.runner.v2.RunnerService.ResolveProgram
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kyozo.runner.v2.ResolveProgramRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kyozo.runner.v2.ResolveProgramResponse'
+components:
+  schemas:
+    kyozo.runner.v2.CommandMode:
+      type: string
+      title: CommandMode
+      enum:
+        - COMMAND_MODE_UNSPECIFIED
+        - COMMAND_MODE_INLINE
+        - COMMAND_MODE_FILE
+        - COMMAND_MODE_TERMINAL
+        - COMMAND_MODE_CLI
+    kyozo.runner.v2.CreateSessionRequest.Config.SessionEnvStoreSeeding:
+      type: string
+      title: SessionEnvStoreSeeding
+      enum:
+        - SESSION_ENV_STORE_SEEDING_UNSPECIFIED
+        - SESSION_ENV_STORE_SEEDING_SYSTEM
+    kyozo.runner.v2.ExecuteStop:
+      type: string
+      title: ExecuteStop
+      enum:
+        - EXECUTE_STOP_UNSPECIFIED
+        - EXECUTE_STOP_INTERRUPT
+        - EXECUTE_STOP_KILL
+    kyozo.runner.v2.MonitorEnvStoreResponseSnapshot.Status:
+      type: string
+      title: Status
+      enum:
+        - STATUS_UNSPECIFIED
+        - STATUS_LITERAL
+        - STATUS_HIDDEN
+        - STATUS_MASKED
+    kyozo.runner.v2.MonitorEnvStoreType:
+      type: string
+      title: MonitorEnvStoreType
+      enum:
+        - MONITOR_ENV_STORE_TYPE_UNSPECIFIED
+        - MONITOR_ENV_STORE_TYPE_SNAPSHOT
+    kyozo.runner.v2.ResolveProgramRequest.Mode:
+      type: string
+      title: Mode
+      enum:
+        - MODE_UNSPECIFIED
+        - MODE_PROMPT_ALL
+        - MODE_SKIP_ALL
+    kyozo.runner.v2.ResolveProgramRequest.Retention:
+      type: string
+      title: Retention
+      enum:
+        - RETENTION_UNSPECIFIED
+        - RETENTION_FIRST_RUN
+        - RETENTION_LAST_RUN
+    kyozo.runner.v2.ResolveProgramResponse.Status:
+      type: string
+      title: Status
+      enum:
+        - STATUS_UNSPECIFIED
+        - STATUS_RESOLVED
+        - STATUS_UNRESOLVED_WITH_MESSAGE
+        - STATUS_UNRESOLVED_WITH_PLACEHOLDER
+        - STATUS_UNRESOLVED_WITH_SECRET
+    kyozo.runner.v2.SessionEnvStoreType:
+      type: string
+      title: SessionEnvStoreType
+      enum:
+        - SESSION_ENV_STORE_TYPE_UNSPECIFIED
+        - SESSION_ENV_STORE_TYPE_OWL
+      description: env store implementation
+    kyozo.runner.v2.SessionStrategy:
+      type: string
+      title: SessionStrategy
+      enum:
+        - SESSION_STRATEGY_UNSPECIFIED
+        - SESSION_STRATEGY_MOST_RECENT
+      description: |-
+        SessionStrategy determines a session selection in
+         an initial execute request.
+    google.protobuf.UInt32Value:
+      type: object
+      properties:
+        value:
+          type: integer
+          title: value
+          description: The uint32 value.
+      title: UInt32Value
+      additionalProperties: false
+      description: |-
+        Wrapper message for `uint32`.
+
+         The JSON representation for `UInt32Value` is JSON number.
+
+         Not recommended for use in new APIs, but still useful for legacy APIs and
+         has no plan to be removed.
+    kyozo.runner.v2.CreateSessionRequest:
+      type: object
+      properties:
+        metadata:
+          type: object
+          title: metadata
+          additionalProperties:
+            type: string
+            title: value
+          description: metadata is a map of client specific metadata.
+        env:
+          type: array
+          items:
+            type: string
+          title: env
+          description: |-
+            env field provides an initial set of environment variables
+             for a newly created session.
+        project:
+          title: project
+          description: |-
+            project from which to load environment variables.
+             They will be appended to the list from the env field.
+             The env field has a higher priority.
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.Project'
+        envStoreType:
+          title: env_store_type
+          description: |-
+            Deprecated use config instead. optional selection
+             of which env store implementation to use.
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.SessionEnvStoreType'
+        config:
+          title: config
+          $ref: '#/components/schemas/kyozo.runner.v2.CreateSessionRequest.Config'
+      title: CreateSessionRequest
+      additionalProperties: false
+    kyozo.runner.v2.CreateSessionRequest.Config:
+      type: object
+      properties:
+        envStoreType:
+          title: env_store_type
+          description: optional selection of which env store implementation to use.
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.SessionEnvStoreType'
+        envStoreSeeding:
+          title: env_store_seeding
+          description: how to seed initial ENV
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.CreateSessionRequest.Config.SessionEnvStoreSeeding'
+      title: Config
+      additionalProperties: false
+    kyozo.runner.v2.CreateSessionRequest.MetadataEntry:
+      type: object
+      properties:
+        key:
+          type: string
+          title: key
+        value:
+          type: string
+          title: value
+      title: MetadataEntry
+      additionalProperties: false
+    kyozo.runner.v2.CreateSessionResponse:
+      type: object
+      properties:
+        session:
+          title: session
+          $ref: '#/components/schemas/kyozo.runner.v2.Session'
+      title: CreateSessionResponse
+      additionalProperties: false
+    kyozo.runner.v2.DeleteSessionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+      title: DeleteSessionRequest
+      additionalProperties: false
+    kyozo.runner.v2.DeleteSessionResponse:
+      type: object
+      title: DeleteSessionResponse
+      additionalProperties: false
+    kyozo.runner.v2.ExecuteRequest:
+      type: object
+      properties:
+        config:
+          title: config
+          $ref: '#/components/schemas/kyozo.runner.v2.ProgramConfig'
+        inputData:
+          type: string
+          title: input_data
+          format: byte
+          description: |-
+            input_data is a byte array that will be send as input
+             to the program.
+        stop:
+          title: stop
+          description: |-
+            stop requests the running process to be stopped.
+             It is allowed only in the consecutive calls.
+          $ref: '#/components/schemas/kyozo.runner.v2.ExecuteStop'
+        winsize:
+          title: winsize
+          description: |-
+            sets pty winsize
+             has no effect in non-interactive mode
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.Winsize'
+        sessionId:
+          type: string
+          title: session_id
+          description: |-
+            session_id indicates in which Session the program should execute.
+             Executing in a Session might provide additional context like
+             environment variables.
+        sessionStrategy:
+          title: session_strategy
+          description: session_strategy is a strategy for selecting the session.
+          $ref: '#/components/schemas/kyozo.runner.v2.SessionStrategy'
+        project:
+          title: project
+          description: project used to load environment variables from .env files.
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.Project'
+        storeStdoutInEnv:
+          type: boolean
+          title: store_stdout_in_env
+          description: |-
+            store_stdout_in_env, if true, will store the stdout under well known name
+             and the last ran block in the environment variable `__`.
+      title: ExecuteRequest
+      additionalProperties: false
+    kyozo.runner.v2.ExecuteResponse:
+      type: object
+      properties:
+        exitCode:
+          title: exit_code
+          description: exit_code is sent only in the final message.
+          $ref: '#/components/schemas/google.protobuf.UInt32Value'
+        stdoutData:
+          type: string
+          title: stdout_data
+          format: byte
+          description: stdout_data contains bytes from stdout since the last response.
+        stderrData:
+          type: string
+          title: stderr_data
+          format: byte
+          description: stderr_data contains bytes from stderr since the last response.
+        pid:
+          title: pid
+          description: |-
+            pid contains the process' PID.
+
+             This is only sent once in an initial response for background processes.
+          $ref: '#/components/schemas/google.protobuf.UInt32Value'
+        mimeType:
+          type: string
+          title: mime_type
+          description: |-
+            mime_type is a detected MIME type of the stdout_data.
+
+             This is only sent once in the first response containing stdout_data.
+      title: ExecuteResponse
+      additionalProperties: false
+    kyozo.runner.v2.GetSessionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+      title: GetSessionRequest
+      additionalProperties: false
+    kyozo.runner.v2.GetSessionResponse:
+      type: object
+      properties:
+        session:
+          title: session
+          $ref: '#/components/schemas/kyozo.runner.v2.Session'
+      title: GetSessionResponse
+      additionalProperties: false
+    kyozo.runner.v2.ListSessionsRequest:
+      type: object
+      title: ListSessionsRequest
+      additionalProperties: false
+    kyozo.runner.v2.ListSessionsResponse:
+      type: object
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/kyozo.runner.v2.Session'
+          title: sessions
+      title: ListSessionsResponse
+      additionalProperties: false
+    kyozo.runner.v2.MonitorEnvStoreRequest:
+      type: object
+      properties:
+        session:
+          title: session
+          $ref: '#/components/schemas/kyozo.runner.v2.Session'
+      title: MonitorEnvStoreRequest
+      additionalProperties: false
+    kyozo.runner.v2.MonitorEnvStoreResponse:
+      type: object
+      oneOf:
+        - properties:
+            snapshot:
+              title: snapshot
+              $ref: '#/components/schemas/kyozo.runner.v2.MonitorEnvStoreResponseSnapshot'
+          title: snapshot
+          required:
+            - snapshot
+      properties:
+        type:
+          title: type
+          $ref: '#/components/schemas/kyozo.runner.v2.MonitorEnvStoreType'
+      title: MonitorEnvStoreResponse
+      additionalProperties: false
+    kyozo.runner.v2.MonitorEnvStoreResponseSnapshot:
+      type: object
+      properties:
+        envs:
+          type: array
+          items:
+            $ref: '#/components/schemas/kyozo.runner.v2.MonitorEnvStoreResponseSnapshot.SnapshotEnv'
+          title: envs
+      title: MonitorEnvStoreResponseSnapshot
+      additionalProperties: false
+    kyozo.runner.v2.MonitorEnvStoreResponseSnapshot.Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          title: code
+        message:
+          type: string
+          title: message
+      title: Error
+      additionalProperties: false
+    kyozo.runner.v2.MonitorEnvStoreResponseSnapshot.SnapshotEnv:
+      type: object
+      properties:
+        status:
+          title: status
+          $ref: '#/components/schemas/kyozo.runner.v2.MonitorEnvStoreResponseSnapshot.Status'
+        name:
+          type: string
+          title: name
+        description:
+          type: string
+          title: description
+        spec:
+          type: string
+          title: spec
+        isRequired:
+          type: boolean
+          title: is_required
+        origin:
+          type: string
+          title: origin
+        originalValue:
+          type: string
+          title: original_value
+        resolvedValue:
+          type: string
+          title: resolved_value
+        createTime:
+          type: string
+          title: create_time
+        updateTime:
+          type: string
+          title: update_time
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/kyozo.runner.v2.MonitorEnvStoreResponseSnapshot.Error'
+          title: errors
+      title: SnapshotEnv
+      additionalProperties: false
+    kyozo.runner.v2.ProgramConfig:
+      type: object
+      oneOf:
+        - properties:
+            commands:
+              title: commands
+              description: |-
+                commands are commands to be executed by the program.
+                 The commands are joined and executed as a script.
+              $ref: '#/components/schemas/kyozo.runner.v2.ProgramConfig.CommandList'
+          title: commands
+          required:
+            - commands
+        - properties:
+            script:
+              type: string
+              title: script
+              description: |-
+                script is code to be executed by the program.
+                 Individual lines are joined with the new line character.
+          title: script
+          required:
+            - script
+      properties:
+        programName:
+          type: string
+          title: program_name
+          description: |-
+            program_name is a name of the program to execute.
+             If it's not a path (relative or absolute), the runner
+             will try to resolve the name.
+             For example: "sh", "/bin/bash".
+        arguments:
+          type: array
+          items:
+            type: string
+          title: arguments
+          description: arguments is a list of arguments passed to the program.
+        directory:
+          type: string
+          title: directory
+          description: directory to execute the program in.
+        languageId:
+          type: string
+          title: language_id
+          description: |-
+            language_id associated with script to allow interpreter
+             detection if no specific interpreter program is provided.
+        background:
+          type: boolean
+          title: background
+          description: |-
+            background indicates a background process
+             required to handle running background tasks via CLI in C/I
+        fileExtension:
+          type: string
+          title: file_extension
+          description: |-
+            file_extension associated with script. Some interpreters are strict
+             about file extensions, such as tsc which requires "ts" extension.
+        env:
+          type: array
+          items:
+            type: string
+          title: env
+          description: |-
+            env is a list of additional environment variables
+             that will be injected to the executed program.
+        interactive:
+          type: boolean
+          title: interactive
+          description: |-
+            interactive, if true, uses a pseudo-tty to execute the program.
+             Otherwise, the program is executed using in-memory buffers for I/O.
+        mode:
+          title: mode
+          description: |-
+            TODO(adamb): understand motivation for this. In theory, source
+             should tell whether to execute it inline or as a file.
+          $ref: '#/components/schemas/kyozo.runner.v2.CommandMode'
+        knownId:
+          type: string
+          title: known_id
+          description: optional well known id for cell/block
+        knownName:
+          type: string
+          title: known_name
+          description: optional well known name for cell/block
+        runId:
+          type: string
+          title: run_id
+          description: optional run ID to track the execution of the program
+      title: ProgramConfig
+      additionalProperties: false
+      description: |-
+        ProgramConfig is a configuration for a program to execute.
+         From this configuration, any program can be built.
+    kyozo.runner.v2.ProgramConfig.CommandList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+          title: items
+          description: |-
+            commands are commands to be executed by the program.
+             The commands are joined and executed as a script.
+             For example: ["echo 'Hello, World'", "ls -l /etc"].
+      title: CommandList
+      additionalProperties: false
+    kyozo.runner.v2.Project:
+      type: object
+      properties:
+        root:
+          type: string
+          title: root
+          description: |-
+            root is a root directory of the project.
+             The semantic is the same as for the "--project"
+             flag in "kyozo".
+        envLoadOrder:
+          type: array
+          items:
+            type: string
+          title: env_load_order
+          description: |-
+            env_load_order is list of environment files
+             to try and load env from.
+      title: Project
+      additionalProperties: false
+    kyozo.runner.v2.ResolveProgramCommandList:
+      type: object
+      properties:
+        lines:
+          type: array
+          items:
+            type: string
+          title: lines
+          description: |-
+            commands are commands to be executed by the program.
+             The commands are joined and executed as a script.
+             For example: ["echo 'Hello, World'", "ls -l /etc"].
+      title: ResolveProgramCommandList
+      additionalProperties: false
+    kyozo.runner.v2.ResolveProgramRequest:
+      type: object
+      oneOf:
+        - properties:
+            commands:
+              title: commands
+              description: |-
+                commands are commands to be executed by the program.
+                 The commands are joined and executed as a script.
+              $ref: '#/components/schemas/kyozo.runner.v2.ResolveProgramCommandList'
+          title: commands
+          required:
+            - commands
+        - properties:
+            script:
+              type: string
+              title: script
+              description: |-
+                script is code to be executed by the program.
+                 Individual lines are joined with the new line character.
+          title: script
+          required:
+            - script
+      properties:
+        mode:
+          title: mode
+          description: |-
+            mode determines how variables resolution occurs.
+             It is usually based on document or cell annotation config.
+          $ref: '#/components/schemas/kyozo.runner.v2.ResolveProgramRequest.Mode'
+        env:
+          type: array
+          items:
+            type: string
+          title: env
+          description: |-
+            env is a list of explicit environment variables that will be used
+             to resolve the environment variables found in the source.
+        sessionId:
+          type: string
+          title: session_id
+          description: |-
+            session_id indicates which session is the source of
+             environment variables. If not provided, the most recent
+             session can be used using session_strategy.
+        sessionStrategy:
+          title: session_strategy
+          description: session_strategy is a strategy for selecting the session.
+          $ref: '#/components/schemas/kyozo.runner.v2.SessionStrategy'
+        project:
+          title: project
+          description: project used to load environment variables from .env files.
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.Project'
+        languageId:
+          type: string
+          title: language_id
+          description: language id associated with script.
+        retention:
+          title: retention
+          description: retention determines how variables are retained once resolved.
+          $ref: '#/components/schemas/kyozo.runner.v2.ResolveProgramRequest.Retention'
+      title: ResolveProgramRequest
+      additionalProperties: false
+    kyozo.runner.v2.ResolveProgramResponse:
+      type: object
+      properties:
+        script:
+          type: string
+          title: script
+        commands:
+          title: commands
+          description: use script until commands normalization is implemented
+          $ref: '#/components/schemas/kyozo.runner.v2.ResolveProgramCommandList'
+        vars:
+          type: array
+          items:
+            $ref: '#/components/schemas/kyozo.runner.v2.ResolveProgramResponse.VarResult'
+          title: vars
+      title: ResolveProgramResponse
+      additionalProperties: false
+    kyozo.runner.v2.ResolveProgramResponse.VarResult:
+      type: object
+      properties:
+        status:
+          title: status
+          description: prompt indicates the resolution status of the env variable.
+          $ref: '#/components/schemas/kyozo.runner.v2.ResolveProgramResponse.Status'
+        name:
+          type: string
+          title: name
+          description: name is the name of the environment variable.
+        originalValue:
+          type: string
+          title: original_value
+          description: |-
+            original_value is a default value of the environment variable.
+             It might be a value that is assigned to the variable in the script,
+             like FOO=bar or FOO=${FOO:-bar}.
+             If the variable is not assigned, it is an empty string.
+        resolvedValue:
+          type: string
+          title: resolved_value
+          description: |-
+            resolved_value is a value of the environment variable resolved from a source.
+             If it is an empty string, it means that the environment variable is not resolved.
+      title: VarResult
+      additionalProperties: false
+    kyozo.runner.v2.Session:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        env:
+          type: array
+          items:
+            type: string
+          title: env
+          description: |-
+            env keeps track of session environment variables.
+             They can be modified by executing programs which
+             alter them through "export" and "unset" commands.
+        metadata:
+          type: object
+          title: metadata
+          additionalProperties:
+            type: string
+            title: value
+          description: metadata is a map of client specific metadata.
+      title: Session
+      additionalProperties: false
+    kyozo.runner.v2.Session.MetadataEntry:
+      type: object
+      properties:
+        key:
+          type: string
+          title: key
+        value:
+          type: string
+          title: value
+      title: MetadataEntry
+      additionalProperties: false
+    kyozo.runner.v2.UpdateSessionRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        metadata:
+          type: object
+          title: metadata
+          additionalProperties:
+            type: string
+            title: value
+          description: metadata is a map of client specific metadata.
+        env:
+          type: array
+          items:
+            type: string
+          title: env
+          description: |-
+            env field provides an initial set of environment variables
+             for a newly created session.
+        project:
+          title: project
+          description: |-
+            project from which to load environment variables.
+             They will be appended to the list from the env field.
+             The env field has a higher priority.
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.Project'
+      title: UpdateSessionRequest
+      additionalProperties: false
+    kyozo.runner.v2.UpdateSessionRequest.MetadataEntry:
+      type: object
+      properties:
+        key:
+          type: string
+          title: key
+        value:
+          type: string
+          title: value
+      title: MetadataEntry
+      additionalProperties: false
+    kyozo.runner.v2.UpdateSessionResponse:
+      type: object
+      properties:
+        session:
+          title: session
+          $ref: '#/components/schemas/kyozo.runner.v2.Session'
+      title: UpdateSessionResponse
+      additionalProperties: false
+    kyozo.runner.v2.Winsize:
+      type: object
+      properties:
+        rows:
+          type: integer
+          title: rows
+        cols:
+          type: integer
+          title: cols
+        x:
+          type: integer
+          title: x
+        y:
+          type: integer
+          title: y
+      title: Winsize
+      additionalProperties: false
+    connect-protocol-version:
+      type: number
+      title: Connect-Protocol-Version
+      enum:
+        - 1
+      description: Define the version of the Connect protocol
+      const: 1
+    connect-timeout-header:
+      type: number
+      title: Connect-Timeout-Ms
+      description: Define the timeout, in ms
+    connect.error:
+      type: object
+      properties:
+        code:
+          type: string
+          examples:
+            - not_found
+          enum:
+            - canceled
+            - unknown
+            - invalid_argument
+            - deadline_exceeded
+            - not_found
+            - already_exists
+            - permission_denied
+            - resource_exhausted
+            - failed_precondition
+            - aborted
+            - out_of_range
+            - unimplemented
+            - internal
+            - unavailable
+            - data_loss
+            - unauthenticated
+          description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+        message:
+          type: string
+          description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+        detail:
+          $ref: '#/components/schemas/google.protobuf.Any'
+      title: Connect Error
+      additionalProperties: true
+      description: 'Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation'
+    google.protobuf.Any:
+      type: object
+      properties:
+        type:
+          type: string
+        value:
+          type: string
+          format: binary
+        debug:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+security: []
+tags:
+  - name: kyozo.runner.v2.RunnerService

@@ -1,0 +1,468 @@
+defmodule Kyozo.Storage.StorageResource do
+  @moduledoc """
+  Storage resource representing Entrepôt-style file storage entries.
+
+  This resource acts as the bridge between Ash resources and file storage,
+  implementing the Entrepôt pattern where each storage entry contains:
+  - A unique locator ID for the storage backend
+  - Storage backend type (disk, s3, git, hybrid, etc.)
+  - Metadata about the stored file
+  - Relationship data for multitenancy and ownership
+  """
+
+  use Ash.Resource,
+    otp_app: :kyozo,
+    domain: Kyozo.Storage,
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub],
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+
+  alias Kyozo.Storage.{Storage, Upload, Locator, Uploader}
+
+  postgres do
+    table "storage_entries"
+    repo Kyozo.Repo
+
+    references do
+      reference :team, on_delete: :delete, index?: true
+      reference :user, on_delete: :nilify, index?: true
+    end
+
+    custom_indexes do
+      index [:team_id, :locator_id], unique: true
+      index [:team_id, :storage_backend]
+      index [:team_id, :mime_type]
+      index [:team_id, :file_name]
+      index [:checksum], unique: false
+      index [:created_at]
+      index [:file_size]
+    end
+  end
+
+  json_api do
+    type "storage"
+
+    routes do
+      base "/storage"
+      get :read
+      index :list_storage_entries
+      post :create_storage_entry
+      patch :update_storage_entry
+      delete :destroy
+    end
+  end
+
+  graphql do
+    type :storage
+
+    queries do
+      get :get_storage, :read
+      list :list_storage, :list_storage_entries
+    end
+
+    mutations do
+      create :create_storage, :create_storage_entry
+      update :update_storage, :update_storage_entry
+      destroy :destroy_storage, :destroy
+    end
+  end
+
+  actions do
+    default_accept []
+    defaults [:read, :destroy]
+
+    read :list_storage_entries do
+      prepare build(load: [:locator, :storage_info, :can_access])
+      filter expr(is_nil(deleted_at))
+    end
+
+    read :by_locator_id do
+      argument :locator_id, :string, allow_nil?: false
+
+      prepare build(filter: [locator_id: arg(:locator_id)])
+    end
+
+    read :by_checksum do
+      argument :checksum, :string, allow_nil?: false
+
+      prepare build(filter: [checksum: arg(:checksum)])
+    end
+
+    read :by_mime_type do
+      argument :mime_type, :string, allow_nil?: false
+
+      prepare build(filter: [mime_type: arg(:mime_type)])
+    end
+
+    create :create_storage_entry do
+      argument :file_upload, :map, allow_nil?: false
+      argument :storage_backend, :atom, default: :hybrid
+      argument :storage_options, :map, default: %{}
+
+      change relate_actor(:user)
+      change {__MODULE__.Changes.ProcessFileUpload, []}
+      change {__MODULE__.Changes.CreateStorageEntry, []}
+      change {__MODULE__.Changes.ExtractFileMetadata, []}
+    end
+
+    create :create_from_locator do
+      argument :locator, :map, allow_nil?: false
+
+      change relate_actor(:user)
+      change {__MODULE__.Changes.CreateFromLocator, []}
+    end
+
+    update :update_storage_entry do
+      accept [:description, :tags, :metadata]
+
+      change {__MODULE__.Changes.UpdateMetadata, []}
+    end
+
+    action :get_content, :map do
+      argument :version, :string, allow_nil?: true
+
+      run {__MODULE__.Actions.GetContent, []}
+    end
+
+    action :upload_new_version, :struct do
+      argument :file_upload, :map, allow_nil?: false
+      argument :commit_message, :string, default: "New version uploaded"
+
+      run {__MODULE__.Actions.UploadNewVersion, []}
+    end
+
+    action :list_versions, {:array, :map} do
+      run {__MODULE__.Actions.ListVersions, []}
+    end
+
+    action :duplicate_storage, :struct do
+      argument :new_storage_backend, :atom, allow_nil?: true
+      argument :copy_options, :map, default: %{}
+
+      run {__MODULE__.Actions.DuplicateStorage, []}
+    end
+
+    destroy :soft_delete do
+      accept []
+
+      change set_attribute(:deleted_at, expr(now()))
+      change {__MODULE__.Changes.SoftDeleteStorage, []}
+    end
+
+    destroy :hard_delete do
+      accept []
+
+      change {__MODULE__.Changes.HardDeleteStorage, []}
+    end
+  end
+
+  policies do
+    policy action_type(:read) do
+      authorize_if relates_to_actor_via([:team, :users])
+    end
+
+    policy action_type(:create) do
+      authorize_if actor_present()
+      authorize_if relates_to_actor_via([:team, :users])
+    end
+
+    policy action_type(:update) do
+      authorize_if relates_to_actor_via(:user)
+      authorize_if relates_to_actor_via([:team, :users])
+    end
+
+    policy action_type(:destroy) do
+      authorize_if relates_to_actor_via(:user)
+      authorize_if actor_attribute_equals(:role, "admin")
+    end
+
+    policy action([:get_content, :list_versions, :upload_new_version, :duplicate_storage]) do
+      authorize_if relates_to_actor_via([:team, :users])
+    end
+  end
+
+  pub_sub do
+    module KyozoWeb.Endpoint
+
+    publish_all :create, ["storage", :team_id]
+    publish_all :update, ["storage", :team_id]
+    publish_all :destroy, ["storage", :team_id]
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :team_id
+  end
+
+  attributes do
+    uuid_v7_primary_key :id
+
+    attribute :locator_id, :string do
+      allow_nil? false
+      public? true
+      constraints min_length: 1, max_length: 1024
+    end
+
+    attribute :storage_backend, :atom do
+      allow_nil? false
+      public? true
+      default :hybrid
+      constraints one_of: [:disk, :s3, :git, :hybrid, :ram]
+    end
+
+    attribute :file_name, :string do
+      allow_nil? false
+      public? true
+      constraints min_length: 1, max_length: 255
+    end
+
+    attribute :original_filename, :string do
+      public? true
+      constraints max_length: 255
+    end
+
+    attribute :mime_type, :string do
+      allow_nil? false
+      public? true
+      default "application/octet-stream"
+    end
+
+    attribute :file_size, :integer do
+      allow_nil? false
+      public? true
+      constraints min: 0
+    end
+
+    attribute :checksum, :string do
+      public? true
+      constraints min_length: 32, max_length: 128
+    end
+
+    attribute :checksum_algorithm, :atom do
+      public? true
+      default :sha256
+      constraints one_of: [:md5, :sha1, :sha256, :sha512]
+    end
+
+    attribute :description, :string do
+      public? true
+      constraints max_length: 1000
+    end
+
+    attribute :tags, {:array, :string} do
+      public? true
+      default []
+    end
+
+    attribute :metadata, :map do
+      public? true
+      default %{}
+    end
+
+    attribute :storage_metadata, :map do
+      public? true
+      default %{}
+    end
+
+    attribute :version, :string do
+      public? true
+      default "1.0.0"
+    end
+
+    attribute :is_versioned, :boolean do
+      public? true
+      default false
+    end
+
+    attribute :is_public, :boolean do
+      public? true
+      default false
+    end
+
+    attribute :access_count, :integer do
+      public? true
+      default 0
+    end
+
+    attribute :last_accessed_at, :utc_datetime_usec do
+      public? true
+    end
+
+    attribute :expires_at, :utc_datetime_usec do
+      public? true
+    end
+
+    attribute :deleted_at, :utc_datetime_usec do
+      public? true
+    end
+
+    create_timestamp :created_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    belongs_to :team, Kyozo.Accounts.Team do
+      allow_nil? false
+      attribute_writable? true
+    end
+
+    belongs_to :user, Kyozo.Accounts.User do
+      allow_nil? true
+      attribute_writable? true
+    end
+
+    # Generic polymorphic relationships for any resource that uses file storage
+    # has_many :document_storages, Kyozo.Workspaces.DocumentStorage do
+    #   destination_attribute :storage_id
+    # end
+  end
+
+  calculations do
+    calculate :locator, :map do
+      load [:locator_id, :storage_backend, :metadata, :storage_metadata]
+
+      calculation fn storage_entries, _context ->
+        Enum.map(storage_entries, fn entry ->
+          %{
+            id: entry.locator_id,
+            storage: entry.storage_backend,
+            metadata: Map.merge(entry.metadata || %{}, entry.storage_metadata || %{})
+          }
+        end)
+      end
+    end
+
+    calculate :storage_info, :map do
+      load [:storage_backend, :is_versioned, :file_size, :mime_type]
+
+      calculation fn storage_entries, _context ->
+        Enum.map(storage_entries, fn entry ->
+          %{
+            backend: entry.storage_backend,
+            supports_versioning: entry.is_versioned,
+            supports_streaming: entry.storage_backend in [:s3, :disk],
+            max_file_size: get_max_file_size(entry.storage_backend),
+            estimated_cost: estimate_storage_cost(entry.storage_backend, entry.file_size)
+          }
+        end)
+      end
+    end
+
+    calculate :can_access, :boolean, {Kyozo.Calculations.CanPerformAction, action: :read}
+
+    calculate :file_extension, :string, expr(
+      fragment("regexp_replace(?, '^.*\\.', '')", file_name)
+    )
+
+    calculate :file_type_category, :string do
+      load [:mime_type, :file_extension]
+
+      calculation fn storage_entries, _context ->
+        Enum.map(storage_entries, fn entry ->
+          categorize_file_type(entry.mime_type, entry.file_extension)
+        end)
+      end
+    end
+
+    calculate :is_expired, :boolean, expr(
+      not is_nil(expires_at) and expires_at < now()
+    )
+
+    calculate :size_human_readable, :string do
+      load [:file_size]
+
+      calculation fn storage_entries, _context ->
+        Enum.map(storage_entries, &format_file_size(&1.file_size))
+      end
+    end
+  end
+
+  validations do
+    validate present([:locator_id, :storage_backend, :file_name, :mime_type, :file_size])
+
+    validate {__MODULE__.Validations.ValidateLocatorId, []}
+    validate {__MODULE__.Validations.ValidateStorageBackend, []}
+    validate {__MODULE__.Validations.ValidateFileSize, []}
+    validate {__MODULE__.Validations.ValidateChecksum, []}
+  end
+
+  changes do
+    change before_action({__MODULE__.Changes.GenerateChecksum, []}), on: [:create]
+    change before_action({__MODULE__.Changes.ValidateStorageAccess, []}), on: [:create, :update]
+  end
+
+  # Resource helper functions
+
+  @doc """
+  Creates a new storage entry from an Entrepôt locator.
+  """
+  def from_locator(%Locator{} = locator, attrs \\ %{}) do
+    base_attrs = %{
+      locator_id: locator.id,
+      storage_backend: locator.storage,
+      storage_metadata: locator.metadata,
+      metadata: Map.get(locator.metadata, :file_metadata, %{})
+    }
+
+    Map.merge(base_attrs, attrs)
+  end
+
+  @doc """
+  Converts storage entry to Entrepôt locator.
+  """
+  def to_locator(%__MODULE__{} = storage) do
+    Locator.new!(%{
+      id: storage.locator_id,
+      storage: storage.storage_backend,
+      metadata: Map.merge(storage.metadata || %{}, storage.storage_metadata || %{})
+    })
+  end
+
+  @doc """
+  Gets the storage provider for the given backend.
+  """
+  def get_storage_provider(backend) do
+    case backend do
+      :disk -> Kyozo.Storage.Providers.Disk
+      :s3 -> Kyozo.Storage.Providers.S3
+      :git -> Kyozo.Workspaces.Storage.GitProvider
+      :hybrid -> Kyozo.Workspaces.Storage.HybridProvider
+      :ram -> Kyozo.Storage.Providers.RAM
+      _ -> raise ArgumentError, "Unknown storage backend: #{backend}"
+    end
+  end
+
+  # Private helper functions
+
+  defp get_max_file_size(:ram), do: 10 * 1024 * 1024  # 10MB
+  defp get_max_file_size(:disk), do: 1024 * 1024 * 1024  # 1GB
+  defp get_max_file_size(:git), do: 100 * 1024 * 1024  # 100MB
+  defp get_max_file_size(:s3), do: 5 * 1024 * 1024 * 1024  # 5GB
+  defp get_max_file_size(:hybrid), do: 1024 * 1024 * 1024  # 1GB
+
+  defp estimate_storage_cost(:ram, _size), do: 0.0
+  defp estimate_storage_cost(:disk, size), do: size * 0.00001
+  defp estimate_storage_cost(:git, size), do: size * 0.00002
+  defp estimate_storage_cost(:s3, size), do: size * 0.000023
+  defp estimate_storage_cost(:hybrid, size), do: size * 0.000015
+
+  defp categorize_file_type(mime_type, extension) do
+    cond do
+      String.starts_with?(mime_type, "image/") -> "image"
+      String.starts_with?(mime_type, "video/") -> "video"
+      String.starts_with?(mime_type, "audio/") -> "audio"
+      String.starts_with?(mime_type, "text/") -> "text"
+      mime_type == "application/pdf" -> "document"
+      extension in ~w(.doc .docx .xls .xlsx .ppt .pptx) -> "document"
+      extension in ~w(.zip .tar .gz .rar .7z) -> "archive"
+      extension in ~w(.py .js .ts .ex .exs .rs .go .java) -> "code"
+      true -> "other"
+    end
+  end
+
+  defp format_file_size(size) when size < 1024, do: "#{size} B"
+  defp format_file_size(size) when size < 1024 * 1024, do: "#{Float.round(size / 1024, 1)} KB"
+  defp format_file_size(size) when size < 1024 * 1024 * 1024, do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+  defp format_file_size(size), do: "#{Float.round(size / (1024 * 1024 * 1024), 1)} GB"
+end

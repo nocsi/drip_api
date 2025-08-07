@@ -1,0 +1,2230 @@
+# Domain Documentation
+
+## Domain Kyozo.Accounts
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    class Token {
+        String jti
+        String subject
+        UtcDatetime expires_at
+        String purpose
+        Map extra_data
+        store_confirmation_changes(String token, Map extra_data, String purpose)
+        get_confirmation_changes(String jti)
+        read_expired()
+        read()
+        expired()
+        get_token(String token, String jti, String purpose)
+        revoked?(String token, String jti)
+        revoke_token(String token, Map extra_data)
+        revoke_jti(String subject, String jti, Map extra_data)
+        store_token(String token, Map extra_data, String purpose)
+        expunge_expired()
+        revoke_all_stored_for_subject(String subject, Map extra_data)
+    }
+    class Team {
+        UUIDv7 id
+        String name
+        String domain
+        String description
+        destroy()
+        read()
+        create(String name, String domain, String description)
+        list_user_teams()
+        update_team(String name, String domain, String description)
+    }
+    class UserTeam {
+        UUIDv7 id
+        String role
+        UUID user_id
+        UUID team_id
+        User user
+        Team team
+        destroy()
+        update(UUID user_id, UUID team_id)
+        read()
+        create(UUID user_id, UUID team_id)
+        list_team_members()
+        add_team_member(UUID user_id, String role)
+        change_member_role(String role)
+        remove_team_member()
+        leave_team()
+        is_member?(String user_id)
+    }
+    class Invitation {
+        UUIDv7 id
+        UUID invited_user_id
+        UUID inviter_user_id
+        UUID team_id
+        User invited_user
+        User inviter_user
+        Team team
+        read()
+        list_received_invitations()
+        list_invitations_sent()
+        invite_user(UUID invited_user_id)
+        cancel_invitation()
+        decline_invitation()
+        accept_invitation()
+    }
+    class Group {
+        UUIDv7 id
+        destroy()
+        update(String name, String description)
+        read()
+        create(String name, String description)
+    }
+    class GroupPermission {
+        UUIDv7 id
+        destroy()
+        update(String resource, String action, UUID group_id)
+        read()
+        create(String resource, String action, UUID group_id)
+    }
+    class UserGroup {
+        UUIDv7 id
+        destroy()
+        update(UUID user_id, UUID group_id)
+        read()
+        create(UUID user_id, UUID group_id)
+    }
+    class User {
+        UUIDv7 id
+        String name
+        CiString email
+        String picture
+        confirm(String confirm, CiString email)
+        log_out_everywhere(Struct user)
+        update()
+        read()
+        destroy()
+        current_user()
+        set_current_team(String team)
+        get_by_subject(String subject)
+        change_password(String current_password, String password, String password_confirmation)
+        sign_in_with_password(CiString email, String password)
+        sign_in_with_token(String token)
+        register_with_password(String name, CiString email, String password, String password_confirmation)
+        request_password_reset_token(CiString email)
+        get_by_email(CiString email)
+        reset_password_with_token(String reset_token, String password, String password_confirmation)
+        search_users(String search)
+        sign_in_with_api_key(String api_key)
+    }
+    class UserIdentity {
+        String strategy
+        read()
+        destroy()
+        upsert(Map user_info, Map oauth_tokens, UUIDv7 user_id, String strategy)
+    }
+    class Notification {
+        UUID id
+        destroy()
+        update(UUID sender_user_id, UUID recipient_user_id, String subject, String body, ...)
+        create(UUID sender_user_id, UUID recipient_user_id, String subject, String body, ...)
+        read()
+        send(UUID sender_user_id, UUID recipient_user_id, String subject, String body, ...)
+        unprocessed()
+        for_user()
+    }
+    class ApiKey {
+        UUID id
+        destroy()
+        read()
+        create(UUID user_id, UtcDatetimeUsec expires_at)
+    }
+
+    ApiKey -- User
+    Group -- GroupPermission
+    Group -- User
+    Group -- UserGroup
+    Invitation -- Team
+    Invitation -- User
+    Notification -- User
+    Team -- User
+    Team -- UserTeam
+    User -- UserGroup
+    User -- UserIdentity
+    User -- UserTeam
+```
+
+### ER Diagram
+
+```mermaid
+erDiagram
+    "Token" {
+        String jti
+        String subject
+        UtcDatetime expires_at
+        String purpose
+        Map extra_data
+    }
+    "Team" {
+        UUIDv7 id
+        String name
+        String domain
+        String description
+    }
+    "UserTeam" {
+        UUIDv7 id
+        String role
+        UUID user_id
+        UUID team_id
+    }
+    "Invitation" {
+        UUIDv7 id
+        UUID invited_user_id
+        UUID inviter_user_id
+        UUID team_id
+    }
+    "Group" {
+        UUIDv7 id
+    }
+    "GroupPermission" {
+        UUIDv7 id
+    }
+    "UserGroup" {
+        UUIDv7 id
+    }
+    "User" {
+        UUIDv7 id
+        String name
+        CiString email
+        String picture
+    }
+    "UserIdentity" {
+        String strategy
+    }
+    "Notification" {
+        UUID id
+    }
+    "ApiKey" {
+        UUID id
+    }
+
+    "ApiKey" ||--|| "User" : ""
+    "Group" ||--|| "GroupPermission" : ""
+    "Group" ||--|| "User" : ""
+    "Group" ||--|| "UserGroup" : ""
+    "Invitation" ||--|| "Team" : ""
+    "Invitation" ||--|| "User" : ""
+    "Notification" ||--|| "User" : ""
+    "Team" ||--|| "User" : ""
+    "Team" ||--|| "UserTeam" : ""
+    "User" ||--|| "UserGroup" : ""
+    "User" ||--|| "UserIdentity" : ""
+    "User" ||--|| "UserTeam" : ""
+```
+
+### Resources
+
+- [Token](#token)
+- [Team](#team)
+- [UserTeam](#userteam)
+- [Invitation](#invitation)
+- [Group](#group)
+- [GroupPermission](#grouppermission)
+- [UserGroup](#usergroup)
+- [User](#user)
+- [UserIdentity](#useridentity)
+- [Notification](#notification)
+- [ApiKey](#apikey)
+
+### Token
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **jti** | String |  |
+| **subject** | String |  |
+| **expires_at** | UtcDatetime |  |
+| **purpose** | String |  |
+| **extra_data** | Map |  |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **store_confirmation_changes** | _create_ | <ul><li><b>token</b> <i>String</i> </li><li><b>extra_data</b> <i>Map</i> attribute</li><li><b>purpose</b> <i>String</i> attribute</li></ul> |  |
+| **get_confirmation_changes** | _read_ | <ul><li><b>jti</b> <i>String</i> </li></ul> |  |
+| **read_expired** | _read_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **expired** | _read_ | <ul></ul> | Look up all expired tokens. |
+| **get_token** | _read_ | <ul><li><b>token</b> <i>String</i> </li><li><b>jti</b> <i>String</i> </li><li><b>purpose</b> <i>String</i> </li></ul> | Look up a token by JTI or token, and an optional purpose. |
+| **revoked?** | _action_ | <ul><li><b>token</b> <i>String</i> </li><li><b>jti</b> <i>String</i> </li></ul> | Returns true if a revocation token is found for the provided token |
+| **revoke_token** | _create_ | <ul><li><b>token</b> <i>String</i> </li><li><b>extra_data</b> <i>Map</i> attribute</li></ul> | Revoke a token. Creates a revocation token corresponding to the provided token. |
+| **revoke_jti** | _create_ | <ul><li><b>subject</b> <i>String</i> </li><li><b>jti</b> <i>String</i> </li><li><b>extra_data</b> <i>Map</i> attribute</li></ul> | Revoke a token by JTI. Creates a revocation token corresponding to the provided jti. |
+| **store_token** | _create_ | <ul><li><b>token</b> <i>String</i> </li><li><b>extra_data</b> <i>Map</i> attribute</li><li><b>purpose</b> <i>String</i> attribute</li></ul> | Stores a token used for the provided purpose. |
+| **expunge_expired** | _destroy_ | <ul></ul> | Deletes expired tokens. |
+| **revoke_all_stored_for_subject** | _update_ | <ul><li><b>subject</b> <i>String</i> </li><li><b>extra_data</b> <i>Map</i> attribute</li></ul> | Revokes all stored tokens for a specific subject. |
+
+### Team
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **name** | String |  |
+| **domain** | String |  |
+| **description** | String |  |
+| **inserted_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **owner_user_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>name</b> <i>String</i> attribute</li><li><b>domain</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li></ul> |  |
+| **list_user_teams** | _read_ | <ul></ul> | List all teams that a user is a member of |
+| **update_team** | _update_ | <ul><li><b>name</b> <i>String</i> attribute</li><li><b>domain</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li></ul> |  |
+
+### UserTeam
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **role** | String |  |
+| **inserted_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **user_id** | UUID |  |
+| **team_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **update** | _update_ | <ul><li><b>user_id</b> <i>UUID</i> attribute</li><li><b>team_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>user_id</b> <i>UUID</i> attribute</li><li><b>team_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **list_team_members** | _read_ | <ul></ul> |  |
+| **add_team_member** | _create_ | <ul><li><b>user_id</b> <i>UUID</i> attribute</li><li><b>role</b> <i>String</i> attribute</li></ul> |  |
+| **change_member_role** | _update_ | <ul><li><b>role</b> <i>String</i> attribute</li></ul> |  |
+| **remove_team_member** | _destroy_ | <ul></ul> |  |
+| **leave_team** | _destroy_ | <ul></ul> |  |
+| **is_member?** | _action_ | <ul><li><b>user_id</b> <i>String</i> </li></ul> |  |
+
+### Invitation
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **invited_user_id** | UUID |  |
+| **inviter_user_id** | UUID |  |
+| **team_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **read** | _read_ | <ul></ul> |  |
+| **list_received_invitations** | _read_ | <ul></ul> |  |
+| **list_invitations_sent** | _read_ | <ul></ul> |  |
+| **invite_user** | _create_ | <ul><li><b>invited_user_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **cancel_invitation** | _destroy_ | <ul></ul> |  |
+| **decline_invitation** | _destroy_ | <ul></ul> |  |
+| **accept_invitation** | _destroy_ | <ul></ul> |  |
+
+### Group
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **name** | String | Group name unique name |
+| **description** | String | Describes the intention of the group |
+| **inserted_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **update** | _update_ | <ul><li><b>name</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>name</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li></ul> |  |
+
+### GroupPermission
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **action** | String |  |
+| **resource** | String |  |
+| **inserted_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **group_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **update** | _update_ | <ul><li><b>resource</b> <i>String</i> attribute</li><li><b>action</b> <i>String</i> attribute</li><li><b>group_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>resource</b> <i>String</i> attribute</li><li><b>action</b> <i>String</i> attribute</li><li><b>group_id</b> <i>UUID</i> attribute</li></ul> |  |
+
+### UserGroup
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **inserted_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **group_id** | UUID |  |
+| **user_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **update** | _update_ | <ul><li><b>user_id</b> <i>UUID</i> attribute</li><li><b>group_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>user_id</b> <i>UUID</i> attribute</li><li><b>group_id</b> <i>UUID</i> attribute</li></ul> |  |
+
+### User
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **name** | String |  |
+| **email** | CiString |  |
+| **current_team** | String | The current team the user is accessing the app with |
+| **hashed_password** | String |  |
+| **picture** | String |  |
+| **confirmed_at** | UtcDatetimeUsec |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **confirm** | _update_ | <ul><li><b>confirm</b> <i>String</i> </li><li><b>email</b> <i>CiString</i> attribute</li></ul> |  |
+| **log_out_everywhere** | _action_ | <ul><li><b>user</b> <i>Struct</i> The user to log out</li></ul> |  |
+| **update** | _update_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **current_user** | _read_ | <ul></ul> |  |
+| **set_current_team** | _update_ | <ul><li><b>team</b> <i>String</i> </li></ul> | Set the current team for the user |
+| **get_by_subject** | _read_ | <ul><li><b>subject</b> <i>String</i> </li></ul> | Get a user by the subject claim in a JWT |
+| **change_password** | _update_ | <ul><li><b>current_password</b> <i>String</i> </li><li><b>password</b> <i>String</i> </li><li><b>password_confirmation</b> <i>String</i> </li></ul> |  |
+| **sign_in_with_password** | _read_ | <ul><li><b>email</b> <i>CiString</i> The email to use for retrieving the user.</li><li><b>password</b> <i>String</i> The password to check for the matching user.</li></ul> | Attempt to sign in using a email and password. |
+| **sign_in_with_token** | _read_ | <ul><li><b>token</b> <i>String</i> The short-lived sign in token.</li></ul> | Attempt to sign in using a short-lived sign in token. |
+| **register_with_password** | _create_ | <ul><li><b>name</b> <i>String</i> </li><li><b>email</b> <i>CiString</i> </li><li><b>password</b> <i>String</i> The proposed password for the user, in plain text.</li><li><b>password_confirmation</b> <i>String</i> The proposed password for the user (again), in plain text.</li></ul> | Register a new user with a email and password. |
+| **request_password_reset_token** | _action_ | <ul><li><b>email</b> <i>CiString</i> </li></ul> | Send password reset instructions to a user if they exist. |
+| **get_by_email** | _read_ | <ul><li><b>email</b> <i>CiString</i> </li></ul> | Looks up a user by their email |
+| **reset_password_with_token** | _update_ | <ul><li><b>reset_token</b> <i>String</i> </li><li><b>password</b> <i>String</i> The proposed password for the user, in plain text.</li><li><b>password_confirmation</b> <i>String</i> The proposed password for the user (again), in plain text.</li></ul> |  |
+| **search_users** | _read_ | <ul><li><b>search</b> <i>String</i> </li></ul> |  |
+| **sign_in_with_api_key** | _read_ | <ul><li><b>api_key</b> <i>String</i> </li></ul> |  |
+
+### UserIdentity
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **refresh_token** | String |  |
+| **access_token_expires_at** | UtcDatetimeUsec |  |
+| **access_token** | String |  |
+| **uid** | String |  |
+| **strategy** | String |  |
+| **id** | UUID |  |
+| **user_id** | UUIDv7 |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **read** | _read_ | <ul></ul> |  |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **upsert** | _create_ | <ul><li><b>user_info</b> <i>Map</i> </li><li><b>oauth_tokens</b> <i>Map</i> </li><li><b>user_id</b> <i>UUIDv7</i> </li><li><b>strategy</b> <i>String</i> attribute</li></ul> |  |
+
+### Notification
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUID |  |
+| **sender_user_id** | UUID | The user who sent the notification |
+| **recipient_user_id** | UUID | The user who received the notification |
+| **subject** | String | The subject of the notification |
+| **body** | String | The body of the notification |
+| **read_at** | DateTime | The time a notification has been read |
+| **status** | Atom | The status of the notification |
+| **processed** | Boolean | Whether the notification has been processed |
+| **inserted_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **update** | _update_ | <ul><li><b>sender_user_id</b> <i>UUID</i> attribute</li><li><b>recipient_user_id</b> <i>UUID</i> attribute</li><li><b>subject</b> <i>String</i> attribute</li><li><b>body</b> <i>String</i> attribute</li><li><b>read_at</b> <i>DateTime</i> attribute</li><li><b>status</b> <i>Atom</i> attribute</li></ul> |  |
+| **create** | _create_ | <ul><li><b>sender_user_id</b> <i>UUID</i> attribute</li><li><b>recipient_user_id</b> <i>UUID</i> attribute</li><li><b>subject</b> <i>String</i> attribute</li><li><b>body</b> <i>String</i> attribute</li><li><b>read_at</b> <i>DateTime</i> attribute</li><li><b>status</b> <i>Atom</i> attribute</li></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **send** | _update_ | <ul><li><b>sender_user_id</b> <i>UUID</i> attribute</li><li><b>recipient_user_id</b> <i>UUID</i> attribute</li><li><b>subject</b> <i>String</i> attribute</li><li><b>body</b> <i>String</i> attribute</li><li><b>read_at</b> <i>DateTime</i> attribute</li><li><b>status</b> <i>Atom</i> attribute</li></ul> | Send a new user notification to the user |
+| **unprocessed** | _read_ | <ul></ul> | Read unprocessed notifications |
+| **for_user** | _read_ | <ul></ul> |  |
+
+### ApiKey
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUID |  |
+| **api_key_hash** | Binary |  |
+| **expires_at** | UtcDatetimeUsec |  |
+| **user_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>user_id</b> <i>UUID</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+
+## Domain Kyozo.Workspaces
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    class Workspace {
+        UUIDv7 id
+        String name
+        String description
+        Atom status
+        Atom storage_backend
+        Map settings
+        String[] tags
+        String storage_path
+        Map storage_metadata
+        String git_repository_url
+        String git_branch
+        UtcDatetimeUsec archived_at
+        UtcDatetimeUsec deleted_at
+        destroy()
+        update(String name, String description, Atom storage_backend, Map settings)
+        read()
+        create(String name, String description, Atom storage_backend, Map settings)
+        list_workspaces()
+        list_active_workspaces()
+        list_archived_workspaces()
+        search_workspaces(String query)
+        create_workspace(Boolean initialize_git, Boolean create_readme, String name, String description, ...)
+        update_workspace(String name, String description, String[] tags, Map settings)
+        archive_workspace()
+        restore_workspace()
+        change_storage_backend(Atom new_backend, Boolean migrate_files, String name, String description, ...)
+        get_storage_info()
+        get_statistics()
+        cleanup_storage(Boolean dry_run)
+        duplicate_workspace(String new_name, UUID copy_to_team_id, Boolean include_files, Boolean include_nfiles)
+        soft_delete()
+        hard_delete()
+    }
+    class Role {
+        String name
+    }
+    class File {
+        String description_html
+        String content_html
+        UUIDv7 id
+        String name
+        String file_path
+        String content_type
+        String description
+        String[] tags
+        Integer file_size
+        Atom storage_backend
+        Map storage_metadata
+        String version
+        String checksum
+        Boolean is_directory
+        Boolean is_binary
+        Boolean is_notebook_file
+        Map render_cache
+        Integer view_count
+        UtcDatetimeUsec last_viewed_at
+        UtcDatetimeUsec deleted_at
+        UUID workspace_id
+        UUID parent_file_id
+        Map markdown_stats
+        Notebook[] notebooks
+        Notebook primary_notebook
+        destroy()
+        read()
+        list_files()
+        list_by_type(String content_type)
+        search(String query)
+        create_file(String content, String initial_commit_message, String name, String content_type, ...)
+        create_folder(String initial_commit_message, String name, String content_type, String description, ...)
+        upload_file(Map file_upload, String initial_commit_message, String name, String content_type, ...)
+        update_content(String content, String commit_message, String name, String content_type, ...)
+        rename_file(String new_name, String commit_message, String name, String content_type, ...)
+        move_file(UUID new_parent_id, String commit_message, String name, String content_type, ...)
+        update_metadata(String description, String[] tags, String content_type)
+        update(String name, String content_type, String description, String[] tags)
+        view_file()
+        get_content(String version)
+        list_versions()
+        render_as(Atom target_format, Map options)
+        resolve_to_media(Boolean force_create)
+        resolve_to_notebook(Boolean force_create)
+        get_specialized_content()
+        create_version(String content, String commit_message)
+        duplicate_file(String new_name, UUID copy_to_workspace_id, String initial_commit_message)
+        list_folder_contents(UUID folder_id)
+        soft_delete()
+        hard_delete()
+    }
+    class FileStorage {
+        UUIDv7 id
+        UUID storage_resource_id
+        Atom relationship_type
+        Atom media_type
+        Boolean is_primary
+        Integer priority
+        Map metadata
+        Atom processing_status
+        String processing_error
+        UtcDatetimeUsec expires_at
+        UUID team_id
+        UUID user_id
+        UUID file_id
+        StorageResource storage_resource
+        File file
+        destroy()
+        read()
+        list_by_media_type()
+        by_relationship_type(Atom relationship_type)
+        primary_storage()
+        create_from_content(String content, String filename, String mime_type, Atom storage_backend, ...)
+        create_from_upload(Map upload, Atom storage_backend, Map processing_options, Atom relationship_type, ...)
+        create_from_locator(Map locator, Atom relationship_type, Map metadata, Integer priority, ...)
+        update_metadata(Map metadata, Integer priority, Atom processing_status, String processing_error)
+        set_as_primary()
+        get_content()
+        duplicate_to_backend(Atom target_backend, Atom relationship_type)
+        process_content(Map processing_options)
+        cleanup_expired()
+        create(UUID storage_resource_id, UUID file_id, Atom relationship_type, Atom media_type, ...)
+        update(Atom relationship_type, Map metadata, Integer priority, Atom processing_status, ...)
+        by_file(UUID file_id)
+        primary_for_file(UUID file_id)
+        create_file_content(UUID file_id, String content, String filename, String mime_type, ...)
+        create_file_version(UUID file_id, String content, String version_name, String commit_message, ...)
+        update_file_storage(Atom relationship_type, Map metadata, Integer priority, Atom processing_status, ...)
+        convert_format(String target_format, Map conversion_options)
+        extract_text()
+        search_content(String query, Map search_options)
+        update_file_content(UUID file_id, String content, String commit_message)
+    }
+    class ImageStorage {
+        UUIDv7 id
+        UUID storage_resource_id
+        Atom relationship_type
+        Atom media_type
+        Boolean is_primary
+        Integer priority
+        Map metadata
+        Atom processing_status
+        String processing_error
+        UtcDatetimeUsec expires_at
+        UUID team_id
+        UUID user_id
+        UUID file_id
+        UUID original_image_id
+        StorageResource storage_resource
+        File file
+        ImageStorage original_image
+        destroy()
+        read()
+        list_by_media_type()
+        by_relationship_type(Atom relationship_type)
+        primary_storage()
+        create_from_content(String content, String filename, String mime_type, Atom storage_backend, ...)
+        create_from_upload(Map upload, Atom storage_backend, Map processing_options, Atom relationship_type, ...)
+        create_from_locator(Map locator, Atom relationship_type, Map metadata, Integer priority, ...)
+        update_metadata(Map metadata, Integer priority, Atom processing_status, String processing_error)
+        set_as_primary()
+        get_content()
+        duplicate_to_backend(Atom target_backend, Atom relationship_type)
+        process_content(Map processing_options)
+        cleanup_expired()
+        create(UUID storage_resource_id, UUID file_id, Atom relationship_type, Atom media_type, ...)
+        update(Atom relationship_type, Map metadata, Integer priority, Atom processing_status, ...)
+        create_with_thumbnails(UUID file_id, String content, String filename, String mime_type, ...)
+        generate_thumbnails(String[] sizes)
+        convert_format(String target_format, Integer quality, Boolean progressive)
+        extract_colors()
+        detect_faces()
+        optimize_for_web(Integer max_width, Integer max_height, Integer quality)
+    }
+    class FileMedia {
+        UUIDv7 id
+        UUID storage_resource_id
+        Atom relationship_type
+        Atom media_type
+        Boolean is_primary
+        Integer priority
+        Map metadata
+        Atom processing_status
+        String processing_error
+        UtcDatetimeUsec expires_at
+        UUID team_id
+        UUID user_id
+        UUID file_id
+        StorageResource storage_resource
+        File file
+        destroy()
+        read()
+        list_by_media_type()
+        by_relationship_type(Atom relationship_type)
+        primary_storage()
+        create_from_content(String content, String filename, String mime_type, Atom storage_backend, ...)
+        create_from_upload(Map upload, Atom storage_backend, Map processing_options, Atom relationship_type, ...)
+        create_from_locator(Map locator, Atom relationship_type, Map metadata, Integer priority, ...)
+        update_metadata(Map metadata, Integer priority, Atom processing_status, String processing_error)
+        set_as_primary()
+        get_content()
+        duplicate_to_backend(Atom target_backend, Atom relationship_type)
+        process_content(Map processing_options)
+        cleanup_expired()
+        create(UUID storage_resource_id, UUID file_id, Atom relationship_type, Atom media_type, ...)
+        update(Atom relationship_type, Map metadata, Integer priority, Atom processing_status, ...)
+        by_file(UUID file_id)
+        primary_for_file(UUID file_id)
+        create_from_file(UUID file_id, String content, Atom storage_backend, Atom relationship_type, ...)
+        create_thumbnail(UUID file_id, Integer width, Integer height, String format, ...)
+        generate_thumbnails(Map[] sizes)
+        extract_colors(Integer max_colors)
+        convert_format(String target_format, Integer quality, Boolean progressive)
+        optimize_image(Integer target_size, Integer quality)
+    }
+    class FileNotebook {
+        UUIDv7 id
+        UUID storage_resource_id
+        Atom relationship_type
+        Atom media_type
+        Boolean is_primary
+        Integer priority
+        Map metadata
+        Atom processing_status
+        String processing_error
+        UtcDatetimeUsec expires_at
+        UUID team_id
+        UUID user_id
+        UUID file_id
+        UUID notebook_id
+        StorageResource storage_resource
+        File file
+        Notebook notebook
+        destroy()
+        read()
+        list_by_media_type()
+        by_relationship_type(Atom relationship_type)
+        primary_storage()
+        create_from_content(String content, String filename, String mime_type, Atom storage_backend, ...)
+        create_from_upload(Map upload, Atom storage_backend, Map processing_options, Atom relationship_type, ...)
+        create_from_locator(Map locator, Atom relationship_type, Map metadata, Integer priority, ...)
+        update_metadata(Map metadata, Integer priority, Atom processing_status, String processing_error)
+        set_as_primary()
+        get_content()
+        duplicate_to_backend(Atom target_backend, Atom relationship_type)
+        process_content(Map processing_options)
+        cleanup_expired()
+        create(UUID storage_resource_id, UUID file_id, UUID notebook_id, Atom relationship_type, ...)
+        update(Atom relationship_type, Map metadata, Integer priority, Atom processing_status, ...)
+        by_file(UUID file_id)
+        primary_for_file(UUID file_id)
+        create_from_file(UUID file_id, String content, Atom storage_backend, String notebook_format, ...)
+        create_checkpoint(UUID file_id, String checkpoint_name, Boolean include_outputs, Atom relationship_type, ...)
+        execute_cells(String[] cell_ids, String kernel_name, Integer execution_timeout)
+        clear_outputs()
+        convert_format(String target_format, Boolean include_outputs, String template)
+        extract_code(String language, Boolean include_markdown)
+        analyze_dependencies()
+        validate_notebook()
+    }
+    class Notebook {
+        UUIDv7 id
+        String title
+        String file_path
+        String content
+        String content_html
+        Atom status
+        Map execution_state
+        Map[] cells
+        Map[] extracted_tasks
+        String[] execution_order
+        Integer current_task_index
+        Integer total_execution_time
+        UtcDatetimeUsec last_executed_at
+        Integer execution_count
+        Boolean auto_save_enabled
+        Boolean collaborative_mode
+        Atom kernel_status
+        Map environment_variables
+        Integer execution_timeout
+        Map render_cache
+        Map metadata
+        UtcDatetimeUsec last_accessed_at
+        UUID file_id
+        UUID workspace_id
+        UUID team_id
+        Map markdown_stats
+        File file
+        Workspace workspace
+        Team team
+        destroy()
+        read()
+        list_notebooks()
+        list_by_workspace(UUID workspace_id)
+        list_by_status(Atom status)
+        list_executable()
+        create_from_document(UUID file_id)
+        update_content(String content, String title, Map metadata)
+        execute_notebook(Map environment_variables, Integer timeout_seconds)
+        execute_task(String task_id, Map environment_variables)
+        stop_execution()
+        reset_execution()
+        update_execution_state(Map execution_state, Integer current_task_index, Atom kernel_status)
+        toggle_collaborative_mode()
+        update_access_time()
+        duplicate_notebook(String new_title, UUID copy_to_workspace_id)
+    }
+    class Blob {
+        UUIDv7 id
+        String hash
+        Integer size
+        String content_type
+        String encoding
+        destroy()
+        read()
+        create_blob(String content, String content_type, String encoding)
+        find_or_create(String content, String content_type, String encoding)
+        get_content()
+        exists?(String hash)
+    }
+    class Task {
+        UUIDv7 id
+        UUID workspace_id
+        String name
+        Boolean is_name_generated
+        String language
+        String code
+        String description
+        Integer line_start
+        Integer line_end
+        Integer order_index
+        Integer execution_count
+        Atom last_execution_status
+        String last_execution_output
+        String last_execution_error
+        Integer execution_time_ms
+        Boolean is_executable
+        Boolean requires_input
+        String[] dependencies
+        Map environment_variables
+        String working_directory
+        Integer timeout_seconds
+        Map metadata
+        UtcDatetimeUsec last_executed_at
+        UUID notebook_id
+        Workspace workspace
+        Notebook notebook
+        destroy()
+        read()
+        list_tasks()
+        list_notebook_tasks(UUID notebook_id)
+        list_workspace_tasks(UUID workspace_id)
+        executable_tasks_only()
+        create(UUID workspace_id, String name, Boolean is_name_generated, String language, ...)
+        update_execution_result(Integer execution_count, Atom last_execution_status, String last_execution_output, String last_execution_error, ...)
+        mark_successful_execution(String output, Integer execution_time_ms)
+        mark_failed_execution(String error, Integer execution_time_ms)
+    }
+    class LoadEvent {
+        UUIDv7 id
+        Atom event_type
+        Map event_data
+        String path
+        String error_message
+        String task_name
+        String task_workspace_id
+        Boolean is_task_name_generated
+        Integer processing_time_ms
+        Integer sequence_number
+        UUID workspace_id
+        UUID notebook_id
+        UUID task_id
+        Workspace workspace
+        Notebook notebook
+        Task task
+        destroy()
+        read()
+        list_events()
+        list_workspace_events(UUID workspace_id)
+        list_error_events()
+        list_events_by_type(Atom event_type)
+        log_started_walk(Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_found_dir(String path, Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_found_file(String path, Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_finished_walk(Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_started_parsing_doc(String path, Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_finished_parsing_doc(String path, Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_found_task(String path, String task_name, String task_workspace_id, Boolean is_task_name_generated, ...)
+        log_error(String path, String error_message, Integer sequence_number, Integer processing_time_ms, ...)
+        create_generic(Atom event_type, Map event_data, String path, String error_message, ...)
+    }
+
+    Team -- File
+    Team -- FileMedia
+    Team -- FileNotebook
+    Team -- FileStorage
+    Team -- ImageStorage
+    Team -- Notebook
+    Team -- Workspace
+    User -- FileMedia
+    User -- FileNotebook
+    User -- FileStorage
+    User -- ImageStorage
+    User -- Workspace
+    UserTeam -- File
+    UserTeam -- Role
+    StorageResource -- File
+    StorageResource -- FileMedia
+    StorageResource -- FileNotebook
+    StorageResource -- FileStorage
+    StorageResource -- ImageStorage
+    File -- File
+    File -- FileMedia
+    File -- FileNotebook
+    File -- FileStorage
+    File -- ImageStorage
+    File -- Notebook
+    File -- Workspace
+    FileNotebook -- Notebook
+    ImageStorage -- ImageStorage
+    LoadEvent -- Notebook
+    LoadEvent -- Task
+    LoadEvent -- Workspace
+    Notebook -- Task
+    Notebook -- Workspace
+    Task -- Workspace
+```
+
+### ER Diagram
+
+```mermaid
+erDiagram
+    "Workspace" {
+        UUIDv7 id
+        String name
+        String description
+        Atom status
+        Atom storage_backend
+        Map settings
+        ArrayOfString tags
+        String storage_path
+        Map storage_metadata
+        String git_repository_url
+        String git_branch
+        UtcDatetimeUsec archived_at
+        UtcDatetimeUsec deleted_at
+    }
+    "Role" {
+        String name
+    }
+    "File" {
+        String description_html
+        String content_html
+        UUIDv7 id
+        String name
+        String file_path
+        String content_type
+        String description
+        ArrayOfString tags
+        Integer file_size
+        Atom storage_backend
+        Map storage_metadata
+        String version
+        String checksum
+        Boolean is_directory
+        Boolean is_binary
+        Boolean is_notebook_file
+        Map render_cache
+        Integer view_count
+        UtcDatetimeUsec last_viewed_at
+        UtcDatetimeUsec deleted_at
+        UUID workspace_id
+        UUID parent_file_id
+        Map markdown_stats
+    }
+    "FileStorage" {
+        UUIDv7 id
+        UUID storage_resource_id
+        Atom relationship_type
+        Atom media_type
+        Boolean is_primary
+        Integer priority
+        Map metadata
+        Atom processing_status
+        String processing_error
+        UtcDatetimeUsec expires_at
+        UUID team_id
+        UUID user_id
+        UUID file_id
+    }
+    "ImageStorage" {
+        UUIDv7 id
+        UUID storage_resource_id
+        Atom relationship_type
+        Atom media_type
+        Boolean is_primary
+        Integer priority
+        Map metadata
+        Atom processing_status
+        String processing_error
+        UtcDatetimeUsec expires_at
+        UUID team_id
+        UUID user_id
+        UUID file_id
+        UUID original_image_id
+    }
+    "FileMedia" {
+        UUIDv7 id
+        UUID storage_resource_id
+        Atom relationship_type
+        Atom media_type
+        Boolean is_primary
+        Integer priority
+        Map metadata
+        Atom processing_status
+        String processing_error
+        UtcDatetimeUsec expires_at
+        UUID team_id
+        UUID user_id
+        UUID file_id
+    }
+    "FileNotebook" {
+        UUIDv7 id
+        UUID storage_resource_id
+        Atom relationship_type
+        Atom media_type
+        Boolean is_primary
+        Integer priority
+        Map metadata
+        Atom processing_status
+        String processing_error
+        UtcDatetimeUsec expires_at
+        UUID team_id
+        UUID user_id
+        UUID file_id
+        UUID notebook_id
+    }
+    "Notebook" {
+        UUIDv7 id
+        String title
+        String file_path
+        String content
+        String content_html
+        Atom status
+        Map execution_state
+        ArrayOfMap cells
+        ArrayOfMap extracted_tasks
+        ArrayOfString execution_order
+        Integer current_task_index
+        Integer total_execution_time
+        UtcDatetimeUsec last_executed_at
+        Integer execution_count
+        Boolean auto_save_enabled
+        Boolean collaborative_mode
+        Atom kernel_status
+        Map environment_variables
+        Integer execution_timeout
+        Map render_cache
+        Map metadata
+        UtcDatetimeUsec last_accessed_at
+        UUID file_id
+        UUID workspace_id
+        UUID team_id
+        Map markdown_stats
+    }
+    "Blob" {
+        UUIDv7 id
+        String hash
+        Integer size
+        String content_type
+        String encoding
+    }
+    "Task" {
+        UUIDv7 id
+        UUID workspace_id
+        String name
+        Boolean is_name_generated
+        String language
+        String code
+        String description
+        Integer line_start
+        Integer line_end
+        Integer order_index
+        Integer execution_count
+        Atom last_execution_status
+        String last_execution_output
+        String last_execution_error
+        Integer execution_time_ms
+        Boolean is_executable
+        Boolean requires_input
+        ArrayOfString dependencies
+        Map environment_variables
+        String working_directory
+        Integer timeout_seconds
+        Map metadata
+        UtcDatetimeUsec last_executed_at
+        UUID notebook_id
+    }
+    "LoadEvent" {
+        UUIDv7 id
+        Atom event_type
+        Map event_data
+        String path
+        String error_message
+        String task_name
+        String task_workspace_id
+        Boolean is_task_name_generated
+        Integer processing_time_ms
+        Integer sequence_number
+        UUID workspace_id
+        UUID notebook_id
+        UUID task_id
+    }
+
+    "Team" ||--|| "File" : ""
+    "Team" ||--|| "FileMedia" : ""
+    "Team" ||--|| "FileNotebook" : ""
+    "Team" ||--|| "FileStorage" : ""
+    "Team" ||--|| "ImageStorage" : ""
+    "Team" ||--|| "Notebook" : ""
+    "Team" ||--|| "Workspace" : ""
+    "User" ||--|| "FileMedia" : ""
+    "User" ||--|| "FileNotebook" : ""
+    "User" ||--|| "FileStorage" : ""
+    "User" ||--|| "ImageStorage" : ""
+    "User" ||--|| "Workspace" : ""
+    "UserTeam" ||--|| "File" : ""
+    "UserTeam" ||--|| "Role" : ""
+    "StorageResource" ||--|| "File" : ""
+    "StorageResource" ||--|| "FileMedia" : ""
+    "StorageResource" ||--|| "FileNotebook" : ""
+    "StorageResource" ||--|| "FileStorage" : ""
+    "StorageResource" ||--|| "ImageStorage" : ""
+    "File" ||--|| "File" : ""
+    "File" ||--|| "FileMedia" : ""
+    "File" ||--|| "FileNotebook" : ""
+    "File" ||--|| "FileStorage" : ""
+    "File" ||--|| "ImageStorage" : ""
+    "File" ||--|| "Notebook" : ""
+    "File" ||--|| "Workspace" : ""
+    "FileNotebook" ||--|| "Notebook" : ""
+    "ImageStorage" ||--|| "ImageStorage" : ""
+    "LoadEvent" ||--|| "Notebook" : ""
+    "LoadEvent" ||--|| "Task" : ""
+    "LoadEvent" ||--|| "Workspace" : ""
+    "Notebook" ||--|| "Task" : ""
+    "Notebook" ||--|| "Workspace" : ""
+    "Task" ||--|| "Workspace" : ""
+```
+
+### Resources
+
+- [Workspace](#workspace)
+- [Role](#role)
+- [File](#file)
+- [FileStorage](#filestorage)
+- [ImageStorage](#imagestorage)
+- [FileMedia](#filemedia)
+- [FileNotebook](#filenotebook)
+- [Notebook](#notebook)
+- [Blob](#blob)
+- [Task](#task)
+- [LoadEvent](#loadevent)
+
+### Workspace
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **name** | String |  |
+| **description** | String |  |
+| **status** | Atom |  |
+| **storage_backend** | Atom |  |
+| **settings** | Map |  |
+| **tags** | String[] |  |
+| **storage_path** | String |  |
+| **storage_metadata** | Map |  |
+| **git_repository_url** | String |  |
+| **git_branch** | String |  |
+| **archived_at** | UtcDatetimeUsec |  |
+| **deleted_at** | UtcDatetimeUsec |  |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **team_id** | UUID |  |
+| **created_by_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **update** | _update_ | <ul><li><b>name</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>storage_backend</b> <i>Atom</i> attribute</li><li><b>settings</b> <i>Map</i> attribute</li></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>name</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>storage_backend</b> <i>Atom</i> attribute</li><li><b>settings</b> <i>Map</i> attribute</li></ul> |  |
+| **list_workspaces** | _read_ | <ul></ul> |  |
+| **list_active_workspaces** | _read_ | <ul></ul> |  |
+| **list_archived_workspaces** | _read_ | <ul></ul> |  |
+| **search_workspaces** | _read_ | <ul><li><b>query</b> <i>String</i> </li></ul> |  |
+| **create_workspace** | _create_ | <ul><li><b>initialize_git</b> <i>Boolean</i> </li><li><b>create_readme</b> <i>Boolean</i> </li><li><b>name</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>storage_backend</b> <i>Atom</i> attribute</li><li><b>settings</b> <i>Map</i> attribute</li></ul> |  |
+| **update_workspace** | _update_ | <ul><li><b>name</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li><li><b>settings</b> <i>Map</i> attribute</li></ul> |  |
+| **archive_workspace** | _update_ | <ul></ul> |  |
+| **restore_workspace** | _update_ | <ul></ul> |  |
+| **change_storage_backend** | _update_ | <ul><li><b>new_backend</b> <i>Atom</i> </li><li><b>migrate_files</b> <i>Boolean</i> </li><li><b>name</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>storage_backend</b> <i>Atom</i> attribute</li><li><b>settings</b> <i>Map</i> attribute</li></ul> |  |
+| **get_storage_info** | _action_ | <ul></ul> |  |
+| **get_statistics** | _action_ | <ul></ul> |  |
+| **cleanup_storage** | _action_ | <ul><li><b>dry_run</b> <i>Boolean</i> </li></ul> |  |
+| **duplicate_workspace** | _action_ | <ul><li><b>new_name</b> <i>String</i> </li><li><b>copy_to_team_id</b> <i>UUID</i> </li><li><b>include_files</b> <i>Boolean</i> </li><li><b>include_nfiles</b> <i>Boolean</i> </li></ul> |  |
+| **soft_delete** | _destroy_ | <ul></ul> |  |
+| **hard_delete** | _destroy_ | <ul></ul> |  |
+
+### Role
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **name** | String |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+
+
+### File
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **description_html** | String | HTML rendered from markdown content |
+| **content_html** | String | HTML rendered from markdown content |
+| **id** | UUIDv7 |  |
+| **name** | String |  |
+| **file_path** | String |  |
+| **content_type** | String |  |
+| **description** | String |  |
+| **tags** | String[] |  |
+| **file_size** | Integer |  |
+| **storage_backend** | Atom |  |
+| **storage_metadata** | Map |  |
+| **version** | String |  |
+| **checksum** | String |  |
+| **is_directory** | Boolean |  |
+| **is_binary** | Boolean |  |
+| **is_notebook_file** | Boolean |  |
+| **render_cache** | Map |  |
+| **view_count** | Integer |  |
+| **last_viewed_at** | UtcDatetimeUsec |  |
+| **deleted_at** | UtcDatetimeUsec |  |
+| **workspace_id** | UUID |  |
+| **parent_file_id** | UUID |  |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **team_member_id** | UUID |  |
+| **team_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_files** | _read_ | <ul></ul> |  |
+| **list_by_type** | _read_ | <ul><li><b>content_type</b> <i>String</i> </li></ul> |  |
+| **search** | _read_ | <ul><li><b>query</b> <i>String</i> </li></ul> |  |
+| **create_file** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>initial_commit_message</b> <i>String</i> </li><li><b>name</b> <i>String</i> attribute</li><li><b>content_type</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li><li><b>is_directory</b> <i>Boolean</i> attribute</li><li><b>parent_file_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **create_folder** | _create_ | <ul><li><b>initial_commit_message</b> <i>String</i> </li><li><b>name</b> <i>String</i> attribute</li><li><b>content_type</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li><li><b>is_directory</b> <i>Boolean</i> attribute</li><li><b>parent_file_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **upload_file** | _create_ | <ul><li><b>file_upload</b> <i>Map</i> </li><li><b>initial_commit_message</b> <i>String</i> </li><li><b>name</b> <i>String</i> attribute</li><li><b>content_type</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li><li><b>is_directory</b> <i>Boolean</i> attribute</li><li><b>parent_file_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **update_content** | _update_ | <ul><li><b>content</b> <i>String</i> </li><li><b>commit_message</b> <i>String</i> </li><li><b>name</b> <i>String</i> attribute</li><li><b>content_type</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li><li><b>is_directory</b> <i>Boolean</i> attribute</li><li><b>parent_file_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **rename_file** | _update_ | <ul><li><b>new_name</b> <i>String</i> </li><li><b>commit_message</b> <i>String</i> </li><li><b>name</b> <i>String</i> attribute</li><li><b>content_type</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li><li><b>is_directory</b> <i>Boolean</i> attribute</li><li><b>parent_file_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **move_file** | _update_ | <ul><li><b>new_parent_id</b> <i>UUID</i> </li><li><b>commit_message</b> <i>String</i> </li><li><b>name</b> <i>String</i> attribute</li><li><b>content_type</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li><li><b>is_directory</b> <i>Boolean</i> attribute</li><li><b>parent_file_id</b> <i>UUID</i> attribute</li></ul> |  |
+| **update_metadata** | _update_ | <ul><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li><li><b>content_type</b> <i>String</i> attribute</li></ul> |  |
+| **update** | _update_ | <ul><li><b>name</b> <i>String</i> attribute</li><li><b>content_type</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>tags</b> <i>String[]</i> attribute</li></ul> |  |
+| **view_file** | _action_ | <ul></ul> |  |
+| **get_content** | _action_ | <ul><li><b>version</b> <i>String</i> </li></ul> |  |
+| **list_versions** | _action_ | <ul></ul> |  |
+| **render_as** | _action_ | <ul><li><b>target_format</b> <i>Atom</i> </li><li><b>options</b> <i>Map</i> </li></ul> |  |
+| **resolve_to_media** | _action_ | <ul><li><b>force_create</b> <i>Boolean</i> </li></ul> |  |
+| **resolve_to_notebook** | _action_ | <ul><li><b>force_create</b> <i>Boolean</i> </li></ul> |  |
+| **get_specialized_content** | _action_ | <ul></ul> |  |
+| **create_version** | _action_ | <ul><li><b>content</b> <i>String</i> </li><li><b>commit_message</b> <i>String</i> </li></ul> |  |
+| **duplicate_file** | _action_ | <ul><li><b>new_name</b> <i>String</i> </li><li><b>copy_to_workspace_id</b> <i>UUID</i> </li><li><b>initial_commit_message</b> <i>String</i> </li></ul> |  |
+| **list_folder_contents** | _action_ | <ul><li><b>folder_id</b> <i>UUID</i> </li></ul> |  |
+| **soft_delete** | _destroy_ | <ul></ul> |  |
+| **hard_delete** | _destroy_ | <ul></ul> |  |
+
+### FileStorage
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **storage_resource_id** | UUID | Reference to the underlying StorageResource |
+| **relationship_type** | Atom | Type of relationship to the parent resource |
+| **media_type** | Atom | Media type category |
+| **is_primary** | Boolean | Whether this is the primary storage for the resource |
+| **priority** | Integer | Priority for storage selection (lower = higher priority) |
+| **metadata** | Map | Media-specific metadata and processing information |
+| **processing_status** | Atom | Status of any background processing |
+| **processing_error** | String | Error message if processing failed |
+| **expires_at** | UtcDatetimeUsec | When this storage entry expires (for temporary/cache entries) |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **team_id** | UUID |  |
+| **user_id** | UUID |  |
+| **file_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_by_media_type** | _read_ | <ul></ul> |  |
+| **by_relationship_type** | _read_ | <ul><li><b>relationship_type</b> <i>Atom</i> </li></ul> |  |
+| **primary_storage** | _read_ | <ul></ul> |  |
+| **create_from_content** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>filename</b> <i>String</i> </li><li><b>mime_type</b> <i>String</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>processing_options</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_from_upload** | _create_ | <ul><li><b>upload</b> <i>Map</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>processing_options</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_from_locator** | _create_ | <ul><li><b>locator</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> </li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **update_metadata** | _update_ | <ul><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li></ul> |  |
+| **set_as_primary** | _update_ | <ul></ul> |  |
+| **get_content** | _action_ | <ul></ul> |  |
+| **duplicate_to_backend** | _action_ | <ul><li><b>target_backend</b> <i>Atom</i> </li><li><b>relationship_type</b> <i>Atom</i> </li></ul> |  |
+| **process_content** | _action_ | <ul><li><b>processing_options</b> <i>Map</i> </li></ul> |  |
+| **cleanup_expired** | _action_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>storage_resource_id</b> <i>UUID</i> attribute</li><li><b>file_id</b> <i>UUID</i> attribute</li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>media_type</b> <i>Atom</i> attribute</li><li><b>is_primary</b> <i>Boolean</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **update** | _update_ | <ul><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **by_file** | _read_ | <ul><li><b>file_id</b> <i>UUID</i> </li></ul> |  |
+| **primary_for_file** | _read_ | <ul><li><b>file_id</b> <i>UUID</i> </li></ul> |  |
+| **create_file_content** | _create_ | <ul><li><b>file_id</b> <i>UUID</i> </li><li><b>content</b> <i>String</i> </li><li><b>filename</b> <i>String</i> </li><li><b>mime_type</b> <i>String</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_file_version** | _create_ | <ul><li><b>file_id</b> <i>UUID</i> </li><li><b>content</b> <i>String</i> </li><li><b>version_name</b> <i>String</i> </li><li><b>commit_message</b> <i>String</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **update_file_storage** | _update_ | <ul><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **convert_format** | _action_ | <ul><li><b>target_format</b> <i>String</i> </li><li><b>conversion_options</b> <i>Map</i> </li></ul> |  |
+| **extract_text** | _action_ | <ul></ul> |  |
+| **search_content** | _action_ | <ul><li><b>query</b> <i>String</i> </li><li><b>search_options</b> <i>Map</i> </li></ul> |  |
+| **update_file_content** | _action_ | <ul><li><b>file_id</b> <i>UUID</i> </li><li><b>content</b> <i>String</i> </li><li><b>commit_message</b> <i>String</i> </li></ul> |  |
+
+### ImageStorage
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **storage_resource_id** | UUID | Reference to the underlying StorageResource |
+| **relationship_type** | Atom | Type of relationship to the parent resource |
+| **media_type** | Atom | Media type category |
+| **is_primary** | Boolean | Whether this is the primary storage for the resource |
+| **priority** | Integer | Priority for storage selection (lower = higher priority) |
+| **metadata** | Map | Media-specific metadata and processing information |
+| **processing_status** | Atom | Status of any background processing |
+| **processing_error** | String | Error message if processing failed |
+| **expires_at** | UtcDatetimeUsec | When this storage entry expires (for temporary/cache entries) |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **team_id** | UUID |  |
+| **user_id** | UUID |  |
+| **file_id** | UUID |  |
+| **original_image_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_by_media_type** | _read_ | <ul></ul> |  |
+| **by_relationship_type** | _read_ | <ul><li><b>relationship_type</b> <i>Atom</i> </li></ul> |  |
+| **primary_storage** | _read_ | <ul></ul> |  |
+| **create_from_content** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>filename</b> <i>String</i> </li><li><b>mime_type</b> <i>String</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>processing_options</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_from_upload** | _create_ | <ul><li><b>upload</b> <i>Map</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>processing_options</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_from_locator** | _create_ | <ul><li><b>locator</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> </li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **update_metadata** | _update_ | <ul><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li></ul> |  |
+| **set_as_primary** | _update_ | <ul></ul> |  |
+| **get_content** | _action_ | <ul></ul> |  |
+| **duplicate_to_backend** | _action_ | <ul><li><b>target_backend</b> <i>Atom</i> </li><li><b>relationship_type</b> <i>Atom</i> </li></ul> |  |
+| **process_content** | _action_ | <ul><li><b>processing_options</b> <i>Map</i> </li></ul> |  |
+| **cleanup_expired** | _action_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>storage_resource_id</b> <i>UUID</i> attribute</li><li><b>file_id</b> <i>UUID</i> attribute</li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>media_type</b> <i>Atom</i> attribute</li><li><b>is_primary</b> <i>Boolean</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **update** | _update_ | <ul><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_with_thumbnails** | _create_ | <ul><li><b>file_id</b> <i>UUID</i> </li><li><b>content</b> <i>String</i> </li><li><b>filename</b> <i>String</i> </li><li><b>mime_type</b> <i>String</i> </li><li><b>thumbnail_sizes</b> <i>String[]</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **generate_thumbnails** | _action_ | <ul><li><b>sizes</b> <i>String[]</i> </li></ul> |  |
+| **convert_format** | _action_ | <ul><li><b>target_format</b> <i>String</i> </li><li><b>quality</b> <i>Integer</i> </li><li><b>progressive</b> <i>Boolean</i> </li></ul> |  |
+| **extract_colors** | _action_ | <ul></ul> |  |
+| **detect_faces** | _action_ | <ul></ul> |  |
+| **optimize_for_web** | _action_ | <ul><li><b>max_width</b> <i>Integer</i> </li><li><b>max_height</b> <i>Integer</i> </li><li><b>quality</b> <i>Integer</i> </li></ul> |  |
+
+### FileMedia
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **storage_resource_id** | UUID | Reference to the underlying StorageResource |
+| **relationship_type** | Atom | Type of relationship to the parent resource |
+| **media_type** | Atom | Media type category |
+| **is_primary** | Boolean | Whether this is the primary storage for the resource |
+| **priority** | Integer | Priority for storage selection (lower = higher priority) |
+| **metadata** | Map | Media-specific metadata and processing information |
+| **processing_status** | Atom | Status of any background processing |
+| **processing_error** | String | Error message if processing failed |
+| **expires_at** | UtcDatetimeUsec | When this storage entry expires (for temporary/cache entries) |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **team_id** | UUID |  |
+| **user_id** | UUID |  |
+| **file_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_by_media_type** | _read_ | <ul></ul> |  |
+| **by_relationship_type** | _read_ | <ul><li><b>relationship_type</b> <i>Atom</i> </li></ul> |  |
+| **primary_storage** | _read_ | <ul></ul> |  |
+| **create_from_content** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>filename</b> <i>String</i> </li><li><b>mime_type</b> <i>String</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>processing_options</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_from_upload** | _create_ | <ul><li><b>upload</b> <i>Map</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>processing_options</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_from_locator** | _create_ | <ul><li><b>locator</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> </li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **update_metadata** | _update_ | <ul><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li></ul> |  |
+| **set_as_primary** | _update_ | <ul></ul> |  |
+| **get_content** | _action_ | <ul></ul> |  |
+| **duplicate_to_backend** | _action_ | <ul><li><b>target_backend</b> <i>Atom</i> </li><li><b>relationship_type</b> <i>Atom</i> </li></ul> |  |
+| **process_content** | _action_ | <ul><li><b>processing_options</b> <i>Map</i> </li></ul> |  |
+| **cleanup_expired** | _action_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>storage_resource_id</b> <i>UUID</i> attribute</li><li><b>file_id</b> <i>UUID</i> attribute</li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>media_type</b> <i>Atom</i> attribute</li><li><b>is_primary</b> <i>Boolean</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **update** | _update_ | <ul><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **by_file** | _read_ | <ul><li><b>file_id</b> <i>UUID</i> </li></ul> |  |
+| **primary_for_file** | _read_ | <ul><li><b>file_id</b> <i>UUID</i> </li></ul> |  |
+| **create_from_file** | _create_ | <ul><li><b>file_id</b> <i>UUID</i> </li><li><b>content</b> <i>String</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_thumbnail** | _create_ | <ul><li><b>file_id</b> <i>UUID</i> </li><li><b>width</b> <i>Integer</i> </li><li><b>height</b> <i>Integer</i> </li><li><b>format</b> <i>String</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **generate_thumbnails** | _action_ | <ul><li><b>sizes</b> <i>Map[]</i> </li></ul> |  |
+| **extract_colors** | _action_ | <ul><li><b>max_colors</b> <i>Integer</i> </li></ul> |  |
+| **convert_format** | _action_ | <ul><li><b>target_format</b> <i>String</i> </li><li><b>quality</b> <i>Integer</i> </li><li><b>progressive</b> <i>Boolean</i> </li></ul> |  |
+| **optimize_image** | _action_ | <ul><li><b>target_size</b> <i>Integer</i> </li><li><b>quality</b> <i>Integer</i> </li></ul> |  |
+
+### FileNotebook
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **storage_resource_id** | UUID | Reference to the underlying StorageResource |
+| **relationship_type** | Atom | Type of relationship to the parent resource |
+| **media_type** | Atom | Media type category |
+| **is_primary** | Boolean | Whether this is the primary storage for the resource |
+| **priority** | Integer | Priority for storage selection (lower = higher priority) |
+| **metadata** | Map | Media-specific metadata and processing information |
+| **processing_status** | Atom | Status of any background processing |
+| **processing_error** | String | Error message if processing failed |
+| **expires_at** | UtcDatetimeUsec | When this storage entry expires (for temporary/cache entries) |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **team_id** | UUID |  |
+| **user_id** | UUID |  |
+| **file_id** | UUID |  |
+| **notebook_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_by_media_type** | _read_ | <ul></ul> |  |
+| **by_relationship_type** | _read_ | <ul><li><b>relationship_type</b> <i>Atom</i> </li></ul> |  |
+| **primary_storage** | _read_ | <ul></ul> |  |
+| **create_from_content** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>filename</b> <i>String</i> </li><li><b>mime_type</b> <i>String</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>processing_options</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_from_upload** | _create_ | <ul><li><b>upload</b> <i>Map</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>processing_options</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_from_locator** | _create_ | <ul><li><b>locator</b> <i>Map</i> </li><li><b>relationship_type</b> <i>Atom</i> </li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **update_metadata** | _update_ | <ul><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li></ul> |  |
+| **set_as_primary** | _update_ | <ul></ul> |  |
+| **get_content** | _action_ | <ul></ul> |  |
+| **duplicate_to_backend** | _action_ | <ul><li><b>target_backend</b> <i>Atom</i> </li><li><b>relationship_type</b> <i>Atom</i> </li></ul> |  |
+| **process_content** | _action_ | <ul><li><b>processing_options</b> <i>Map</i> </li></ul> |  |
+| **cleanup_expired** | _action_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>storage_resource_id</b> <i>UUID</i> attribute</li><li><b>file_id</b> <i>UUID</i> attribute</li><li><b>notebook_id</b> <i>UUID</i> attribute</li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>media_type</b> <i>Atom</i> attribute</li><li><b>is_primary</b> <i>Boolean</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **update** | _update_ | <ul><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **by_file** | _read_ | <ul><li><b>file_id</b> <i>UUID</i> </li></ul> |  |
+| **primary_for_file** | _read_ | <ul><li><b>file_id</b> <i>UUID</i> </li></ul> |  |
+| **create_from_file** | _create_ | <ul><li><b>file_id</b> <i>UUID</i> </li><li><b>content</b> <i>String</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>notebook_format</b> <i>String</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **create_checkpoint** | _create_ | <ul><li><b>file_id</b> <i>UUID</i> </li><li><b>checkpoint_name</b> <i>String</i> </li><li><b>include_outputs</b> <i>Boolean</i> </li><li><b>relationship_type</b> <i>Atom</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li><li><b>priority</b> <i>Integer</i> attribute</li><li><b>processing_status</b> <i>Atom</i> attribute</li><li><b>processing_error</b> <i>String</i> attribute</li><li><b>expires_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **execute_cells** | _action_ | <ul><li><b>cell_ids</b> <i>String[]</i> </li><li><b>kernel_name</b> <i>String</i> </li><li><b>execution_timeout</b> <i>Integer</i> </li></ul> |  |
+| **clear_outputs** | _action_ | <ul></ul> |  |
+| **convert_format** | _action_ | <ul><li><b>target_format</b> <i>String</i> </li><li><b>include_outputs</b> <i>Boolean</i> </li><li><b>template</b> <i>String</i> </li></ul> |  |
+| **extract_code** | _action_ | <ul><li><b>language</b> <i>String</i> </li><li><b>include_markdown</b> <i>Boolean</i> </li></ul> |  |
+| **analyze_dependencies** | _action_ | <ul></ul> |  |
+| **validate_notebook** | _action_ | <ul></ul> |  |
+
+### Notebook
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **title** | String | Title of the notebook (derived from document) |
+| **file_path** | String |  |
+| **content** | String | Original markdown content from the document |
+| **content_html** | String | Rendered HTML content with syntax highlighting |
+| **status** | Atom | Current status of the notebook |
+| **execution_state** | Map | Current execution state including task statuses and outputs |
+| **cells** | Map[] | Tasks extracted from markdown code blocks |
+| **extracted_tasks** | Map[] | Tasks extracted from markdown code blocks |
+| **execution_order** | String[] | Order in which tasks should be executed |
+| **current_task_index** | Integer | Index of currently executing or next task to execute |
+| **total_execution_time** | Integer | Total execution time across all tasks in milliseconds |
+| **last_executed_at** | UtcDatetimeUsec | When the notebook was last executed |
+| **execution_count** | Integer | Number of times this notebook has been executed |
+| **auto_save_enabled** | Boolean | Whether to automatically save execution results |
+| **collaborative_mode** | Boolean | Whether collaborative editing is enabled |
+| **kernel_status** | Atom | Status of the execution kernel |
+| **environment_variables** | Map | Environment variables for task execution |
+| **execution_timeout** | Integer | Default timeout for task execution in seconds |
+| **render_cache** | Map | Cache of rendered content for performance |
+| **metadata** | Map | Additional metadata for the notebook |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **last_accessed_at** | UtcDatetimeUsec | When the notebook was last accessed |
+| **file_id** | UUID |  |
+| **workspace_id** | UUID |  |
+| **team_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_notebooks** | _read_ | <ul></ul> |  |
+| **list_by_workspace** | _read_ | <ul><li><b>workspace_id</b> <i>UUID</i> </li></ul> |  |
+| **list_by_status** | _read_ | <ul><li><b>status</b> <i>Atom</i> </li></ul> |  |
+| **list_executable** | _read_ | <ul></ul> |  |
+| **create_from_document** | _create_ | <ul><li><b>file_id</b> <i>UUID</i> </li></ul> |  |
+| **update_content** | _update_ | <ul><li><b>content</b> <i>String</i> attribute</li><li><b>title</b> <i>String</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **execute_notebook** | _update_ | <ul><li><b>environment_variables</b> <i>Map</i> </li><li><b>timeout_seconds</b> <i>Integer</i> </li></ul> |  |
+| **execute_task** | _update_ | <ul><li><b>task_id</b> <i>String</i> </li><li><b>environment_variables</b> <i>Map</i> </li></ul> |  |
+| **stop_execution** | _update_ | <ul></ul> |  |
+| **reset_execution** | _update_ | <ul></ul> |  |
+| **update_execution_state** | _update_ | <ul><li><b>execution_state</b> <i>Map</i> attribute</li><li><b>current_task_index</b> <i>Integer</i> attribute</li><li><b>kernel_status</b> <i>Atom</i> attribute</li></ul> |  |
+| **toggle_collaborative_mode** | _update_ | <ul></ul> |  |
+| **update_access_time** | _update_ | <ul></ul> |  |
+| **duplicate_notebook** | _action_ | <ul><li><b>new_title</b> <i>String</i> </li><li><b>copy_to_workspace_id</b> <i>UUID</i> </li></ul> |  |
+
+### Blob
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **hash** | String | SHA-256 hash of the content |
+| **size** | Integer | Size of the content in bytes |
+| **content_type** | String | MIME type of the content |
+| **encoding** | String | Text encoding (for text content) |
+| **created_at** | UtcDatetimeUsec |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **create_blob** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>content_type</b> <i>String</i> attribute</li><li><b>encoding</b> <i>String</i> attribute</li></ul> |  |
+| **find_or_create** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>content_type</b> <i>String</i> attribute</li><li><b>encoding</b> <i>String</i> attribute</li></ul> |  |
+| **get_content** | _action_ | <ul></ul> |  |
+| **exists?** | _action_ | <ul><li><b>hash</b> <i>String</i> </li></ul> |  |
+
+### Task
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **workspace_id** | UUID | Unique identifier from workspace parsing |
+| **name** | String | Name of the task/code block |
+| **is_name_generated** | Boolean | Whether the task name was auto-generated |
+| **language** | String | Programming language of the code block (e.g., python, javascript, shell) |
+| **code** | String | The executable code content |
+| **description** | String | Optional description or documentation for the task |
+| **line_start** | Integer | Starting line number in the notebook |
+| **line_end** | Integer | Ending line number in the notebook |
+| **order_index** | Integer | Order of this task within the notebook |
+| **execution_count** | Integer | Number of times this task has been executed |
+| **last_execution_status** | Atom | Status of the last execution |
+| **last_execution_output** | String | Output from the last execution |
+| **last_execution_error** | String | Error message from the last execution |
+| **execution_time_ms** | Integer | Duration of last execution in milliseconds |
+| **is_executable** | Boolean | Whether this task can be executed |
+| **requires_input** | Boolean | Whether this task requires user input |
+| **dependencies** | String[] | List of task IDs or names that this task depends on |
+| **environment_variables** | Map | Environment variables required for execution |
+| **working_directory** | String | Working directory for task execution |
+| **timeout_seconds** | Integer | Execution timeout in seconds |
+| **metadata** | Map | Additional metadata for the task |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **last_executed_at** | UtcDatetimeUsec | When this task was last executed |
+| **notebook_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_tasks** | _read_ | <ul></ul> |  |
+| **list_notebook_tasks** | _read_ | <ul><li><b>notebook_id</b> <i>UUID</i> </li></ul> |  |
+| **list_workspace_tasks** | _read_ | <ul><li><b>workspace_id</b> <i>UUID</i> </li></ul> |  |
+| **executable_tasks_only** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>workspace_id</b> <i>UUID</i> attribute</li><li><b>name</b> <i>String</i> attribute</li><li><b>is_name_generated</b> <i>Boolean</i> attribute</li><li><b>language</b> <i>String</i> attribute</li><li><b>code</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>line_start</b> <i>Integer</i> attribute</li><li><b>line_end</b> <i>Integer</i> attribute</li><li><b>order_index</b> <i>Integer</i> attribute</li><li><b>is_executable</b> <i>Boolean</i> attribute</li><li><b>requires_input</b> <i>Boolean</i> attribute</li><li><b>dependencies</b> <i>String[]</i> attribute</li><li><b>environment_variables</b> <i>Map</i> attribute</li><li><b>working_directory</b> <i>String</i> attribute</li><li><b>timeout_seconds</b> <i>Integer</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **update_execution_result** | _update_ | <ul><li><b>execution_count</b> <i>Integer</i> attribute</li><li><b>last_execution_status</b> <i>Atom</i> attribute</li><li><b>last_execution_output</b> <i>String</i> attribute</li><li><b>last_execution_error</b> <i>String</i> attribute</li><li><b>execution_time_ms</b> <i>Integer</i> attribute</li><li><b>last_executed_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **mark_successful_execution** | _update_ | <ul><li><b>output</b> <i>String</i> </li><li><b>execution_time_ms</b> <i>Integer</i> </li></ul> |  |
+| **mark_failed_execution** | _update_ | <ul><li><b>error</b> <i>String</i> </li><li><b>execution_time_ms</b> <i>Integer</i> </li></ul> |  |
+
+### LoadEvent
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **event_type** | Atom | Type of the loading event |
+| **event_data** | Map | Event-specific data payload |
+| **path** | String | File or directory path related to this event |
+| **error_message** | String | Error message if event_type is :error |
+| **task_name** | String | Task name if event_type is :found_task |
+| **task_workspace_id** | String | Task workspace ID if event_type is :found_task |
+| **is_task_name_generated** | Boolean | Whether task name was generated if event_type is :found_task |
+| **processing_time_ms** | Integer | Processing time for this event in milliseconds |
+| **sequence_number** | Integer | Order of this event within the workspace loading sequence |
+| **occurred_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **workspace_id** | UUID |  |
+| **notebook_id** | UUID |  |
+| **task_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_events** | _read_ | <ul></ul> |  |
+| **list_workspace_events** | _read_ | <ul><li><b>workspace_id</b> <i>UUID</i> </li></ul> |  |
+| **list_error_events** | _read_ | <ul></ul> |  |
+| **list_events_by_type** | _read_ | <ul><li><b>event_type</b> <i>Atom</i> </li></ul> |  |
+| **log_started_walk** | _create_ | <ul><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_found_dir** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_found_file** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_finished_walk** | _create_ | <ul><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_started_parsing_doc** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_finished_parsing_doc** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_found_task** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>task_name</b> <i>String</i> attribute</li><li><b>task_workspace_id</b> <i>String</i> attribute</li><li><b>is_task_name_generated</b> <i>Boolean</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_error** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>error_message</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **create_generic** | _create_ | <ul><li><b>event_type</b> <i>Atom</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li><li><b>path</b> <i>String</i> attribute</li><li><b>error_message</b> <i>String</i> attribute</li><li><b>task_name</b> <i>String</i> attribute</li><li><b>task_workspace_id</b> <i>String</i> attribute</li><li><b>is_task_name_generated</b> <i>Boolean</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>occurred_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+
+## Domain Kyozo.Projects
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    class Project {
+        UUIDv7 id
+        String path
+        Atom type
+        String name
+        Atom status
+        Atom identity_mode
+        Map options
+        String error_message
+        Integer document_count
+        Integer task_count
+        destroy()
+        read()
+        list_projects()
+        load_directory(String path, Boolean skip_gitignore, String[] ignore_file_patterns, Boolean skip_repo_lookup_upward, ...)
+        load_file(String path, Atom identity)
+        load_project(String path, Map options, Atom identity)
+        mark_loaded(Integer document_count, Integer task_count)
+        mark_error(String error_message)
+    }
+    class Document {
+        UUIDv7 id
+        String path
+        String absolute_path
+        String filename
+        String name
+        String extension
+        String content
+        Map parsed_content
+        Atom status
+        String error_message
+        Integer size_bytes
+        Integer line_count
+        Integer task_count
+        Map metadata
+        UtcDatetimeUsec parsed_at
+        UtcDatetimeUsec modified_at
+        UUID project_id
+        Project project
+        destroy()
+        read()
+        list_documents()
+        list_project_documents(UUID project_id)
+        create(String path, String absolute_path, String filename, String name, ...)
+        update_content(String content, UtcDatetimeUsec modified_at)
+        mark_parsed(Map parsed_content, Integer task_count, Map metadata)
+        mark_error(String error_message)
+    }
+    class Task {
+        UUIDv7 id
+        String runme_id
+        String name
+        Boolean is_name_generated
+        String language
+        String code
+        String description
+        Integer line_start
+        Integer line_end
+        Integer order_index
+        Integer execution_count
+        Atom last_execution_status
+        String last_execution_output
+        String last_execution_error
+        Integer execution_time_ms
+        Boolean is_executable
+        Boolean requires_input
+        String[] dependencies
+        Map environment_variables
+        String working_directory
+        Integer timeout_seconds
+        Map metadata
+        UtcDatetimeUsec last_executed_at
+        UUID project_id
+        UUID document_id
+        Project project
+        Document document
+        destroy()
+        read()
+        list_tasks()
+        list_document_tasks(UUID document_id)
+        list_project_tasks(UUID project_id)
+        executable_tasks_only()
+        create(String runme_id, String name, Boolean is_name_generated, String language, ...)
+        update_execution_result(Integer execution_count, Atom last_execution_status, String last_execution_output, String last_execution_error, ...)
+        mark_successful_execution(String output, Integer execution_time_ms)
+        mark_failed_execution(String error, Integer execution_time_ms)
+    }
+    class LoadEvent {
+        UUIDv7 id
+        Atom event_type
+        Map event_data
+        String path
+        String error_message
+        String task_name
+        String task_runme_id
+        Boolean is_task_name_generated
+        Integer processing_time_ms
+        Integer sequence_number
+        UUID project_id
+        UUID document_id
+        UUID task_id
+        Project project
+        Document document
+        Task task
+        destroy()
+        read()
+        list_events()
+        list_project_events(UUID project_id)
+        list_error_events()
+        list_events_by_type(Atom event_type)
+        log_started_walk(Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_found_dir(String path, Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_found_file(String path, Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_finished_walk(Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_started_parsing_doc(String path, Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_finished_parsing_doc(String path, Integer sequence_number, Integer processing_time_ms, Map event_data)
+        log_found_task(String path, String task_name, String task_runme_id, Boolean is_task_name_generated, ...)
+        log_error(String path, String error_message, Integer sequence_number, Integer processing_time_ms, ...)
+        create_generic(Atom event_type, Map event_data, String path, String error_message, ...)
+    }
+
+    User -- Project
+    Document -- LoadEvent
+    Document -- Project
+    Document -- Task
+    LoadEvent -- Project
+    LoadEvent -- Task
+    Project -- Task
+```
+
+### ER Diagram
+
+```mermaid
+erDiagram
+    "Project" {
+        UUIDv7 id
+        String path
+        Atom type
+        String name
+        Atom status
+        Atom identity_mode
+        Map options
+        String error_message
+        Integer document_count
+        Integer task_count
+    }
+    "Document" {
+        UUIDv7 id
+        String path
+        String absolute_path
+        String filename
+        String name
+        String extension
+        String content
+        Map parsed_content
+        Atom status
+        String error_message
+        Integer size_bytes
+        Integer line_count
+        Integer task_count
+        Map metadata
+        UtcDatetimeUsec parsed_at
+        UtcDatetimeUsec modified_at
+        UUID project_id
+    }
+    "Task" {
+        UUIDv7 id
+        String runme_id
+        String name
+        Boolean is_name_generated
+        String language
+        String code
+        String description
+        Integer line_start
+        Integer line_end
+        Integer order_index
+        Integer execution_count
+        Atom last_execution_status
+        String last_execution_output
+        String last_execution_error
+        Integer execution_time_ms
+        Boolean is_executable
+        Boolean requires_input
+        ArrayOfString dependencies
+        Map environment_variables
+        String working_directory
+        Integer timeout_seconds
+        Map metadata
+        UtcDatetimeUsec last_executed_at
+        UUID project_id
+        UUID document_id
+    }
+    "LoadEvent" {
+        UUIDv7 id
+        Atom event_type
+        Map event_data
+        String path
+        String error_message
+        String task_name
+        String task_runme_id
+        Boolean is_task_name_generated
+        Integer processing_time_ms
+        Integer sequence_number
+        UUID project_id
+        UUID document_id
+        UUID task_id
+    }
+
+    "User" ||--|| "Project" : ""
+    "Document" ||--|| "LoadEvent" : ""
+    "Document" ||--|| "Project" : ""
+    "Document" ||--|| "Task" : ""
+    "LoadEvent" ||--|| "Project" : ""
+    "LoadEvent" ||--|| "Task" : ""
+    "Project" ||--|| "Task" : ""
+```
+
+### Resources
+
+- [Project](#project)
+- [Document](#document)
+- [Task](#task)
+- [LoadEvent](#loadevent)
+
+### Project
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **path** | String | The root path of the project |
+| **type** | Atom | Whether this project was loaded from a directory or single file |
+| **name** | String | The project name (derived from path) |
+| **status** | Atom | Current loading status of the project |
+| **identity_mode** | Atom | Controls if unique identifiers are inserted if not present |
+| **options** | Map | Project-specific loading options |
+| **error_message** | String | Error message if loading failed |
+| **document_count** | Integer | Number of documents found in project |
+| **task_count** | Integer | Number of tasks found in project |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **user_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_projects** | _read_ | <ul></ul> |  |
+| **load_directory** | _create_ | <ul><li><b>path</b> <i>String</i> Path to directory containing the project</li><li><b>skip_gitignore</b> <i>Boolean</i> If true, .gitignore file is ignored</li><li><b>ignore_file_patterns</b> <i>String[]</i> List of file patterns to ignore (gitignore syntax)</li><li><b>skip_repo_lookup_upward</b> <i>Boolean</i> If true, disables looking up for .git folder in parent directories</li><li><b>identity</b> <i>Atom</i> Controls if unique identifiers are inserted</li></ul> | Load a project from a directory |
+| **load_file** | _create_ | <ul><li><b>path</b> <i>String</i> Path to the file</li><li><b>identity</b> <i>Atom</i> Controls if unique identifiers are inserted</li></ul> | Load a project from a single file |
+| **load_project** | _create_ | <ul><li><b>path</b> <i>String</i> Path to directory or file</li><li><b>options</b> <i>Map</i> Loading options (directory-specific options ignored for files)</li><li><b>identity</b> <i>Atom</i> Controls if unique identifiers are inserted</li></ul> | Load a project (auto-detects directory vs file) |
+| **mark_loaded** | _update_ | <ul><li><b>document_count</b> <i>Integer</i> attribute</li><li><b>task_count</b> <i>Integer</i> attribute</li></ul> |  |
+| **mark_error** | _update_ | <ul><li><b>error_message</b> <i>String</i> attribute</li></ul> |  |
+
+### Document
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **path** | String | Path to the document relative to project root |
+| **absolute_path** | String | Absolute filesystem path to the document |
+| **filename** | String | Name of the file including extension |
+| **name** | String | Document name without extension |
+| **extension** | String | File extension |
+| **content** | String | Raw markdown content of the document |
+| **parsed_content** | Map | Parsed markdown structure (AST or similar) |
+| **status** | Atom | Current parsing status of the document |
+| **error_message** | String | Error message if parsing failed |
+| **size_bytes** | Integer | File size in bytes |
+| **line_count** | Integer | Number of lines in the document |
+| **task_count** | Integer | Number of executable tasks found in this document |
+| **metadata** | Map | Additional metadata extracted from document |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **parsed_at** | UtcDatetimeUsec | When the document was last parsed |
+| **modified_at** | UtcDatetimeUsec | File modification time |
+| **project_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_documents** | _read_ | <ul></ul> |  |
+| **list_project_documents** | _read_ | <ul><li><b>project_id</b> <i>UUID</i> </li></ul> |  |
+| **create** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>absolute_path</b> <i>String</i> attribute</li><li><b>filename</b> <i>String</i> attribute</li><li><b>name</b> <i>String</i> attribute</li><li><b>extension</b> <i>String</i> attribute</li><li><b>content</b> <i>String</i> attribute</li><li><b>size_bytes</b> <i>Integer</i> attribute</li><li><b>line_count</b> <i>Integer</i> attribute</li><li><b>modified_at</b> <i>UtcDatetimeUsec</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **update_content** | _update_ | <ul><li><b>content</b> <i>String</i> attribute</li><li><b>modified_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **mark_parsed** | _update_ | <ul><li><b>parsed_content</b> <i>Map</i> attribute</li><li><b>task_count</b> <i>Integer</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **mark_error** | _update_ | <ul><li><b>error_message</b> <i>String</i> attribute</li></ul> |  |
+
+### Task
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **runme_id** | String | Unique identifier from runme parsing |
+| **name** | String | Name of the task/code block |
+| **is_name_generated** | Boolean | Whether the task name was auto-generated |
+| **language** | String | Programming language of the code block (e.g., python, javascript, shell) |
+| **code** | String | The executable code content |
+| **description** | String | Optional description or documentation for the task |
+| **line_start** | Integer | Starting line number in the document |
+| **line_end** | Integer | Ending line number in the document |
+| **order_index** | Integer | Order of this task within the document |
+| **execution_count** | Integer | Number of times this task has been executed |
+| **last_execution_status** | Atom | Status of the last execution |
+| **last_execution_output** | String | Output from the last execution |
+| **last_execution_error** | String | Error message from the last execution |
+| **execution_time_ms** | Integer | Duration of last execution in milliseconds |
+| **is_executable** | Boolean | Whether this task can be executed |
+| **requires_input** | Boolean | Whether this task requires user input |
+| **dependencies** | String[] | List of task IDs or names that this task depends on |
+| **environment_variables** | Map | Environment variables required for execution |
+| **working_directory** | String | Working directory for task execution |
+| **timeout_seconds** | Integer | Execution timeout in seconds |
+| **metadata** | Map | Additional metadata for the task |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **last_executed_at** | UtcDatetimeUsec | When this task was last executed |
+| **project_id** | UUID |  |
+| **document_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_tasks** | _read_ | <ul></ul> |  |
+| **list_document_tasks** | _read_ | <ul><li><b>document_id</b> <i>UUID</i> </li></ul> |  |
+| **list_project_tasks** | _read_ | <ul><li><b>project_id</b> <i>UUID</i> </li></ul> |  |
+| **executable_tasks_only** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>runme_id</b> <i>String</i> attribute</li><li><b>name</b> <i>String</i> attribute</li><li><b>is_name_generated</b> <i>Boolean</i> attribute</li><li><b>language</b> <i>String</i> attribute</li><li><b>code</b> <i>String</i> attribute</li><li><b>description</b> <i>String</i> attribute</li><li><b>line_start</b> <i>Integer</i> attribute</li><li><b>line_end</b> <i>Integer</i> attribute</li><li><b>order_index</b> <i>Integer</i> attribute</li><li><b>is_executable</b> <i>Boolean</i> attribute</li><li><b>requires_input</b> <i>Boolean</i> attribute</li><li><b>dependencies</b> <i>String[]</i> attribute</li><li><b>environment_variables</b> <i>Map</i> attribute</li><li><b>working_directory</b> <i>String</i> attribute</li><li><b>timeout_seconds</b> <i>Integer</i> attribute</li><li><b>metadata</b> <i>Map</i> attribute</li></ul> |  |
+| **update_execution_result** | _update_ | <ul><li><b>execution_count</b> <i>Integer</i> attribute</li><li><b>last_execution_status</b> <i>Atom</i> attribute</li><li><b>last_execution_output</b> <i>String</i> attribute</li><li><b>last_execution_error</b> <i>String</i> attribute</li><li><b>execution_time_ms</b> <i>Integer</i> attribute</li><li><b>last_executed_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+| **mark_successful_execution** | _update_ | <ul><li><b>output</b> <i>String</i> </li><li><b>execution_time_ms</b> <i>Integer</i> </li></ul> |  |
+| **mark_failed_execution** | _update_ | <ul><li><b>error</b> <i>String</i> </li><li><b>execution_time_ms</b> <i>Integer</i> </li></ul> |  |
+
+### LoadEvent
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUIDv7 |  |
+| **event_type** | Atom | Type of the loading event |
+| **event_data** | Map | Event-specific data payload |
+| **path** | String | File or directory path related to this event |
+| **error_message** | String | Error message if event_type is :error |
+| **task_name** | String | Task name if event_type is :found_task |
+| **task_runme_id** | String | Task runme ID if event_type is :found_task |
+| **is_task_name_generated** | Boolean | Whether task name was generated if event_type is :found_task |
+| **processing_time_ms** | Integer | Processing time for this event in milliseconds |
+| **sequence_number** | Integer | Order of this event within the project loading sequence |
+| **occurred_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+| **project_id** | UUID |  |
+| **document_id** | UUID |  |
+| **task_id** | UUID |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list_events** | _read_ | <ul></ul> |  |
+| **list_project_events** | _read_ | <ul><li><b>project_id</b> <i>UUID</i> </li></ul> |  |
+| **list_error_events** | _read_ | <ul></ul> |  |
+| **list_events_by_type** | _read_ | <ul><li><b>event_type</b> <i>Atom</i> </li></ul> |  |
+| **log_started_walk** | _create_ | <ul><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_found_dir** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_found_file** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_finished_walk** | _create_ | <ul><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_started_parsing_doc** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_finished_parsing_doc** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_found_task** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>task_name</b> <i>String</i> attribute</li><li><b>task_runme_id</b> <i>String</i> attribute</li><li><b>is_task_name_generated</b> <i>Boolean</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **log_error** | _create_ | <ul><li><b>path</b> <i>String</i> attribute</li><li><b>error_message</b> <i>String</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li></ul> |  |
+| **create_generic** | _create_ | <ul><li><b>event_type</b> <i>Atom</i> attribute</li><li><b>event_data</b> <i>Map</i> attribute</li><li><b>path</b> <i>String</i> attribute</li><li><b>error_message</b> <i>String</i> attribute</li><li><b>task_name</b> <i>String</i> attribute</li><li><b>task_runme_id</b> <i>String</i> attribute</li><li><b>is_task_name_generated</b> <i>Boolean</i> attribute</li><li><b>sequence_number</b> <i>Integer</i> attribute</li><li><b>processing_time_ms</b> <i>Integer</i> attribute</li><li><b>occurred_at</b> <i>UtcDatetimeUsec</i> attribute</li></ul> |  |
+
+## Domain Kyozo.Storage
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    class StorageResource {
+        UUID id
+        String locator_id
+        String file_name
+        String mime_type
+        Integer file_size
+        String checksum
+        String version
+        Atom storage_backend
+        Map storage_metadata
+        Boolean is_versioned
+        UtcDatetimeUsec created_at
+        UtcDatetimeUsec updated_at
+        FileStorage[] file_storages
+        ImageStorage[] image_storages
+        destroy()
+        update(String file_name, String mime_type, Integer file_size, String checksum, ...)
+        read()
+        list()
+        create(String content, Struct upload, String locator_id, String file_name, ...)
+        create_storage_entry(String content, Map storage_options, String file_name, String mime_type, ...)
+        store_content(String content, String file_name, Atom storage_backend, Map storage_options)
+        retrieve_content()
+        delete_content()
+        create_version(String content, String version_name, String commit_message)
+        schedule_bulk_processing(Atom operation, Integer batch_size, Atom backend)
+        schedule_maintenance(Atom maintenance_type, Integer max_age_hours, Integer batch_size)
+    }
+
+    StorageResource -- FileStorage
+    StorageResource -- ImageStorage
+```
+
+### ER Diagram
+
+```mermaid
+erDiagram
+    "StorageResource" {
+        UUID id
+        String locator_id
+        String file_name
+        String mime_type
+        Integer file_size
+        String checksum
+        String version
+        Atom storage_backend
+        Map storage_metadata
+        Boolean is_versioned
+        UtcDatetimeUsec created_at
+        UtcDatetimeUsec updated_at
+    }
+
+    "StorageResource" ||--|| "FileStorage" : ""
+    "StorageResource" ||--|| "ImageStorage" : ""
+```
+
+### Resources
+
+- [StorageResource](#storageresource)
+
+### StorageResource
+
+
+
+#### Attributes
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| **id** | UUID |  |
+| **locator_id** | String | Unique identifier for locating the stored content |
+| **file_name** | String | Original filename |
+| **mime_type** | String | MIME type of the stored content |
+| **file_size** | Integer | Size of the file in bytes |
+| **checksum** | String | SHA256 checksum of the content |
+| **version** | String | Version identifier |
+| **storage_backend** | Atom | Storage backend used for this resource |
+| **storage_metadata** | Map | Backend-specific metadata |
+| **is_versioned** | Boolean | Whether this resource supports versioning |
+| **created_at** | UtcDatetimeUsec |  |
+| **updated_at** | UtcDatetimeUsec |  |
+
+#### Actions
+
+| Name | Type | Input | Description |
+| ---- | ---- | ----- | ----------- |
+| **destroy** | _destroy_ | <ul></ul> |  |
+| **update** | _update_ | <ul><li><b>file_name</b> <i>String</i> attribute</li><li><b>mime_type</b> <i>String</i> attribute</li><li><b>file_size</b> <i>Integer</i> attribute</li><li><b>checksum</b> <i>String</i> attribute</li><li><b>version</b> <i>String</i> attribute</li><li><b>storage_backend</b> <i>Atom</i> attribute</li><li><b>storage_metadata</b> <i>Map</i> attribute</li><li><b>is_versioned</b> <i>Boolean</i> attribute</li></ul> |  |
+| **read** | _read_ | <ul></ul> |  |
+| **list** | _read_ | <ul></ul> |  |
+| **create** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>upload</b> <i>Struct</i> </li><li><b>locator_id</b> <i>String</i> </li><li><b>file_name</b> <i>String</i> attribute</li><li><b>mime_type</b> <i>String</i> attribute</li><li><b>file_size</b> <i>Integer</i> attribute</li><li><b>checksum</b> <i>String</i> attribute</li><li><b>version</b> <i>String</i> attribute</li><li><b>storage_backend</b> <i>Atom</i> attribute</li><li><b>storage_metadata</b> <i>Map</i> attribute</li><li><b>is_versioned</b> <i>Boolean</i> attribute</li></ul> |  |
+| **create_storage_entry** | _create_ | <ul><li><b>content</b> <i>String</i> </li><li><b>storage_options</b> <i>Map</i> </li><li><b>file_name</b> <i>String</i> attribute</li><li><b>mime_type</b> <i>String</i> attribute</li><li><b>file_size</b> <i>Integer</i> attribute</li><li><b>checksum</b> <i>String</i> attribute</li><li><b>version</b> <i>String</i> attribute</li><li><b>storage_backend</b> <i>Atom</i> attribute</li><li><b>storage_metadata</b> <i>Map</i> attribute</li><li><b>is_versioned</b> <i>Boolean</i> attribute</li></ul> |  |
+| **store_content** | _action_ | <ul><li><b>content</b> <i>String</i> </li><li><b>file_name</b> <i>String</i> </li><li><b>storage_backend</b> <i>Atom</i> </li><li><b>storage_options</b> <i>Map</i> </li></ul> |  |
+| **retrieve_content** | _action_ | <ul></ul> |  |
+| **delete_content** | _action_ | <ul></ul> |  |
+| **create_version** | _action_ | <ul><li><b>content</b> <i>String</i> </li><li><b>version_name</b> <i>String</i> </li><li><b>commit_message</b> <i>String</i> </li></ul> |  |
+| **schedule_bulk_processing** | _action_ | <ul><li><b>operation</b> <i>Atom</i> </li><li><b>batch_size</b> <i>Integer</i> </li><li><b>backend</b> <i>Atom</i> </li></ul> |  |
+| **schedule_maintenance** | _action_ | <ul><li><b>maintenance_type</b> <i>Atom</i> </li><li><b>max_age_hours</b> <i>Integer</i> </li><li><b>batch_size</b> <i>Integer</i> </li></ul> |  |
+
+

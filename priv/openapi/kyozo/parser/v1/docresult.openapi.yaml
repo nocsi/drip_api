@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: kyozo.parser.v1
+paths: {}
+components:
+  schemas:
+    kyozo.parser.v1.DocResult:
+      type: object
+      properties:
+        fileId:
+          type: string
+          title: file_id
+          description: The unique ID of the file.
+        fileName:
+          type: string
+          title: file_name
+          description: The name of the file.
+        score:
+          type: number
+          title: score
+          format: double
+          description: The relevance score of the file.
+        link:
+          type: string
+          title: link
+          description: 'Link to display for this file TOO(jlewi): Should we include the file contents?'
+      title: DocResult
+      additionalProperties: false
+security: []

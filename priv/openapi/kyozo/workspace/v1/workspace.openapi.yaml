@@ -1,0 +1,277 @@
+openapi: 3.1.0
+info:
+  title: kyozo.workspace.v1
+paths:
+  /kyozo.workspace.v1.WorkspaceService/Load: {}
+components:
+  schemas:
+    kyozo.parser.v1.KyozoIdentity:
+      type: string
+      title: KyozoIdentity
+      enum:
+        - KYOZO_IDENTITY_UNSPECIFIED
+        - KYOZO_IDENTITY_ALL
+        - KYOZO_IDENTITY_DOCUMENT
+        - KYOZO_IDENTITY_CELL
+      description: KyozoIdentity controls if unique identifiers are inserted if not present.
+    kyozo.workspace.v1.LoadEventType:
+      type: string
+      title: LoadEventType
+      enum:
+        - LOAD_EVENT_TYPE_UNSPECIFIED
+        - LOAD_EVENT_TYPE_STARTED_WALK
+        - LOAD_EVENT_TYPE_FOUND_DIR
+        - LOAD_EVENT_TYPE_FOUND_FILE
+        - LOAD_EVENT_TYPE_FINISHED_WALK
+        - LOAD_EVENT_TYPE_STARTED_PARSING_DOC
+        - LOAD_EVENT_TYPE_FINISHED_PARSING_DOC
+        - LOAD_EVENT_TYPE_FOUND_TASK
+        - LOAD_EVENT_TYPE_ERROR
+    kyozo.workspace.v1.Directory:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+          description: Path to a directory containing the workspace.
+        skipGitignore:
+          type: boolean
+          title: skip_gitignore
+          description: If true, .gitignore file is ignored, as well as .git/info/exclude.
+        ignoreFilePatterns:
+          type: array
+          items:
+            type: string
+          title: ignore_file_patterns
+          description: |-
+            A list of file patterns, compatible with .gitignore syntax,
+             to ignore.
+        skipRepoLookupUpward:
+          type: boolean
+          title: skip_repo_lookup_upward
+          description: |-
+            If true, it disables lookuping up for .git folder
+             in the parent directories.
+      title: Directory
+      additionalProperties: false
+    kyozo.workspace.v1.File:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+      title: File
+      additionalProperties: false
+    kyozo.events.v1.LoadEventError:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          title: error_message
+      title: LoadEventError
+      additionalProperties: false
+    kyozo.workspace.v1.LoadEventFinishedParsingDoc:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+      title: LoadEventFinishedParsingDoc
+      additionalProperties: false
+    kyozo.events.v1.LoadEventFinishedWalk:
+      type: object
+      title: LoadEventFinishedWalk
+      additionalProperties: false
+    kyozo.events.v1.LoadEventFoundDir:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+      title: LoadEventFoundDir
+      additionalProperties: false
+    kyozo.events.v1.LoadEventFoundFile:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+      title: LoadEventFoundFile
+      additionalProperties: false
+    kyozo.events.v1.LoadEventFoundTask:
+      type: object
+      properties:
+        documentPath:
+          type: string
+          title: document_path
+        id:
+          type: string
+          title: id
+        name:
+          type: string
+          title: name
+        isNameGenerated:
+          type: boolean
+          title: is_name_generated
+      title: LoadEventFoundTask
+      additionalProperties: false
+    kyozo.events.v1.LoadEventStartedParsingDoc:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+      title: LoadEventStartedParsingDoc
+      additionalProperties: false
+    kyozo.events.v1.LoadEventStartedWalk:
+      type: object
+      title: LoadEventStartedWalk
+      additionalProperties: false
+    kyozo.workspace.v1.LoadRequest:
+      type: object
+      oneOf:
+        - properties:
+            directory:
+              title: directory
+              $ref: '#/components/schemas/kyozo.workspace.v1.Directory'
+          title: directory
+          required:
+            - directory
+        - properties:
+            file:
+              title: file
+              $ref: '#/components/schemas/kyozo.workspace.v1.File'
+          title: file
+          required:
+            - file
+      properties:
+        identity:
+          title: identity
+          $ref: '#/components/schemas/kyozo.parser.v1.KyozoIdentity'
+      title: LoadRequest
+      additionalProperties: false
+    kyozo.events.v1.LoadResponse:
+      type: object
+      oneOf:
+        - properties:
+            error:
+              title: error
+              $ref: '#/components/schemas/kyozo.events.v1.LoadEventError'
+          title: error
+          required:
+            - error
+        - properties:
+            finishedParsingDoc:
+              title: finished_parsing_doc
+              $ref: '#/components/schemas/kyozo.events.v1.LoadEventFinishedParsingDoc'
+          title: finished_parsing_doc
+          required:
+            - finishedParsingDoc
+        - properties:
+            finishedWalk:
+              title: finished_walk
+              $ref: '#/components/schemas/kyozo.events.v1.LoadEventFinishedWalk'
+          title: finished_walk
+          required:
+            - finishedWalk
+        - properties:
+            foundDir:
+              title: found_dir
+              $ref: '#/components/schemas/kyozo.events.v1.LoadEventFoundDir'
+          title: found_dir
+          required:
+            - foundDir
+        - properties:
+            foundFile:
+              title: found_file
+              $ref: '#/components/schemas/kyozo.events.v1.LoadEventFoundFile'
+          title: found_file
+          required:
+            - foundFile
+        - properties:
+            foundTask:
+              title: found_task
+              $ref: '#/components/schemas/kyozo.events.v1.LoadEventFoundTask'
+          title: found_task
+          required:
+            - foundTask
+        - properties:
+            startedParsingDoc:
+              title: started_parsing_doc
+              $ref: '#/components/schemas/kyozo.events.v1.LoadEventStartedParsingDoc'
+          title: started_parsing_doc
+          required:
+            - startedParsingDoc
+        - properties:
+            startedWalk:
+              title: started_walk
+              $ref: '#/components/schemas/kyozo.events.v1.LoadEventStartedWalk'
+          title: started_walk
+          required:
+            - startedWalk
+      properties:
+        type:
+          title: type
+          $ref: '#/components/schemas/kyozo.events.v1.LoadEventType'
+      title: LoadResponse
+      additionalProperties: false
+    connect-protocol-version:
+      type: number
+      title: Connect-Protocol-Version
+      enum:
+        - 1
+      description: Define the version of the Connect protocol
+      const: 1
+    connect-timeout-header:
+      type: number
+      title: Connect-Timeout-Ms
+      description: Define the timeout, in ms
+    connect.error:
+      type: object
+      properties:
+        code:
+          type: string
+          examples:
+            - not_found
+          enum:
+            - canceled
+            - unknown
+            - invalid_argument
+            - deadline_exceeded
+            - not_found
+            - already_exists
+            - permission_denied
+            - resource_exhausted
+            - failed_precondition
+            - aborted
+            - out_of_range
+            - unimplemented
+            - internal
+            - unavailable
+            - data_loss
+            - unauthenticated
+          description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+        message:
+          type: string
+          description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+        detail:
+          $ref: '#/components/schemas/google.protobuf.Any'
+      title: Connect Error
+      additionalProperties: true
+      description: 'Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation'
+    google.protobuf.Any:
+      type: object
+      properties:
+        type:
+          type: string
+        value:
+          type: string
+          format: binary
+        debug:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+security: []
+tags:
+  - name: kyozo.workspace.v1.WorkspaceService

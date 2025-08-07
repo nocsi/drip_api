@@ -1,0 +1,62 @@
+<.svelte
+  name="workspace/index"
+  class="flex min-h-0"
+  props={%{workspaces: @workspaces, teams: @teams, current_team: @current_team}}
+  socket={@socket}
+/>
+<.modal
+  :if={@live_action in [:new, :edit]}
+  show
+  on_cancel={JS.patch(~p"/workspaces")}
+>
+  <:title>
+    {if @workspace.id, do: "Update workspace", else: "Create workspace"}
+  </:title>
+  <:content :let={{on_cancel, _}}>
+    <.live_component
+      module={KyozoWeb.Live.Workspace.Form}
+      id={to_string(@workspace.id || :new)}
+      data={@workspace}
+      current_team={@current_team}
+      current_user={@current_user}
+      action={@live_action == :edit && :edit || :new}
+      patch={~p"/workspaces"}
+    >
+      <:actions>
+        <.button variant="secondary" phx-click={on_cancel}>Cancel</.button>
+        <.button
+          variant="warning"
+          phx-value-id={@workspace.id}
+          type="submit"
+          aria-label={
+            if @workspace.id,
+              do: "Confirm update workspace",
+              else: "Confirm create workspace"
+          }
+        >
+          {if @workspace.id, do: "Update", else: "Create"}
+        </.button>
+      </:actions>
+    </.live_component>
+  </:content>
+</.modal>
+<.modal :if={@live_action in [:delete]} show on_cancel={JS.patch(~p"/workspaces")}>
+  <:title>
+    Delete workspace data?
+  </:title>
+  <:content>
+    Are you sure you want to delete this workspace? This action cannot be undone.
+  </:content>
+  <:actions :let={{on_cancel, _}}>
+    <.button variant="secondary" phx-click={on_cancel}>Cancel</.button>
+    <.button
+      variant="danger"
+      phx-click="delete_workspace"
+      phx-value-id={@workspace.id}
+      type="submit"
+      aria-label="Confirm delete workspace"
+    >
+      Delete
+    </.button>
+  </:actions>
+</.modal>

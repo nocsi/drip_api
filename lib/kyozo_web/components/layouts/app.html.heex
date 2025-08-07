@@ -1,0 +1,24 @@
+<div class="min-h-screen bg-background font-sans antialiased flex flex-col">
+  <.svelte
+    name="MobileNav"
+    socket={@socket}
+  />
+
+  <.svelte
+    name="Navbar"
+    props={%{
+      scroll: true,
+      current_user: assigns[:current_user]
+    }}
+    socket={@socket}
+  >
+    <main class="flex-1 flex justify-center overflow-auto">
+        {@inner_content}
+    </main>
+
+    <.svelte
+      name="SiteFooter"
+      socket={@socket}
+    />
+  </.svelte>
+</div>

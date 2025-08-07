@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "@modelcontextprotocol/server-memory": {
+      "enabled": true,
+      "description": "Provides memory persistence across agent invocations"
+    },
+    "@modelcontextprotocol/server-sequential-thinking": {
+      "enabled": true,
+      "description": "Enhances sequential thinking patterns for complex reasoning"
+    }
+  }
+}

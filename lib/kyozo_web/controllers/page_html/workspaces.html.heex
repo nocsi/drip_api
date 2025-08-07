@@ -1,0 +1,25 @@
+<div 
+  id="workspaces-app" 
+  phx-hook="SvelteWorkspaces"
+  data-current-user={Jason.encode!(@current_user)}
+  data-teams={Jason.encode!(@teams)}
+  data-api-token={@user_token}
+  data-csrf-token={get_csrf_token()}
+>
+  <!-- Loading state while Svelte initializes -->
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+  </div>
+</div>
+
+<script>
+  // Initialize Svelte app data
+  window.KyozoApp = window.KyozoApp || {};
+  window.KyozoApp.workspaces = {
+    currentUser: <%= raw Jason.encode!(@current_user) %>,
+    teams: <%= raw Jason.encode!(@teams) %>,
+    apiToken: '<%= @user_token %>',
+    csrfToken: '<%= get_csrf_token() %>',
+    apiBaseUrl: '/api/v1'
+  };
+</script>

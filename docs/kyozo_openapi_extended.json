@@ -1,0 +1,1296 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Kyozo API",
+    "version": "0.2.0",
+    "description": "Executable markdown workspace system with git repository management and real-time collaboration"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Development server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "paths": {
+    "/api/workspaces": {
+      "get": {
+        "summary": "List all workspaces",
+        "operationId": "getWorkspaces",
+        "tags": ["workspaces"],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/WorkspaceList"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new workspace",
+        "operationId": "createWorkspace",
+        "tags": ["workspaces"],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/WorkspaceCreate"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/WorkspaceCreated"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{id}": {
+      "get": {
+        "summary": "Get workspace details",
+        "operationId": "getWorkspace",
+        "tags": ["workspaces"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Workspace"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update workspace",
+        "operationId": "updateWorkspace",
+        "tags": ["workspaces"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/WorkspaceUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Workspace"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete workspace",
+        "operationId": "deleteWorkspace",
+        "tags": ["workspaces"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Workspace deleted"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{id}/execute": {
+      "post": {
+        "summary": "Execute code in workspace context",
+        "operationId": "executeCode",
+        "tags": ["execution"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ExecutionRequest"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ExecutionResult"
+          },
+          "400": {
+            "$ref": "#/components/responses/ExecutionError"
+          },
+          "408": {
+            "$ref": "#/components/responses/ExecutionTimeout"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{id}/execution-contexts": {
+      "get": {
+        "summary": "List active execution contexts",
+        "operationId": "getExecutionContexts",
+        "tags": ["execution"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ExecutionContextList"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new execution context",
+        "operationId": "createExecutionContext",
+        "tags": ["execution"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ExecutionContextCreate"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/ExecutionContext"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{id}/execution-contexts/{context_id}": {
+      "get": {
+        "summary": "Get execution context details",
+        "operationId": "getExecutionContext",
+        "tags": ["execution"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/ExecutionContextId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ExecutionContext"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Destroy execution context",
+        "operationId": "deleteExecutionContext",
+        "tags": ["execution"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          },
+          {
+            "$ref": "#/components/parameters/ExecutionContextId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Execution context destroyed"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{id}/git/status": {
+      "get": {
+        "summary": "Get git repository status",
+        "operationId": "getGitStatus",
+        "tags": ["git"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GitStatus"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{id}/git/sync": {
+      "post": {
+        "summary": "Sync with remote repository",
+        "operationId": "syncRepository",
+        "tags": ["git"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceId"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/GitSync"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GitSyncResult"
+          },
+          "409": {
+            "$ref": "#/components/responses/GitConflict"
+          }
+        }
+      }
+    },
+    "/api/files": {
+      "post": {
+        "summary": "Create new file",
+        "operationId": "createFile",
+        "tags": ["files"],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/FileCreate"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/File"
+          }
+        }
+      }
+    },
+    "/api/files/{id}": {
+      "get": {
+        "summary": "Get file content",
+        "operationId": "getFile",
+        "tags": ["files"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FileId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/File"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update file content",
+        "operationId": "updateFile",
+        "tags": ["files"],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FileId"
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/FileUpdate"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/File"
+          }
+        }
+      }
+    },
+    "/api/teams": {
+      "get": {
+        "summary": "List teams",
+        "operationId": "getTeams",
+        "tags": ["teams"],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/TeamList"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create team",
+        "operationId": "createTeam",
+        "tags": ["teams"],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/TeamCreate"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/Team"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "parameters": {
+      "WorkspaceId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "Workspace identifier"
+      },
+      "FileId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "File identifier"
+      },
+      "ExecutionContextId": {
+        "name": "context_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Execution context identifier"
+      }
+    },
+    "requestBodies": {
+      "ExecutionRequest": {
+        "required": true,
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["execution"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "description": "Elixir code to execute"
+                        },
+                        "context_id": {
+                          "type": "string",
+                          "description": "Execution context identifier for state persistence"
+                        },
+                        "timeout": {
+                          "type": "integer",
+                          "minimum": 1000,
+                          "maximum": 30000,
+                          "default": 5000,
+                          "description": "Execution timeout in milliseconds"
+                        },
+                        "workspace_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "Associated workspace for context"
+                        },
+                        "block_id": {
+                          "type": "string",
+                          "description": "Code block identifier within file"
+                        }
+                      },
+                      "required": ["code"]
+                    }
+                  },
+                  "required": ["type", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "ExecutionContextCreate": {
+        "required": true,
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["execution-context"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Human-readable context name"
+                        },
+                        "workspace_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "Associated workspace"
+                        }
+                      },
+                      "required": ["name"]
+                    }
+                  },
+                  "required": ["type", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "GitSync": {
+        "required": true,
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["git-sync"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "operation": {
+                          "type": "string",
+                          "enum": ["pull", "push", "fetch"]
+                        },
+                        "remote": {
+                          "type": "string",
+                          "default": "origin"
+                        },
+                        "branch": {
+                          "type": "string",
+                          "default": "main"
+                        },
+                        "force": {
+                          "type": "boolean",
+                          "default": false
+                        }
+                      },
+                      "required": ["operation"]
+                    }
+                  },
+                  "required": ["type", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "WorkspaceCreate": {
+        "required": true,
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["workspace"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "pattern": "[a-zA-Z][a-zA-Z0-9_\\s]+"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "git_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "nullable": true
+                        }
+                      },
+                      "required": ["name"]
+                    }
+                  },
+                  "required": ["type", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "WorkspaceUpdate": {
+        "required": true,
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["workspace"]
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  },
+                  "required": ["type", "id"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "FileCreate": {
+        "required": true,
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["file"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "filename": {
+                          "type": "string",
+                          "pattern": "[a-zA-Z][a-zA-Z0-9_\\s\\.]+"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "mime_type": {
+                          "type": "string",
+                          "default": "text/markdown"
+                        }
+                      },
+                      "required": ["filename"]
+                    },
+                    "relationships": {
+                      "type": "object",
+                      "properties": {
+                        "workspace": {
+                          "type": "object",
+                          "properties": {
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": ["workspace"]
+                                },
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                }
+                              },
+                              "required": ["type", "id"]
+                            }
+                          },
+                          "required": ["data"]
+                        }
+                      },
+                      "required": ["workspace"]
+                    }
+                  },
+                  "required": ["type", "attributes", "relationships"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "FileUpdate": {
+        "required": true,
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["file"]
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "string"
+                        },
+                        "filename": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["type", "id"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "TeamCreate": {
+        "required": true,
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["team"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "pattern": "[a-zA-Z][a-zA-Z0-9_\\s]+"
+                        }
+                      },
+                      "required": ["title"]
+                    }
+                  },
+                  "required": ["type", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "ExecutionResult": {
+        "description": "Code execution successful",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["execution-result"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "result": {
+                          "type": "string",
+                          "description": "Execution result value"
+                        },
+                        "output": {
+                          "type": "string",
+                          "description": "Standard output"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["success", "error"]
+                        },
+                        "execution_time": {
+                          "type": "integer",
+                          "description": "Execution time in milliseconds"
+                        },
+                        "context_id": {
+                          "type": "string",
+                          "description": "Execution context used"
+                        }
+                      },
+                      "required": ["result", "status", "execution_time"]
+                    }
+                  },
+                  "required": ["type", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "ExecutionError": {
+        "description": "Code execution failed",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["400"]
+                      },
+                      "title": {
+                        "type": "string",
+                        "enum": ["Execution Error"]
+                      },
+                      "detail": {
+                        "type": "string",
+                        "description": "Error details and stack trace"
+                      },
+                      "meta": {
+                        "type": "object",
+                        "properties": {
+                          "line": {
+                            "type": "integer"
+                          },
+                          "column": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "required": ["status", "title", "detail"]
+                  }
+                }
+              },
+              "required": ["errors"]
+            }
+          }
+        }
+      },
+      "ExecutionTimeout": {
+        "description": "Code execution timed out",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["408"]
+                      },
+                      "title": {
+                        "type": "string",
+                        "enum": ["Execution Timeout"]
+                      },
+                      "detail": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["status", "title", "detail"]
+                  }
+                }
+              },
+              "required": ["errors"]
+            }
+          }
+        }
+      },
+      "ExecutionContext": {
+        "description": "Execution context details",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["execution-context"]
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["active", "idle", "terminated"]
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "last_execution": {
+                          "type": "string",
+                          "format": "date-time",
+                          "nullable": true
+                        }
+                      },
+                      "required": ["name", "status", "created_at"]
+                    }
+                  },
+                  "required": ["type", "id", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "ExecutionContextList": {
+        "description": "List of execution contexts",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExecutionContext"
+                  }
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "GitStatus": {
+        "description": "Git repository status",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["git-status"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "branch": {
+                          "type": "string"
+                        },
+                        "is_clean": {
+                          "type": "boolean"
+                        },
+                        "ahead": {
+                          "type": "integer"
+                        },
+                        "behind": {
+                          "type": "integer"
+                        },
+                        "modified_files": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "untracked_files": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": ["branch", "is_clean", "ahead", "behind"]
+                    }
+                  },
+                  "required": ["type", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "GitSyncResult": {
+        "description": "Git sync operation result",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": ["git-sync-result"]
+                    },
+                    "attributes": {
+                      "type": "object",
+                      "properties": {
+                        "operation": {
+                          "type": "string",
+                          "enum": ["pull", "push", "fetch"]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["success", "conflict", "error"]
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "commits_ahead": {
+                          "type": "integer"
+                        },
+                        "commits_behind": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["operation", "status", "message"]
+                    }
+                  },
+                  "required": ["type", "attributes"]
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "GitConflict": {
+        "description": "Git merge conflict",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": ["409"]
+                      },
+                      "title": {
+                        "type": "string",
+                        "enum": ["Git Conflict"]
+                      },
+                      "detail": {
+                        "type": "string"
+                      },
+                      "meta": {
+                        "type": "object",
+                        "properties": {
+                          "conflicted_files": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "required": ["status", "title", "detail"]
+                  }
+                }
+              },
+              "required": ["errors"]
+            }
+          }
+        }
+      },
+      "Workspace": {
+        "description": "Workspace details",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Workspace"
+            }
+          }
+        }
+      },
+      "WorkspaceList": {
+        "description": "List of workspaces",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Workspace"
+                  }
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      },
+      "WorkspaceCreated": {
+        "description": "Workspace created successfully",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Workspace"
+            }
+          }
+        }
+      },
+      "File": {
+        "description": "File details",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "$ref": "#/components/schemas/File"
+            }
+          }
+        }
+      },
+      "Team": {
+        "description": "Team details",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "$ref": "#/components/schemas/Team"
+            }
+          }
+        }
+      },
+      "TeamList": {
+        "description": "List of teams",
+        "content": {
+          "application/vnd.api+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                }
+              },
+              "required": ["data"]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Project": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["project"]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string",
+                "nullable": true
+              },
+              "git_url": {
+                "type": "string",
+                "format": "uri",
+                "nullable": true
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": ["name", "created_at", "updated_at"]
+          }
+        },
+        "required": ["type", "id", "attributes"]
+      },
+      "File": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["file"]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              },
+              "mime_type": {
+                "type": "string"
+              },
+              "size": {
+                "type": "integer"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": ["filename", "content", "mime_type", "created_at", "updated_at"]
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "workspace": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": ["workspace"]
+                      },
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    },
+                    "required": ["type", "id"]
+                  }
+                },
+                "required": ["data"]
+              }
+            }
+          }
+        },
+        "required": ["type", "id", "attributes"]
+      },
+      "Team": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["team"]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": ["title", "created_at", "updated_at"]
+          }
+        },
+        "required": ["type", "id", "attributes"]
+      },
+      "ExecutionContext": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["execution-context"]
+          },
+          "id": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["active", "idle", "terminated"]
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "last_execution": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
+            },
+            "required": ["name", "status", "created_at"]
+          }
+        },
+        "required": ["type", "id", "attributes"]
+      }
+    }
+  }
+}

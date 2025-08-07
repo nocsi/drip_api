@@ -1,0 +1,4144 @@
+    warning: unused alias Events
+    │
+ 21 │   alias Kyozo.Workspaces.Events
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/file.ex:21:3
+
+     warning: String.printable/1 is undefined or private. Did you mean:
+
+           * printable?/1
+           * printable?/2
+
+     │
+ 884 │     String.length(content) != String.length(String.printable(content))
+     │                                                    ~
+     │
+     └─ lib/kyozo/workspaces/file.ex:884:52: Kyozo.Workspaces.File.binary_content?/1
+
+    warning: unused alias Workspaces
+    │
+  9 │   alias Kyozo.Workspaces
+    │   ~
+    │
+    └─ lib/kyozo_web/live/workspace/form.ex:9:3
+
+    warning: unused import KyozoWeb.Components.Button
+    │
+  7 │   import KyozoWeb.Components.Button
+    │   ~
+    │
+    └─ lib/kyozo_web/live/workspace/form.ex:7:3
+
+    warning: unused import KyozoWeb.Components.Form
+    │
+  6 │   import KyozoWeb.Components.Form
+    │   ~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/group_form.ex:6:3
+
+    warning: no route path for KyozoWeb.Router matches "/posts"
+    │
+ 50 │         <.modal id={"access-group-modal-button#{@group_id}"} on_cancel={JS.navigate(~p"/posts")}>
+    │         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/group_form.ex:50: KyozoWeb.Accounts.Groups.GroupForm.render/1
+
+    warning: missing required slot "title" for component KyozoWeb.Components.Modal.modal/1
+    │
+ 56 │       <.modal id={"access-group-form-modal#{@group_id}"}>
+    │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/group_form.ex:56: (file)
+
+    warning: missing required slot "content" for component KyozoWeb.Components.Modal.modal/1
+    │
+ 56 │       <.modal id={"access-group-form-modal#{@group_id}"}>
+    │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/group_form.ex:56: (file)
+
+    warning: missing required slot "title" for component KyozoWeb.Components.Modal.modal/1
+    │
+ 50 │         <.modal id={"access-group-modal-button#{@group_id}"} on_cancel={JS.navigate(~p"/posts")}>
+    │         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/group_form.ex:50: (file)
+
+    warning: missing required slot "content" for component KyozoWeb.Components.Modal.modal/1
+    │
+ 50 │         <.modal id={"access-group-modal-button#{@group_id}"} on_cancel={JS.navigate(~p"/posts")}>
+    │         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/group_form.ex:50: (file)
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 432 │       def change(changeset, _opts, context) do
+     │                                    ~~~~~~~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:432:36: Kyozo.Storage.StorageResource.Changes.CreateFromContent.change/3
+
+     warning: function get_storage_provider/1 is unused
+     │
+ 624 │   defp get_storage_provider(:git), do: Kyozo.Storage.Providers.Git
+     │        ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:624:8: Kyozo.Storage.StorageResource (module)
+
+     warning: function generate_version_name/0 is unused
+     │
+ 630 │   defp generate_version_name do
+     │        ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:630:8: Kyozo.Storage.StorageResource (module)
+
+     warning: Kyozo.Storage.Providers.Disk.delete/1 is undefined (module Kyozo.Storage.Providers.Disk is not available or is yet to be defined)
+     │
+ 565 │         case provider.delete(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:565:23: Kyozo.Storage.StorageResource.Actions.DeleteContent.run/3
+
+     warning: Kyozo.Storage.Providers.Git.delete/1 is undefined (module Kyozo.Storage.Providers.Git is not available or is yet to be defined)
+     │
+ 565 │         case provider.delete(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:565:23: Kyozo.Storage.StorageResource.Actions.DeleteContent.run/3
+
+     warning: Kyozo.Storage.Providers.Hybrid.delete/1 is undefined (module Kyozo.Storage.Providers.Hybrid is not available or is yet to be defined)
+     │
+ 565 │         case provider.delete(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:565:23: Kyozo.Storage.StorageResource.Actions.DeleteContent.run/3
+
+     warning: Kyozo.Storage.Providers.Ram.delete/1 is undefined (module Kyozo.Storage.Providers.Ram is not available or is yet to be defined)
+     │
+ 565 │         case provider.delete(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:565:23: Kyozo.Storage.StorageResource.Actions.DeleteContent.run/3
+
+     warning: Kyozo.Storage.Providers.S3.delete/1 is undefined (module Kyozo.Storage.Providers.S3 is not available or is yet to be defined)
+     │
+ 565 │         case provider.delete(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:565:23: Kyozo.Storage.StorageResource.Actions.DeleteContent.run/3
+
+     warning: Kyozo.Storage.Providers.Disk.read/1 is undefined (module Kyozo.Storage.Providers.Disk is not available or is yet to be defined)
+     │
+ 548 │         case provider.read(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:548:23: Kyozo.Storage.StorageResource.Actions.RetrieveContent.run/3
+
+     warning: Kyozo.Storage.Providers.Git.read/1 is undefined (module Kyozo.Storage.Providers.Git is not available or is yet to be defined)
+     │
+ 548 │         case provider.read(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:548:23: Kyozo.Storage.StorageResource.Actions.RetrieveContent.run/3
+
+     warning: Kyozo.Storage.Providers.Hybrid.read/1 is undefined (module Kyozo.Storage.Providers.Hybrid is not available or is yet to be defined)
+     │
+ 548 │         case provider.read(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:548:23: Kyozo.Storage.StorageResource.Actions.RetrieveContent.run/3
+
+     warning: Kyozo.Storage.Providers.Ram.read/1 is undefined (module Kyozo.Storage.Providers.Ram is not available or is yet to be defined)
+     │
+ 548 │         case provider.read(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:548:23: Kyozo.Storage.StorageResource.Actions.RetrieveContent.run/3
+
+     warning: Kyozo.Storage.Providers.S3.read/1 is undefined (module Kyozo.Storage.Providers.S3 is not available or is yet to be defined)
+     │
+ 548 │         case provider.read(storage_resource.locator_id) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:548:23: Kyozo.Storage.StorageResource.Actions.RetrieveContent.run/3
+
+     warning: Kyozo.Storage.Locator.generate/0 is undefined or private
+     │
+ 442 │         locator_id = Locator.generate()
+     │                              ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:442:30: Kyozo.Storage.StorageResource.Changes.CreateFromContent.change/3
+
+     warning: Kyozo.Storage.Providers.Disk.write/3 is undefined (module Kyozo.Storage.Providers.Disk is not available or is yet to be defined)
+     │
+ 459 │         case provider.write(locator_id, content, storage_options) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:459:23: Kyozo.Storage.StorageResource.Changes.CreateFromContent.change/3
+
+     warning: Kyozo.Storage.Providers.Git.write/3 is undefined (module Kyozo.Storage.Providers.Git is not available or is yet to be defined)
+     │
+ 459 │         case provider.write(locator_id, content, storage_options) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:459:23: Kyozo.Storage.StorageResource.Changes.CreateFromContent.change/3
+
+     warning: Kyozo.Storage.Providers.Hybrid.write/3 is undefined (module Kyozo.Storage.Providers.Hybrid is not available or is yet to be defined)
+     │
+ 459 │         case provider.write(locator_id, content, storage_options) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:459:23: Kyozo.Storage.StorageResource.Changes.CreateFromContent.change/3
+
+     warning: Kyozo.Storage.Providers.Ram.write/3 is undefined (module Kyozo.Storage.Providers.Ram is not available or is yet to be defined)
+     │
+ 459 │         case provider.write(locator_id, content, storage_options) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:459:23: Kyozo.Storage.StorageResource.Changes.CreateFromContent.change/3
+
+     warning: Kyozo.Storage.Providers.S3.write/3 is undefined (module Kyozo.Storage.Providers.S3 is not available or is yet to be defined)
+     │
+ 459 │         case provider.write(locator_id, content, storage_options) do
+     │                       ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:459:23: Kyozo.Storage.StorageResource.Changes.CreateFromContent.change/3
+
+     warning: Kyozo.Storage.Providers.Disk.create_version/3 is undefined (module Kyozo.Storage.Providers.Disk is not available or is yet to be defined)
+     │
+ 591 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:591:27: Kyozo.Storage.StorageResource.Actions.CreateVersion.run/3
+
+     warning: Kyozo.Storage.Providers.Git.create_version/3 is undefined (module Kyozo.Storage.Providers.Git is not available or is yet to be defined)
+     │
+ 591 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:591:27: Kyozo.Storage.StorageResource.Actions.CreateVersion.run/3
+
+     warning: Kyozo.Storage.Providers.Hybrid.create_version/3 is undefined (module Kyozo.Storage.Providers.Hybrid is not available or is yet to be defined)
+     │
+ 591 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:591:27: Kyozo.Storage.StorageResource.Actions.CreateVersion.run/3
+
+     warning: Kyozo.Storage.Providers.Ram.create_version/3 is undefined (module Kyozo.Storage.Providers.Ram is not available or is yet to be defined)
+     │
+ 591 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:591:27: Kyozo.Storage.StorageResource.Actions.CreateVersion.run/3
+
+     warning: Kyozo.Storage.Providers.S3.create_version/3 is undefined (module Kyozo.Storage.Providers.S3 is not available or is yet to be defined)
+     │
+ 591 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:591:27: Kyozo.Storage.StorageResource.Actions.CreateVersion.run/3
+
+     warning: Kyozo.Storage.Locator.generate/0 is undefined or private
+     │
+ 394 │         locator_id = Locator.generate()
+     │                              ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:394:30: Kyozo.Storage.StorageResource.Changes.ProcessStorage.process_upload/1
+
+     warning: Kyozo.Storage.Locator.generate/0 is undefined or private
+     │
+ 409 │         locator_id = Locator.generate()
+     │                              ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:409:30: Kyozo.Storage.StorageResource.Changes.ProcessStorage.process_content/1
+
+     warning: Kyozo.Storage.StorageResource.create_storage_entry/2 is undefined or private
+     │
+ 535 │         case Kyozo.Storage.StorageResource.create_storage_entry(attrs,
+     │                                            ~
+     │
+     └─ lib/kyozo/storage/storage_resource.ex:535:44: Kyozo.Storage.StorageResource.Actions.StoreContent.run/3
+
+     warning: Kyozo.Workspaces.duplicate_workspace/3 is undefined or private. Did you mean:
+
+           * duplicate_workspace/0
+           * duplicate_workspace/1
+           * duplicate_workspace/2
+
+     │
+ 101 │          {:ok, duplicate_workspace} <- Workspaces.duplicate_workspace(
+     │                                                   ~
+     │
+     └─ lib/kyozo_web/controllers/api/workspaces_controller.ex:101:51: KyozoWeb.API.WorkspacesController.duplicate/2
+
+     warning: Kyozo.Workspaces.list_documents/1 is undefined or private. Did you mean:
+
+           * list_events/0
+           * list_events/1
+           * list_events/2
+           * list_events!/0
+           * list_events!/1
+
+     │
+ 157 │          {:ok, documents} <- Workspaces.list_documents(
+     │                                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/workspaces_controller.ex:157:41: KyozoWeb.API.WorkspacesController.documents/2
+
+    warning: unused alias Invitation
+    │
+  5 │   alias Kyozo.Accounts.{Team, UserTeam, Invitation}
+    │   ~
+    │
+    └─ lib/kyozo_web/live/team/dashboard.ex:5:3
+
+    warning: unused alias Team
+    │
+  5 │   alias Kyozo.Accounts.{Team, UserTeam, Invitation}
+    │   ~
+    │
+    └─ lib/kyozo_web/live/team/dashboard.ex:5:3
+
+    warning: unused alias UserTeam
+    │
+  5 │   alias Kyozo.Accounts.{Team, UserTeam, Invitation}
+    │   ~
+    │
+    └─ lib/kyozo_web/live/team/dashboard.ex:5:3
+
+    warning: variable "enabled" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 84 │   def handle_event("toggle_collaborative_mode", %{"enabled" => enabled}, socket) do
+    │                                                                ~~~~~~~
+    │
+    └─ lib/kyozo_web/live/document/editor.ex:84:64: KyozoWeb.Live.Document.Editor.handle_event/3
+
+     warning: Kyozo.Workspaces.get_document/2 is undefined or private
+     │
+ 136 │     case Workspaces.get_document(document_id, actor: user) do
+     │                     ~
+     │
+     └─ lib/kyozo_web/live/document/editor.ex:136:21: KyozoWeb.Live.Document.Editor.load_document_with_content/2
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.get_document_content/1 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 138 │         case DocumentBlobRef.get_document_content(document_id) do
+     │                              ~
+     │
+     └─ lib/kyozo_web/live/document/editor.ex:138:30: KyozoWeb.Live.Document.Editor.load_document_with_content/2
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.get_document_content/1 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 206 │     case DocumentBlobRef.get_document_content(document.id) do
+     │                          ~
+     │
+     └─ lib/kyozo_web/live/document/editor.ex:206:26: KyozoWeb.Live.Document.Editor.export_document/2
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.get_document_content/1 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 238 │     DocumentBlobRef.get_document_content(document.id)
+     │                     ~
+     │
+     └─ lib/kyozo_web/live/document/editor.ex:238:21: KyozoWeb.Live.Document.Editor.export_document/2
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.update_document_content/3 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 159 │     case DocumentBlobRef.update_document_content(
+     │                          ~
+     │
+     └─ lib/kyozo_web/live/document/editor.ex:159:26: KyozoWeb.Live.Document.Editor.save_document_content/2
+
+     warning: Kyozo.Workspaces.update_document/3 is undefined or private. Did you mean:
+
+           * update_content/1
+           * update_content/2
+           * update_content/3
+           * update_content!/1
+           * update_content!/2
+
+     │
+ 166 │         case Workspaces.update_document(document, %{
+     │                         ~
+     │
+     └─ lib/kyozo_web/live/document/editor.ex:166:25: KyozoWeb.Live.Document.Editor.save_document_content/2
+
+     warning: Earmark.as_html!/1 is undefined (module Earmark is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+     │
+ 209 │         html = Earmark.as_html!(content)
+     │                        ~
+     │
+     └─ lib/kyozo_web/live/document/editor.ex:209:24: KyozoWeb.Live.Document.Editor.export_document/2
+
+     warning: variable "actor" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 299 │     defp validate_team_access(team_id, actor) do
+     │                                        ~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/validations.ex:299:40: Kyozo.Workspaces.File.Validations.ValidateTeamAccess.validate_team_access/2
+
+     warning: variable "exclude_id" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 337 │     defp check_path_uniqueness(team_id, file_path, exclude_id) do
+     │                                                    ~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/validations.ex:337:52: Kyozo.Workspaces.File.Validations.ValidateUniqueFilePath.check_path_uniqueness/3
+
+     warning: variable "team_id" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 337 │     defp check_path_uniqueness(team_id, file_path, exclude_id) do
+     │                                ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/validations.ex:337:32: Kyozo.Workspaces.File.Validations.ValidateUniqueFilePath.check_path_uniqueness/3
+
+     warning: Ash.Changeset.get_data/1 is undefined or private. Did you mean:
+
+           * get_data/2
+
+     │
+ 325 │       document_id = case Ash.Changeset.get_data(changeset) do
+     │                                        ~
+     │
+     └─ lib/kyozo/workspaces/file/validations.ex:325:40: Kyozo.Workspaces.File.Validations.ValidateUniqueFilePath.validate/3
+
+    warning: function send/3 required by behaviour AshAuthentication.Sender is not implemented (in module Kyozo.Accounts.Emails)
+    │
+  1 │ defmodule Kyozo.Accounts.Emails do
+    │ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo/accounts/emails.ex:1: Kyozo.Accounts.Emails (module)
+
+    warning: Mailer.deliver/3 is undefined (module Mailer is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    │
+ 23 │     Mailer.deliver(email, "Magic Link", """
+    │            ~
+    │
+    └─ lib/kyozo/accounts/emails.ex:23:12: Kyozo.Accounts.Emails.deliver_magic_link/2
+
+    warning: Kyozo.Storage.StorageResource.get/1 is undefined or private
+    │
+  6 │     with {:ok, resource} <- Kyozo.Storage.StorageResource.get(resource_id),
+    │                                                           ~
+    │
+    └─ lib/kyozo/storage/worker.ex:6:59: Kyozo.Storage.StorageResource.Process.Worker.perform/1
+
+    warning: Kyozo.Storage.StorageResource.process/1 is undefined or private
+    │
+  7 │          {:ok, _} <- Kyozo.Storage.StorageResource.process(resource) do
+    │                                                    ~
+    │
+    └─ lib/kyozo/storage/worker.ex:7:52: Kyozo.Storage.StorageResource.Process.Worker.perform/1
+
+    warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 94 │   defp handle_extracted_tasks(changeset, extracted_tasks, context) do
+    │                                                           ~~~~~~~
+    │
+    └─ lib/kyozo/workspaces/extensions/render_markdown/changes/render_markdown.ex:94:59: Kyozo.Workspaces.Extensions.RenderMarkdown.Changes.RenderMarkdown.handle_extracted_tasks/3
+
+    warning: unused alias Apple
+    │
+  4 │   alias Assent.Strategy.Apple
+    │   ~
+    │
+    └─ lib/kyozo_web/controllers/oauth.ex:4:3
+
+    warning: Kyozo.Accounts.register_with_google/2 is undefined or private. Did you mean:
+
+          * register_with_password/0
+          * register_with_password/1
+          * register_with_password/2
+          * register_with_password!/0
+          * register_with_password!/1
+
+    │
+ 37 │            Accounts.register_with_google(
+    │                     ~
+    │
+    └─ lib/kyozo_web/controllers/oauth.ex:37:21: KyozoWeb.OAuth2Controller.callback/2
+
+    warning: variable "opts" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+  5 │   def clear_records!(opts) do
+    │                      ~~~~
+    │
+    └─ lib/kyozo/events/clear_all_records.ex:5:22: Kyozo.Events.ClearAllRecords.clear_records!/1
+
+    warning: Kyozo.Storage.Upload.name/1 is undefined or private
+    │
+ 10 │     key = opts[:key] || Upload.name(upload)
+    │                                ~
+    │
+    └─ lib/kyozo/storage/providers/s3.ex:10:32: Kyozo.Storage.Storages.S3.put/2
+
+    warning: Kyozo.Storage.Upload.contents/1 is undefined or private
+    │
+ 12 │     with {:ok, contents} <- Upload.contents(upload),
+    │                                    ~
+    │
+    └─ lib/kyozo/storage/providers/s3.ex:12:36: Kyozo.Storage.Storages.S3.put/2
+
+     warning: variable "storage_module" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 359 │       storage_module ->
+     │       ~
+     │
+     └─ lib/kyozo/workspaces/file_type_mapper.ex:359:7: Kyozo.Workspaces.FileTypeMapper.create_storage_entry/3
+
+     warning: variable "mime_type" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 465 │   defp determine_notebook_backend(filename, mime_type, file_size) do
+     │                                             ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_type_mapper.ex:465:45: Kyozo.Workspaces.FileTypeMapper.determine_notebook_backend/3
+
+    warning: unused alias StorageResource
+    │
+ 27 │   alias Kyozo.Storage.StorageResource
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/file_type_mapper.ex:27:3
+
+     warning: Kyozo.Workspaces.FileStorage.create_file_content/1 is undefined or private
+     │
+ 363 │             FileStorage.create_file_content(%{
+     │                         ~
+     │
+     └─ lib/kyozo/workspaces/file_type_mapper.ex:363:25: Kyozo.Workspaces.FileTypeMapper.create_storage_entry/3
+
+     warning: Kyozo.Workspaces.FileMedia.create_from_file/1 is undefined or private
+     │
+ 372 │             Kyozo.Workspaces.FileMedia.create_from_file(%{
+     │                                        ~
+     │
+     └─ lib/kyozo/workspaces/file_type_mapper.ex:372:40: Kyozo.Workspaces.FileTypeMapper.create_storage_entry/3
+
+     warning: Kyozo.Workspaces.FileNotebook.create_from_file/1 is undefined or private
+     │
+ 379 │             Kyozo.Workspaces.FileNotebook.create_from_file(%{
+     │                                           ~
+     │
+     └─ lib/kyozo/workspaces/file_type_mapper.ex:379:43: Kyozo.Workspaces.FileTypeMapper.create_storage_entry/3
+
+    warning: variable "changeset" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 10 │     |> Ash.Changeset.after_action(fn changeset, project ->
+    │                                      ~
+    │
+    └─ lib/kyozo/projects/changes/load_project.ex:10:38: Kyozo.Projects.Changes.LoadProject.change/3
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 256 │   defp log_event(project, event_type, event_data, sequence_counter, context, relations \\ %{}) do
+     │                                                                     ~~~~~~~
+     │
+     └─ lib/kyozo/projects/changes/load_project.ex:256:69: Kyozo.Projects.Changes.LoadProject.log_event/6
+
+    warning: Kyozo.Projects.update!/1 is deprecated. Use `Ash.update!/2` instead
+    │
+ 19 │           |> Kyozo.Projects.update!()
+    │                             ~
+    │
+    └─ lib/kyozo/projects/changes/load_project.ex:19:29: Kyozo.Projects.Changes.LoadProject.change/3
+
+    warning: Kyozo.Projects.update/1 is deprecated. Use `Ash.update/2` instead
+    │
+ 88 │       |> Kyozo.Projects.update()
+    │                         ~
+    │
+    └─ lib/kyozo/projects/changes/load_project.ex:88:25: Kyozo.Projects.Changes.LoadProject.load_directory_project/3
+
+     warning: Kyozo.Projects.update/1 is deprecated. Use `Ash.update/2` instead
+     │
+ 129 │       |> Kyozo.Projects.update()
+     │                         ~
+     │
+     └─ lib/kyozo/projects/changes/load_project.ex:129:25: Kyozo.Projects.Changes.LoadProject.load_file_project/3
+
+     warning: Kyozo.Projects.update/1 is deprecated. Use `Ash.update/2` instead
+     │
+ 232 │         |> Kyozo.Projects.update()
+     │                           ~
+     │
+     └─ lib/kyozo/projects/changes/load_project.ex:232:27: Kyozo.Projects.Changes.LoadProject.process_single_file/4
+
+     warning: Kyozo.Projects.create/1 is deprecated. Use `Ash.create/2` instead
+     │
+ 184 │         |> Kyozo.Projects.create()
+     │                           ~
+     │
+     └─ lib/kyozo/projects/changes/load_project.ex:184:27: Kyozo.Projects.Changes.LoadProject.process_single_file/4
+
+     warning: Kyozo.Projects.create/1 is deprecated. Use `Ash.create/2` instead
+     │
+ 206 │             |> Kyozo.Projects.create()
+     │                               ~
+     │
+     └─ lib/kyozo/projects/changes/load_project.ex:206:31: Kyozo.Projects.Changes.LoadProject.process_single_file/4
+
+     warning: Kyozo.Projects.create/1 is deprecated. Use `Ash.create/2` instead
+     │
+ 271 │     |> Kyozo.Projects.create()
+     │                       ~
+     │
+     └─ lib/kyozo/projects/changes/load_project.ex:271:23: Kyozo.Projects.Changes.LoadProject.log_event/6
+
+    warning: unused alias Workspaces
+    │
+ 10 │   alias Kyozo.Workspaces
+    │   ~
+    │
+    └─ lib/kyozo_web/live/workspace/index.ex:10:3
+
+     warning: clauses with the same name and arity (number of arguments) should be grouped together, "def perform/1" was previously defined (lib/kyozo/storage/workers.ex:418)
+     │
+ 468 │     def perform(%Oban.Job{args: invalid_args}) do
+     │         ~
+     │
+     └─ lib/kyozo/storage/workers.ex:468:9
+
+     warning: variable "stats" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 547 │         {:ok, stats} ->
+     │               ~
+     │
+     └─ lib/kyozo/storage/workers.ex:547:15: Kyozo.Storage.Workers.BulkProcessWorker.perform_health_check/1
+
+    warning: Kyozo.Storage.StorageResource.retrieve_content/1 is undefined or private
+    │
+ 64 │           case StorageResource.retrieve_content(storage_resource) do
+    │                                ~
+    │
+    └─ lib/kyozo/storage/workers.ex:64:32: Kyozo.Storage.Workers.ProcessStorageWorker.process_storage_content/2
+
+    warning: Kyozo.Storage.Providers.Disk.write/3 is undefined (module Kyozo.Storage.Providers.Disk is not available or is yet to be defined)
+    │
+ 74 │         case provider.write(storage_resource.locator_id, content, storage_options) do
+    │                       ~
+    │
+    └─ lib/kyozo/storage/workers.ex:74:23: Kyozo.Storage.Workers.ProcessStorageWorker.process_storage_content/2
+
+    warning: Kyozo.Storage.Providers.Git.write/3 is undefined (module Kyozo.Storage.Providers.Git is not available or is yet to be defined)
+    │
+ 74 │         case provider.write(storage_resource.locator_id, content, storage_options) do
+    │                       ~
+    │
+    └─ lib/kyozo/storage/workers.ex:74:23: Kyozo.Storage.Workers.ProcessStorageWorker.process_storage_content/2
+
+    warning: Kyozo.Storage.Providers.Hybrid.write/3 is undefined (module Kyozo.Storage.Providers.Hybrid is not available or is yet to be defined)
+    │
+ 74 │         case provider.write(storage_resource.locator_id, content, storage_options) do
+    │                       ~
+    │
+    └─ lib/kyozo/storage/workers.ex:74:23: Kyozo.Storage.Workers.ProcessStorageWorker.process_storage_content/2
+
+    warning: Kyozo.Storage.Providers.RAM.write/3 is undefined (module Kyozo.Storage.Providers.RAM is not available or is yet to be defined)
+    │
+ 74 │         case provider.write(storage_resource.locator_id, content, storage_options) do
+    │                       ~
+    │
+    └─ lib/kyozo/storage/workers.ex:74:23: Kyozo.Storage.Workers.ProcessStorageWorker.process_storage_content/2
+
+    warning: Kyozo.Storage.Providers.S3.write/3 is undefined (module Kyozo.Storage.Providers.S3 is not available or is yet to be defined)
+    │
+ 74 │         case provider.write(storage_resource.locator_id, content, storage_options) do
+    │                       ~
+    │
+    └─ lib/kyozo/storage/workers.ex:74:23: Kyozo.Storage.Workers.ProcessStorageWorker.process_storage_content/2
+
+     warning: Kyozo.Storage.Providers.Disk.create_version/3 is undefined (module Kyozo.Storage.Providers.Disk is not available or is yet to be defined)
+     │
+ 310 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/workers.ex:310:27: Kyozo.Storage.Workers.CreateVersionWorker.create_storage_version/2
+
+     warning: Kyozo.Storage.Providers.Git.create_version/3 is undefined (module Kyozo.Storage.Providers.Git is not available or is yet to be defined)
+     │
+ 310 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/workers.ex:310:27: Kyozo.Storage.Workers.CreateVersionWorker.create_storage_version/2
+
+     warning: Kyozo.Storage.Providers.Hybrid.create_version/3 is undefined (module Kyozo.Storage.Providers.Hybrid is not available or is yet to be defined)
+     │
+ 310 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/workers.ex:310:27: Kyozo.Storage.Workers.CreateVersionWorker.create_storage_version/2
+
+     warning: Kyozo.Storage.Providers.RAM.create_version/3 is undefined (module Kyozo.Storage.Providers.RAM is not available or is yet to be defined)
+     │
+ 310 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/workers.ex:310:27: Kyozo.Storage.Workers.CreateVersionWorker.create_storage_version/2
+
+     warning: Kyozo.Storage.Providers.S3.create_version/3 is undefined (module Kyozo.Storage.Providers.S3 is not available or is yet to be defined)
+     │
+ 310 │             case provider.create_version(storage_resource.locator_id, content, commit_message) do
+     │                           ~
+     │
+     └─ lib/kyozo/storage/workers.ex:310:27: Kyozo.Storage.Workers.CreateVersionWorker.create_storage_version/2
+
+     warning: Kyozo.Storage.StorageResource.retrieve_content/1 is undefined or private
+     │
+ 342 │               case StorageResource.retrieve_content(storage_resource) do
+     │                                    ~
+     │
+     └─ lib/kyozo/storage/workers.ex:342:36: Kyozo.Storage.Workers.CreateVersionWorker.get_version_content/2
+
+     warning: Kyozo.Storage.Providers.Disk.delete/1 is undefined (module Kyozo.Storage.Providers.Disk is not available or is yet to be defined)
+     │
+ 175 │       case provider.delete(storage_resource.locator_id) do
+     │                     ~
+     │
+     └─ lib/kyozo/storage/workers.ex:175:21: Kyozo.Storage.Workers.CleanupStorageWorker.cleanup_storage_resource/2
+
+     warning: Kyozo.Storage.Providers.Git.delete/1 is undefined (module Kyozo.Storage.Providers.Git is not available or is yet to be defined)
+     │
+ 175 │       case provider.delete(storage_resource.locator_id) do
+     │                     ~
+     │
+     └─ lib/kyozo/storage/workers.ex:175:21: Kyozo.Storage.Workers.CleanupStorageWorker.cleanup_storage_resource/2
+
+     warning: Kyozo.Storage.Providers.Hybrid.delete/1 is undefined (module Kyozo.Storage.Providers.Hybrid is not available or is yet to be defined)
+     │
+ 175 │       case provider.delete(storage_resource.locator_id) do
+     │                     ~
+     │
+     └─ lib/kyozo/storage/workers.ex:175:21: Kyozo.Storage.Workers.CleanupStorageWorker.cleanup_storage_resource/2
+
+     warning: Kyozo.Storage.Providers.RAM.delete/1 is undefined (module Kyozo.Storage.Providers.RAM is not available or is yet to be defined)
+     │
+ 175 │       case provider.delete(storage_resource.locator_id) do
+     │                     ~
+     │
+     └─ lib/kyozo/storage/workers.ex:175:21: Kyozo.Storage.Workers.CleanupStorageWorker.cleanup_storage_resource/2
+
+     warning: Kyozo.Storage.Providers.S3.delete/1 is undefined (module Kyozo.Storage.Providers.S3 is not available or is yet to be defined)
+     │
+ 175 │       case provider.delete(storage_resource.locator_id) do
+     │                     ~
+     │
+     └─ lib/kyozo/storage/workers.ex:175:21: Kyozo.Storage.Workers.CleanupStorageWorker.cleanup_storage_resource/2
+
+     warning: the following clause will never match:
+
+         {:error, reason}
+
+     because it attempts to match on the result of:
+
+         Kyozo.Storage.get_operation_stats()
+
+     which has type:
+
+         dynamic({:ok, term()})
+
+     typing violation found at:
+     │
+ 537 │         {:error, reason} -> {:error, "Stats check failed: #{inspect(reason)}"}
+     │         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/storage/workers.ex:537: Kyozo.Storage.Workers.BulkProcessWorker.perform_health_check/1
+
+    warning: Kyozo.Workspace.create_team/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 18 │     case Workspace.create_team(params, actor: current_user) do
+    │                    ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:18:20: KyozoWeb.WorkspaceController.create/2
+
+    warning: Kyozo.Workspace.list_team_members!/1 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 43 │       Workspace.list_team_members!(
+    │                 ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:43:17: KyozoWeb.WorkspaceController.show/2
+
+    warning: Kyozo.Workspace.list_invitations_sent!/1 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 49 │     invitations_sent = Workspace.list_invitations_sent!(actor: current_user, tenant: current_team)
+    │                                  ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:49:34: KyozoWeb.WorkspaceController.show/2
+
+    warning: Kyozo.Workspace.list_notes!/1 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 51 │     notes = Workspace.list_notes!(actor: current_user, tenant: current_team)
+    │                       ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:51:23: KyozoWeb.WorkspaceController.show/2
+
+    warning: Kyozo.Workspace.invite_user/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 76 │     case Workspace.invite_user(params, actor: current_user, tenant: current_team) do
+    │                    ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:76:20: KyozoWeb.WorkspaceController.invite_user/2
+
+    warning: Kyozo.Workspace.change_member_role/3 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 93 │     case Workspace.change_member_role(params["member_id"], %{role: params["role"]},
+    │                    ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:93:20: KyozoWeb.WorkspaceController.change_role/2
+
+     warning: Kyozo.Workspace.cancel_invitation/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+     │
+ 113 │     case Workspace.cancel_invitation(params, actor: current_user, tenant: current_team) do
+     │                    ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:113:20: KyozoWeb.WorkspaceController.cancel_invitation/2
+
+     warning: Kyozo.Workspace.decline_invitation/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+     │
+ 129 │     case Workspace.decline_invitation(%{id: params["invitation_id"]},
+     │                    ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:129:20: KyozoWeb.WorkspaceController.decline_invitation/2
+
+     warning: Kyozo.Workspace.accept_invitation/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+     │
+ 148 │     case Workspace.accept_invitation(%{id: params["invitation_id"]},
+     │                    ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:148:20: KyozoWeb.WorkspaceController.accept_invitation/2
+
+     warning: Kyozo.Workspace.remove_team_member/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+     │
+ 168 │     case Workspace.remove_team_member(params, actor: current_user, tenant: current_team) do
+     │                    ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:168:20: KyozoWeb.WorkspaceController.remove_team_member/2
+
+     warning: Kyozo.Workspace.get_member!/3 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+     │
+ 186 │       Workspace.get_member!(current_user.id, current_team.id,
+     │                 ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:186:17: KyozoWeb.WorkspaceController.leave_team/2
+
+     warning: Kyozo.Workspace.leave_team/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+     │
+ 191 │     case Workspace.leave_team(team_member, actor: current_user, tenant: current_team) do
+     │                    ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:191:20: KyozoWeb.WorkspaceController.leave_team/2
+
+     warning: Kyozo.Workspace.delete_team/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+     │
+ 208 │     case Workspace.delete_team(current_team, actor: current_user) do
+     │                    ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:208:20: KyozoWeb.WorkspaceController.delete_team/2
+
+     warning: Kyozo.Workspaces.get_team/2 is undefined or private. Did you mean:
+
+           * get_task/1
+           * get_task/2
+           * get_task/3
+           * get_task!/1
+           * get_task!/2
+
+     │
+ 225 │     case Kyozo.Workspaces.get_team(team_id, actor: current_user) do
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:225:27: KyozoWeb.WorkspaceController.set_current_team/2
+
+    warning: no route path for KyozoWeb.Router matches "/workspace"
+    │
+ 35 │     |> redirect(to: ~p"/workspace")
+    │                       ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:35: KyozoWeb.WorkspaceController.enter/2
+
+    warning: no route path for KyozoWeb.Router matches "/workspace"
+    │
+ 80 │         |> redirect(to: ~p"/workspace")
+    │                           ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:80: KyozoWeb.WorkspaceController.invite_user/2
+
+    warning: no route path for KyozoWeb.Router matches "/workspace"
+    │
+ 85 │         |> redirect(to: ~p"/workspace")
+    │                           ~
+    │
+    └─ lib/kyozo_web/controllers/workspace_controller.ex:85: KyozoWeb.WorkspaceController.invite_user/2
+
+     warning: no route path for KyozoWeb.Router matches "/workspace"
+     │
+ 100 │         |> redirect(to: ~p"/workspace")
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:100: KyozoWeb.WorkspaceController.change_role/2
+
+     warning: no route path for KyozoWeb.Router matches "/workspace"
+     │
+ 105 │         |> redirect(to: ~p"/workspace")
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:105: KyozoWeb.WorkspaceController.change_role/2
+
+     warning: no route path for KyozoWeb.Router matches "/workspace"
+     │
+ 117 │         |> redirect(to: ~p"/workspace")
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:117: KyozoWeb.WorkspaceController.cancel_invitation/2
+
+     warning: no route path for KyozoWeb.Router matches "/workspace"
+     │
+ 122 │         |> redirect(to: ~p"/workspace")
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:122: KyozoWeb.WorkspaceController.cancel_invitation/2
+
+     warning: no route path for KyozoWeb.Router matches "/workspace"
+     │
+ 172 │         |> redirect(to: ~p"/workspace")
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:172: KyozoWeb.WorkspaceController.remove_team_member/2
+
+     warning: no route path for KyozoWeb.Router matches "/workspace"
+     │
+ 177 │         |> redirect(to: ~p"/workspace")
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:177: KyozoWeb.WorkspaceController.remove_team_member/2
+
+     warning: no route path for KyozoWeb.Router matches "/workspace"
+     │
+ 200 │         |> redirect(to: ~p"/workspace")
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:200: KyozoWeb.WorkspaceController.leave_team/2
+
+     warning: no route path for KyozoWeb.Router matches "/workspace"
+     │
+ 217 │         |> redirect(to: ~p"/workspace")
+     │                           ~
+     │
+     └─ lib/kyozo_web/controllers/workspace_controller.ex:217: KyozoWeb.WorkspaceController.delete_team/2
+
+    warning: no route path for KyozoWeb.Router matches "/artists/#{notification.album.artist_id}/#album-#{notification.album_id}"
+    │
+ 44 │               navigate={~p"/artists/#{notification.album.artist_id}/#album-#{notification.album_id}"}
+    │               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/notifications_live.ex:44: KyozoWeb.NotificationsLive.render/1
+
+    warning: Kyozo.Accounts.get_user_by_id/1 is undefined or private. Did you mean:
+
+          * get_user_by_email/1
+          * get_user_by_email/2
+          * get_user_by_email/3
+          * get_user_by_email!/1
+          * get_user_by_email!/2
+
+    │
+ 69 │     case Kyozo.Accounts.get_user_by_id(id) do
+    │                         ~
+    │
+    └─ lib/kyozo/storage/actor_persister.ex:69:25: Kyozo.Storage.ActorPersister.lookup/1
+
+    warning: Kyozo.Accounts.get_api_key_by_id/1 is undefined or private
+    │
+ 77 │     case Kyozo.Accounts.get_api_key_by_id(id) do
+    │                         ~
+    │
+    └─ lib/kyozo/storage/actor_persister.ex:77:25: Kyozo.Storage.ActorPersister.lookup/1
+
+    warning: unused alias Workspace
+    │
+ 11 │   alias Kyozo.Workspaces.Workspace
+    │   ~
+    │
+    └─ lib/kyozo_web/live/workspace/show.ex:11:3
+
+    warning: unused alias Workspaces
+    │
+ 10 │   alias Kyozo.Workspaces
+    │   ~
+    │
+    └─ lib/kyozo_web/live/workspace/show.ex:10:3
+
+    warning: Kyozo.Workspaces.list_documents/1 is undefined or private. Did you mean:
+
+          * list_events/0
+          * list_events/1
+          * list_events/2
+          * list_events!/0
+          * list_events!/1
+
+    │
+ 21 │         documents = Kyozo.Workspaces.list_documents(workspace_id: workspace.id, actor: user)
+    │                                      ~
+    │
+    └─ lib/kyozo_web/live/workspace/show.ex:21:38: KyozoWeb.Live.Workspace.Show.mount/3
+
+    warning: Kyozo.Workspaces.delete_document/2 is undefined or private
+    │
+ 60 │     case Kyozo.Workspaces.delete_document(id, actor: socket.assigns.current_user) do
+    │                           ~
+    │
+    └─ lib/kyozo_web/live/workspace/show.ex:60:27: KyozoWeb.Live.Workspace.Show.handle_event/3
+
+    warning: variable "permissions" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 41 │     permissions = %{
+    │     ~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/tenant_auth.ex:41:5: KyozoWeb.TenantAuth.set_permissions/2
+
+    warning: unused import KyozoWeb.Serializers
+    │
+  6 │   import KyozoWeb.Serializers
+    │   ~
+    │
+    └─ lib/kyozo_web/tenant_auth.ex:6:3
+
+    warning: Kyozo.Workspace.get_team/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 12 │          {:ok, team} <- Workspace.get_team(team_id, actor: conn.assigns.current_user) do
+    │                                   ~
+    │
+    └─ lib/kyozo_web/tenant_auth.ex:12:35: KyozoWeb.TenantAuth.ensure_tenant/2
+
+    warning: Kyozo.Workspace.can_invite_user?/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 42 │       can_invite_user: Workspace.can_invite_user?(current_user, tenant: current_team),
+    │                                  ~
+    │
+    └─ lib/kyozo_web/tenant_auth.ex:42:34: KyozoWeb.TenantAuth.set_permissions/2
+
+    warning: Kyozo.Workspace.can_delete_team?/2 is undefined (module Kyozo.Workspace is not available or is yet to be defined)
+    │
+ 43 │       can_delete_team: Workspace.can_delete_team?(current_user, current_team)
+    │                                  ~
+    │
+    └─ lib/kyozo_web/tenant_auth.ex:43:34: KyozoWeb.TenantAuth.set_permissions/2
+
+    warning: unused alias Workspaces
+    │
+  5 │   alias Kyozo.Workspaces
+    │   ~
+    │
+    └─ lib/kyozo_web/live/document/feed.ex:5:3
+
+    warning: module attribute @impl was not set for function render/1 callback (specified in Phoenix.LiveView). This either means you forgot to add the "@impl true" annotation before the definition or that you are accidentally overriding this callback
+    │
+ 11 │   def render(assigns) do
+    │   ~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/document/feed.ex:11: KyozoWeb.Live.Document.Feed (module)
+
+    warning: Routes.document_path/2 is undefined (module Routes is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+    │
+ 34 │       %{label: "New Document", icon: "plus", path: Routes.document_path(socket, :new)}
+    │                                                           ~
+    │
+    └─ lib/kyozo_web/live/document/feed.ex:34:59: KyozoWeb.Live.Document.Feed.mount/3
+
+    warning: AsyncResult.loading/0 is undefined (module AsyncResult is not available or is yet to be defined). Did you mean:
+
+          * Phoenix.LiveView.AsyncResult.loading/0
+
+    │
+ 40 │      |> assign(@documents, AsyncResult.loading())
+    │                                        ~
+    │
+    └─ lib/kyozo_web/live/document/feed.ex:40:40: KyozoWeb.Live.Document.Feed.mount/3
+
+    warning: Kyozo.Workspaces.Document.list_documents/0 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+    │
+ 42 │      |> stream(:documents, Document.list_documents())
+    │                                     ~
+    │
+    └─ lib/kyozo_web/live/document/feed.ex:42:37: KyozoWeb.Live.Document.Feed.mount/3
+
+    warning: Kyozo.AI.LLM.create_chain/1 is undefined (module Kyozo.AI.LLM is not available or is yet to be defined)
+    │
+  5 │     LLM.create_chain("You are a helpful assistant.")
+    │         ~
+    │
+    └─ lib/kyozo/ai.ex:5:9: Kyozo.AI.example_query/0
+
+    warning: Kyozo.AI.LLM.query_text/2 is undefined (module Kyozo.AI.LLM is not available or is yet to be defined)
+    │
+  6 │     |> LLM.query_text("What is the capital of France?")
+    │            ~
+    │
+    └─ lib/kyozo/ai.ex:6:12: Kyozo.AI.example_query/0
+
+    warning: Kyozo.AI.LLM.parse_output/1 is undefined (module Kyozo.AI.LLM is not available or is yet to be defined)
+    │
+  7 │     |> LLM.parse_output()
+    │            ~
+    │
+    └─ lib/kyozo/ai.ex:7:12: Kyozo.AI.example_query/0
+
+    warning: Kyozo.AI.LLM.parse_output/1 is undefined (module Kyozo.AI.LLM is not available or is yet to be defined)
+    │
+ 13 │     |> LLM.parse_output()
+    │            ~
+    │
+    └─ lib/kyozo/ai.ex:13:12: Kyozo.AI.example_json_query/0
+
+    warning: Kyozo.AI.LLM.create_chain/2 is undefined (module Kyozo.AI.LLM is not available or is yet to be defined)
+    │
+ 11 │     LLM.create_chain("You are a helpful assistant. Respond in JSON format.", json_response: true)
+    │         ~
+    │
+    └─ lib/kyozo/ai.ex:11:9: Kyozo.AI.example_json_query/0
+
+    warning: Kyozo.AI.LLM.query_json/2 is undefined (module Kyozo.AI.LLM is not available or is yet to be defined)
+    │
+ 12 │     |> LLM.query_json("What is the capital of France?")
+    │            ~
+    │
+    └─ lib/kyozo/ai.ex:12:12: Kyozo.AI.example_json_query/0
+
+    warning: Kyozo.Storage.Upload.name/1 is undefined or private
+    │
+ 16 │     with path <- Path.join(opts[:prefix] || "/", Upload.name(upload)),
+    │                                                         ~
+    │
+    └─ lib/kyozo/storage/providers/disk.ex:16:57: Kyozo.Storage.Storages.Disk.put/2
+
+    warning: Kyozo.Storage.Upload.contents/1 is undefined or private
+    │
+ 21 │          {:ok, contents} <- Upload.contents(upload) do
+    │                                    ~
+    │
+    └─ lib/kyozo/storage/providers/disk.ex:21:36: Kyozo.Storage.Storages.Disk.put/2
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 507 │       def change(changeset, _opts, context) do
+     │                                    ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_storage.ex:507:36: Kyozo.Workspaces.FileStorage.Changes.CreateStorageResource.change/3
+
+     warning: variable "mime_type" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 510 │         mime_type = Ash.Changeset.get_argument(changeset, :mime_type)
+     │         ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_storage.ex:510:9: Kyozo.Workspaces.FileStorage.Changes.CreateStorageResource.change/3
+
+     warning: variable "updated_resource" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 549 │               {:ok, updated_resource} ->
+     │                     ~
+     │
+     └─ lib/kyozo/workspaces/file_storage.ex:549:21: Kyozo.Workspaces.FileStorage.Actions.UpdateFileContent.run/3
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 535 │       def run(_storage_entry, input, context) do
+     │                                      ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_storage.ex:535:38: Kyozo.Workspaces.FileStorage.Actions.UpdateFileContent.run/3
+
+     warning: variable "target_format" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 611 │       defp convert_content(content, target_format, _options) do
+     │                                     ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_storage.ex:611:37: Kyozo.Workspaces.FileStorage.Actions.ConvertFormat.convert_content/3
+
+     warning: variable "query" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 645 │         query = input.arguments.query
+     │         ~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_storage.ex:645:9: Kyozo.Workspaces.FileStorage.Actions.SearchContent.run/3
+
+     warning: variable "search_options" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 646 │         search_options = input.arguments.search_options
+     │         ~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_storage.ex:646:9: Kyozo.Workspaces.FileStorage.Actions.SearchContent.run/3
+
+    warning: Kyozo.Workspaces.list_user_teams/1 is undefined or private. Did you mean:
+
+          * list_tasks/0
+          * list_tasks/1
+          * list_tasks/2
+
+    │
+ 18 │       teams = case Kyozo.Workspaces.list_user_teams(actor: current_user) do
+    │                                     ~
+    │
+    └─ lib/kyozo_web/controllers/page_controller.ex:18:37: KyozoWeb.PageController.workspaces/2
+
+    warning: Kyozo.Workspaces.list_user_teams/1 is undefined or private. Did you mean:
+
+          * list_tasks/0
+          * list_tasks/1
+          * list_tasks/2
+
+    │
+ 38 │       teams = case Kyozo.Workspaces.list_user_teams(actor: current_user) do
+    │                                     ~
+    │
+    └─ lib/kyozo_web/controllers/page_controller.ex:38:37: KyozoWeb.PageController.teams/2
+
+    warning: Kyozo.Accounts.get_by/1 is undefined or private. Did you mean:
+
+          * get_user_by_email/1
+          * get_user_by_email/2
+          * get_user_by_email/3
+          * get_user_by_email!/1
+          * get_user_by_email!/2
+
+    │
+ 56 │       |> Enum.map(&Kyozo.Accounts.get_by(email: to_string(&1)))
+    │                                   ~
+    │
+    └─ lib/kyozo_web/controllers/page_controller.ex:56:35: KyozoWeb.PageController.maybe_put_development_users/1
+
+    warning: no route path for KyozoWeb.Router matches "/profile"
+    │
+  9 │       _ -> redirect(conn, to: ~p"/profile")
+    │                                 ~
+    │
+    └─ lib/kyozo_web/controllers/page_controller.ex:9: KyozoWeb.PageController.home/2
+
+    warning: variable "error" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 16 │       {:error, error} ->
+    │                ~
+    │
+    └─ lib/kyozo_web/controllers/user_registration_controller.ex:16:16: KyozoWeb.UserRegistrationController.create/2
+
+     warning: Kyozo.Workspaces.get_team/2 is undefined or private. Did you mean:
+
+           * get_task/1
+           * get_task/2
+           * get_task/3
+           * get_task!/1
+           * get_task!/2
+
+     │
+ 201 │       case Workspaces.get_team(team_id, actor: current_user) do
+     │                       ~
+     │
+     └─ lib/kyozo_web/plugs/tenant_auth.ex:201:23: KyozoWeb.Plugs.TenantAuth.load_team/2
+
+     warning: Kyozo.Workspaces.get_member/3 is undefined or private
+     │
+ 222 │       case Workspaces.get_member(user_id, team_id, actor: current_user, tenant: current_team) do
+     │                       ~
+     │
+     └─ lib/kyozo_web/plugs/tenant_auth.ex:222:23: KyozoWeb.Plugs.TenantAuth.get_user_membership/4
+
+    warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+    │
+  2 │   use KyozoWeb, :router
+    │   ~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/router.ex:2: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+     │
+ 138 │       post "/workspaces/:workspace_id/files/upload", FileController, :upload
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:138: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+     │
+ 139 │       post "/duplicate", FileController, :duplicate
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:139: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+     │
+ 140 │       get "/content", FileController, :content
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:140: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+     │
+ 141 │       patch "/content", FileController, :update_content
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:141: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+     │
+ 142 │       get "/versions", FileController, :versions
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:142: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+     │
+ 143 │       post "/render", FileController, :render_as
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:143: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+     │
+ 144 │       patch "/rename", FileController, :rename
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:144: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.API.FileController.init/1 is undefined (module KyozoWeb.API.FileController is not available or is yet to be defined)
+     │
+ 145 │       post "/view", FileController, :view
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:145: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.AccountLive.__live__/0 is undefined (module KyozoWeb.AccountLive is not available or is yet to be defined)
+     │
+ 171 │       live "/account", AccountLive
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:171: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.KyozoWeb.Live.Workspace.Index.__live__/0 is undefined (module KyozoWeb.KyozoWeb.Live.Workspace.Index is not available or is yet to be defined)
+     │
+ 180 │         live "/", KyozoWeb.Live.Workspace.Index, :index
+     │         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:180: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.KyozoWeb.Live.Workspace.Index.__live__/0 is undefined (module KyozoWeb.KyozoWeb.Live.Workspace.Index is not available or is yet to be defined)
+     │
+ 181 │         live "/new", KyozoWeb.Live.Workspace.Index, :new
+     │         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:181: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.KyozoWeb.Live.Workspace.Index.__live__/0 is undefined (module KyozoWeb.KyozoWeb.Live.Workspace.Index is not available or is yet to be defined)
+     │
+ 182 │         live "/:id", KyozoWeb.Live.Workspace.Index, :show
+     │         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:182: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.KyozoWeb.Live.Workspace.Index.__live__/0 is undefined (module KyozoWeb.KyozoWeb.Live.Workspace.Index is not available or is yet to be defined)
+     │
+ 183 │         live "/:id/dashboard", KyozoWeb.Live.Workspace.Index, :show
+     │         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:183: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.UserConfirmationController.init/1 is undefined (module KyozoWeb.UserConfirmationController is not available or is yet to be defined)
+     │
+ 230 │     get "/confirm-new-user/:token", UserConfirmationController, :edit
+     │     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:230: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.UserConfirmationController.init/1 is undefined (module KyozoWeb.UserConfirmationController is not available or is yet to be defined)
+     │
+ 231 │     put "/confirm-new-user/:token", UserConfirmationController, :update
+     │     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:231: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.UserConfirmationController.init/1 is undefined (module KyozoWeb.UserConfirmationController is not available or is yet to be defined)
+     │
+ 232 │     get "/confirm-new-user", UserConfirmationController, :new
+     │     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:232: KyozoWeb.Router.__checks__/0
+
+     warning: KyozoWeb.UserConfirmationController.init/1 is undefined (module KyozoWeb.UserConfirmationController is not available or is yet to be defined)
+     │
+ 233 │     post "/confirm-new-user", UserConfirmationController, :create
+     │     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/router.ex:233: KyozoWeb.Router.__checks__/0
+
+warning: Kyozo.JSONAPI.ContentTypeNegotiation.call/2 is undefined (module Kyozo.JSONAPI.ContentTypeNegotiation is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.ContentTypeNegotiation.call/2 is undefined (module Kyozo.JSONAPI.ContentTypeNegotiation is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.ContentTypeNegotiation.init/1 is undefined (module Kyozo.JSONAPI.ContentTypeNegotiation is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.ContentTypeNegotiation.init/1 is undefined (module Kyozo.JSONAPI.ContentTypeNegotiation is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.Deserializer.call/2 is undefined (module Kyozo.JSONAPI.Deserializer is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.Deserializer.call/2 is undefined (module Kyozo.JSONAPI.Deserializer is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.Deserializer.init/1 is undefined (module Kyozo.JSONAPI.Deserializer is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.Deserializer.init/1 is undefined (module Kyozo.JSONAPI.Deserializer is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.FormatRequired.call/2 is undefined (module Kyozo.JSONAPI.FormatRequired is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.FormatRequired.call/2 is undefined (module Kyozo.JSONAPI.FormatRequired is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.FormatRequired.init/1 is undefined (module Kyozo.JSONAPI.FormatRequired is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.FormatRequired.init/1 is undefined (module Kyozo.JSONAPI.FormatRequired is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.ResponseContentType.call/2 is undefined (module Kyozo.JSONAPI.ResponseContentType is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.ResponseContentType.call/2 is undefined (module Kyozo.JSONAPI.ResponseContentType is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.ResponseContentType.init/1 is undefined (module Kyozo.JSONAPI.ResponseContentType is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.ResponseContentType.init/1 is undefined (module Kyozo.JSONAPI.ResponseContentType is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.UnderscoreParameters.call/2 is undefined (module Kyozo.JSONAPI.UnderscoreParameters is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.UnderscoreParameters.call/2 is undefined (module Kyozo.JSONAPI.UnderscoreParameters is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: Kyozo.JSONAPI.UnderscoreParameters.init/1 is undefined (module Kyozo.JSONAPI.UnderscoreParameters is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api/2
+
+warning: Kyozo.JSONAPI.UnderscoreParameters.init/1 is undefined (module Kyozo.JSONAPI.UnderscoreParameters is not available or is yet to be defined)
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: KyozoWeb.Plugs.TenantAuth.call/2 is undefined or private
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+warning: KyozoWeb.Plugs.TenantAuth.init/1 is undefined or private
+└─ deps/phoenix/lib/phoenix/router.ex: KyozoWeb.Router.api_authenticated/2
+
+     warning: variable "opts" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 276 │   def cancel_scheduled_operations(%StorageResource{} = storage_resource, opts \\ []) do
+     │                                                                          ~~~~
+     │
+     └─ lib/kyozo/storage.ex:276:74: Kyozo.Storage.cancel_scheduled_operations/2
+
+     warning: redefining @doc attribute previously set at line 614
+     │
+ 639 │   @doc """
+     │   ~~~~~~~~
+     │
+     └─ lib/kyozo/storage.ex:639: Kyozo.Storage (module)
+
+    warning: Kyozo.Storage.StorageResource.store_content/1 is undefined or private
+    │
+ 82 │     StorageResource.store_content(%{
+    │                     ~
+    │
+    └─ lib/kyozo/storage.ex:82:21: Kyozo.Storage.store_content/3
+
+    warning: Kyozo.Storage.StorageResource.retrieve_content/1 is undefined or private
+    │
+ 94 │     StorageResource.retrieve_content(storage_resource)
+    │                     ~
+    │
+    └─ lib/kyozo/storage.ex:94:21: Kyozo.Storage.retrieve_content/1
+
+     warning: Kyozo.Storage.StorageResource.create_version/2 is undefined or private
+     │
+ 104 │     StorageResource.create_version(storage_resource, %{
+     │                     ~
+     │
+     └─ lib/kyozo/storage.ex:104:21: Kyozo.Storage.create_version/3
+
+     warning: Kyozo.Storage.StorageResource.delete_content/1 is undefined or private
+     │
+ 115 │     StorageResource.delete_content(storage_resource)
+     │                     ~
+     │
+     └─ lib/kyozo/storage.ex:115:21: Kyozo.Storage.delete_content/1
+
+     warning: Kyozo.Storage.StorageResource.create/2 is undefined or private
+     │
+ 126 │     StorageResource.create(%{
+     │                     ~
+     │
+     └─ lib/kyozo/storage.ex:126:21: Kyozo.Storage.store_upload/2
+
+     warning: Kyozo.Storage.Locator.generate/0 is undefined or private
+     │
+ 670 │   def generate_locator, do: Locator.generate()
+     │                                     ~
+     │
+     └─ lib/kyozo/storage.ex:670:37: Kyozo.Storage.generate_locator/0
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 482 │       def change(changeset, _opts, context) do
+     │                                    ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/image_storage.ex:482:36: Kyozo.Workspaces.ImageStorage.Changes.GenerateThumbnails.change/3
+
+     warning: variable "image_storage" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 505 │       def run(image_storage, input, _context) do
+     │               ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/image_storage.ex:505:15: Kyozo.Workspaces.ImageStorage.Actions.GenerateThumbnails.run/3
+
+     warning: the following clause will never match:
+
+         {:error, _}
+
+     because it attempts to match on the result of:
+
+         optimize_image(content, mime_type, image_metadata)
+
+     which has type:
+
+         dynamic({:ok, term()})
+
+     typing violation found at:
+     │
+ 181 │           {:error, _} ->
+     │           ~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/image_storage.ex:181: Kyozo.Workspaces.ImageStorage.transform_content/2
+
+     warning: the following clause will never match:
+
+         {:error, reason}
+
+     because it attempts to match on the result of:
+
+         extract_image_metadata(content, mime_type)
+
+     which has type:
+
+         dynamic(
+           {:ok,
+            %{
+              bit_depth: integer(),
+              color_space: binary(),
+              exif: empty_map(),
+              file_size: integer(),
+              format: term(),
+              has_transparency: false,
+              height: integer(),
+              width: integer()
+            }}
+         )
+
+     typing violation found at:
+     │
+ 186 │       {:error, reason} ->
+     │       ~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/image_storage.ex:186: Kyozo.Workspaces.ImageStorage.transform_content/2
+
+    warning: unused alias Task
+    │
+  5 │   alias Kyozo.Workspaces.Task
+    │   ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_json.ex:5:3
+
+    warning: KyozoWeb.JSONAPI.Schemas.Error.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.Error is not available or is yet to be defined)
+    │
+ 39 │           "Error" => JSONAPI.Schemas.Error.schema(),
+    │                                            ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:39:44: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.Document.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.Document is not available or is yet to be defined)
+    │
+ 40 │           "Document" => JSONAPI.Schemas.Document.schema(),
+    │                                                  ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:40:50: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.LinksObject.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.LinksObject is not available or is yet to be defined)
+    │
+ 41 │           "LinksObject" => JSONAPI.Schemas.LinksObject.schema(),
+    │                                                        ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:41:56: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.ResourceObject.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.ResourceObject is not available or is yet to be defined)
+    │
+ 42 │           "ResourceObject" => JSONAPI.Schemas.ResourceObject.schema(),
+    │                                                              ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:42:62: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.Timestamp.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.Timestamp is not available or is yet to be defined)
+    │
+ 43 │           "Timestamp" => JSONAPI.Schemas.Timestamp.schema(),
+    │                                                    ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:43:52: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.Meta.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.Meta is not available or is yet to be defined)
+    │
+ 44 │           "Meta" => JSONAPI.Schemas.Meta.schema(),
+    │                                          ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:44:42: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.ResourceLinkage.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.ResourceLinkage is not available or is yet to be defined)
+    │
+ 45 │           "ResourceLinkage" => JSONAPI.Schemas.ResourceLinkage.schema(),
+    │                                                                ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:45:64: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.ResourceIdentifierObject.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.ResourceIdentifierObject is not available or is yet to be defined)
+    │
+ 47 │             JSONAPI.Schemas.ResourceIdentifierObject.schema(),
+    │                                                      ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:47:54: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.RelationshipObject.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.RelationshipObject is not available or is yet to be defined)
+    │
+ 48 │           "RelationshipObject" => JSONAPI.Schemas.RelationshipObject.schema(),
+    │                                                                      ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:48:70: KyozoWeb.APISpec.spec/0
+
+    warning: KyozoWeb.JSONAPI.Schemas.Link.schema/0 is undefined (module KyozoWeb.JSONAPI.Schemas.Link is not available or is yet to be defined)
+    │
+ 49 │           "Link" => JSONAPI.Schemas.Link.schema()
+    │                                          ~
+    │
+    └─ lib/kyozo_web/api_spec.ex:49:42: KyozoWeb.APISpec.spec/0
+
+    warning: unknown key .created_at in expression:
+
+        team.created_at
+
+    the given type does not have the given key:
+
+        dynamic(%Kyozo.Accounts.Team{
+          __lateral_join_source__: term(),
+          __meta__: term(),
+          __metadata__: term(),
+          __order__: term(),
+          aggregates: term(),
+          calculations: term(),
+          description: term(),
+          domain: term(),
+          id: term(),
+          inserted_at: term(),
+          invitations: term(),
+          name: term(),
+          owner: term(),
+          owner_user_id: term(),
+          updated_at: term(),
+          user_teams: term(),
+          users: term(),
+          users_join_assoc: term()
+        })
+
+    where "team" was given the type:
+
+        # type: dynamic(%Kyozo.Accounts.Team{})
+        # from: lib/kyozo_web/controllers/api/teams_json.ex:56:21
+        %Kyozo.Accounts.Team{} = team
+
+    typing violation found at:
+    │
+ 60 │       created_at: team.created_at,
+    │                        ~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/controllers/api/teams_json.ex:60:24: KyozoWeb.API.TeamsJSON.data/1
+
+    warning: unknown key .created_at in expression:
+
+        member.created_at
+
+    the given type does not have the given key:
+
+        dynamic(%Kyozo.Accounts.UserTeam{
+          __lateral_join_source__: term(),
+          __meta__: term(),
+          __metadata__: term(),
+          __order__: term(),
+          aggregates: term(),
+          calculations: term(),
+          can_manage: term(),
+          id: term(),
+          inserted_at: term(),
+          role: term(),
+          team: term(),
+          team_id: term(),
+          updated_at: term(),
+          user: term(),
+          user_id: term()
+        })
+
+    where "member" was given the type:
+
+        # type: dynamic(%Kyozo.Accounts.UserTeam{})
+        # from: lib/kyozo_web/controllers/api/teams_json.ex:69:32
+        %Kyozo.Accounts.UserTeam{} = member
+
+    typing violation found at:
+    │
+ 75 │       created_at: member.created_at,
+    │                          ~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/controllers/api/teams_json.ex:75:26: KyozoWeb.API.TeamsJSON.member_data/1
+
+    warning: unknown key .invited_email in expression:
+
+        invitation.invited_email
+
+    the given type does not have the given key:
+
+        dynamic(%Kyozo.Accounts.Invitation{
+          __lateral_join_source__: term(),
+          __meta__: term(),
+          __metadata__: term(),
+          __order__: term(),
+          aggregates: term(),
+          calculations: term(),
+          id: term(),
+          invited_user: term(),
+          invited_user_id: term(),
+          inviter_user: term(),
+          inviter_user_id: term(),
+          team: term(),
+          team_id: term()
+        })
+
+    where "invitation" was given the type:
+
+        # type: dynamic(%Kyozo.Accounts.Invitation{})
+        # from: lib/kyozo_web/controllers/api/teams_json.ex:81:38
+        %Kyozo.Accounts.Invitation{} = invitation
+
+    typing violation found at:
+    │
+ 86 │       invited_email: invitation.invited_email,
+    │                                 ~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/controllers/api/teams_json.ex:86:33: KyozoWeb.API.TeamsJSON.invitation_data/1
+
+     warning: unknown key .document_count in expression:
+
+         workspace.document_count
+
+     the given type does not have the given key:
+
+         dynamic(%Kyozo.Workspaces.Workspace{
+           __lateral_join_source__: term(),
+           __meta__: term(),
+           __metadata__: term(),
+           __order__: term(),
+           aggregates: term(),
+           archived_at: term(),
+           author: term(),
+           calculations: term(),
+           can_destroy: term(),
+           can_update: term(),
+           created_at: term(),
+           created_by: term(),
+           created_by_id: term(),
+           created_by_user: term(),
+           deleted_at: term(),
+           description: term(),
+           file_count: term(),
+           files: term(),
+           full_storage_path: term(),
+           git_branch: term(),
+           git_repository_url: term(),
+           id: term(),
+           is_active: term(),
+           is_archived: term(),
+           is_deleted: term(),
+           last_activity: term(),
+           load_events: term(),
+           name: term(),
+           notebook_count: term(),
+           notebooks: term(),
+           settings: term(),
+           status: term(),
+           storage_backend: term(),
+           storage_info: term(),
+           storage_metadata: term(),
+           storage_path: term(),
+           tags: term(),
+           team: term(),
+           team_id: term(),
+           total_files: term(),
+           total_size: term(),
+           updated_at: term()
+         })
+
+     where "workspace" was given the type:
+
+         # type: dynamic(%Kyozo.Workspaces.Workspace{})
+         # from: lib/kyozo_web/controllers/api/teams_json.ex:97:36
+         %Kyozo.Workspaces.Workspace{} = workspace
+
+     typing violation found at:
+     │
+ 108 │       document_count: workspace.document_count || 0,
+     │                                 ~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/controllers/api/teams_json.ex:108:33: KyozoWeb.API.TeamsJSON.workspace_data/1
+
+warning: 3..-1 has a default step of -1, please write 3..-1//-1 instead
+  lib/kyozo/projects/services/project_loader.ex:258: Kyozo.Projects.Services.ProjectLoader.parse_markdown_blocks/2
+
+     warning: def determine_backend/2 has multiple clauses and also declares default values. In such cases, the default values should be defined in a header. Instead of:
+
+         def foo(:first_clause, b \\ :default) do ... end
+         def foo(:second_clause, b) do ... end
+
+     one should write:
+
+         def foo(a, b \\ :default)
+         def foo(:first_clause, b) do ... end
+         def foo(:second_clause, b) do ... end
+
+     │
+ 119 │   def determine_backend(%Notebook{}, _options), do: :git
+     │       ~
+     │
+     └─ lib/kyozo/workspaces/storage.ex:119:7
+
+     warning: redefining @doc attribute previously set at line 135.
+
+     Please remove the duplicate docs. If instead you want to override a previously defined @doc, attach the @doc attribute to a function head (the function signature not followed by any do-block). For example:
+
+         @doc """
+         new docs
+         """
+         def build_storage_path(...)
+
+     │
+ 144 │   @doc """
+     │   ~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/storage.ex:144: Kyozo.Workspaces.Storage.build_storage_path/2
+
+     warning: Kyozo.Workspaces.read_one/1 is deprecated. Use `Ash.read_one/2` instead
+     │
+ 240 │       case Kyozo.Workspaces.read_one(query) do
+     │                             ~
+     │
+     └─ lib/kyozo/workspaces/workspace/validations.ex:240:29: Kyozo.Workspaces.Workspace.Validations.UniqueNamePerTeam.check_name_uniqueness/3
+
+     warning: Kyozo.Workspaces.is_member?/2 is undefined or private
+     │
+ 275 │       case Kyozo.Workspaces.is_member?(actor.id, team_id) do
+     │                             ~
+     │
+     └─ lib/kyozo/workspaces/workspace/validations.ex:275:29: Kyozo.Workspaces.Workspace.Validations.ValidateWorkspaceAccess.check_team_membership/2
+
+     warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+     │
+ 330 │       |> Kyozo.Workspaces.read!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/validations.ex:330:27: Kyozo.Workspaces.Workspace.Validations.ValidateStorageQuota.get_team_storage_usage/1
+
+    warning: undefined attribute "navigate" for component KyozoWeb.Components.Button.button/1
+    │
+  7 │     <.button navigate={~p"/accounts/groups"}>{gettext("Back to access groups")}</.button>
+    │     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/group_permissions_live.ex:7: (file)
+
+     warning: variable "content" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 412 │   defp extract_image_metadata(content, mime_type) do
+     │                               ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:412:31: Kyozo.Workspaces.FileMedia.extract_image_metadata/2
+
+     warning: variable "mime_type" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 412 │   defp extract_image_metadata(content, mime_type) do
+     │                                        ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:412:40: Kyozo.Workspaces.FileMedia.extract_image_metadata/2
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 438 │       def change(changeset, _opts, context) do
+     │                                    ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:438:36: Kyozo.Workspaces.FileMedia.Changes.CreateFromFile.change/3
+
+     warning: variable "changeset" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 474 │         |> Ash.Changeset.after_action(fn changeset, file_media ->
+     │                                          ~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:474:42: Kyozo.Workspaces.FileMedia.Changes.CreateMediaResource.change/3
+
+     warning: variable "file_media" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 489 │       defp create_media_from_file_media(file_media) do
+     │                                         ~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:489:41: Kyozo.Workspaces.FileMedia.Changes.CreateMediaResource.create_media_from_file_media/1
+
+     warning: variable "format" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 502 │         format = Ash.Changeset.get_argument(changeset, :format)
+     │         ~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:502:9: Kyozo.Workspaces.FileMedia.Changes.GenerateThumbnail.change/3
+
+     warning: variable "height" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 501 │         height = Ash.Changeset.get_argument(changeset, :height)
+     │         ~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:501:9: Kyozo.Workspaces.FileMedia.Changes.GenerateThumbnail.change/3
+
+     warning: variable "width" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 500 │         width = Ash.Changeset.get_argument(changeset, :width)
+     │         ~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:500:9: Kyozo.Workspaces.FileMedia.Changes.GenerateThumbnail.change/3
+
+     warning: variable "file_media" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 534 │       def run(file_media, input, _context) do
+     │               ~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:534:15: Kyozo.Workspaces.FileMedia.Actions.ExtractColors.run/3
+
+     warning: variable "max_colors" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 535 │         max_colors = input.arguments.max_colors
+     │         ~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:535:9: Kyozo.Workspaces.FileMedia.Actions.ExtractColors.run/3
+
+     warning: variable "progressive" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 551 │         progressive = input.arguments.progressive
+     │         ~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:551:9: Kyozo.Workspaces.FileMedia.Actions.ConvertFormat.run/3
+
+     warning: variable "quality" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 550 │         quality = input.arguments.quality
+     │         ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:550:9: Kyozo.Workspaces.FileMedia.Actions.ConvertFormat.run/3
+
+     warning: variable "target_format" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 549 │         target_format = input.arguments.target_format
+     │         ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:549:9: Kyozo.Workspaces.FileMedia.Actions.ConvertFormat.run/3
+
+     warning: variable "quality" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 564 │         quality = input.arguments.quality
+     │         ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:564:9: Kyozo.Workspaces.FileMedia.Actions.OptimizeImage.run/3
+
+     warning: variable "target_size" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 563 │         target_size = input.arguments.target_size
+     │         ~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:563:9: Kyozo.Workspaces.FileMedia.Actions.OptimizeImage.run/3
+
+     warning: variable "changeset" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 578 │       def validate(changeset, _opts, _context) do
+     │                    ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:578:20: Kyozo.Workspaces.FileMedia.Validations.ValidateImageFormat.validate/3
+
+     warning: the following clause will never match:
+
+         {:error, reason}
+
+     because it attempts to match on the result of:
+
+         extract_image_metadata(content, mime_type)
+
+     which has type:
+
+         dynamic(
+           {:ok,
+            %{
+              bit_depth: integer(),
+              color_space: binary(),
+              exif_data: empty_map(),
+              has_transparency: false,
+              height: integer(),
+              width: integer()
+            }}
+         )
+
+     typing violation found at:
+     │
+ 180 │       {:error, reason} ->
+     │       ~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:180: Kyozo.Workspaces.FileMedia.transform_content/2
+
+     warning: the following clause will never match:
+
+         {:error, reason}
+
+     because it attempts to match on the result of:
+
+         create_media_from_file_media(file_media)
+
+     which has type:
+
+         dynamic({:ok, %{id: term()}})
+
+     typing violation found at:
+     │
+ 481 │             {:error, reason} ->
+     │             ~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_media.ex:481: Kyozo.Workspaces.FileMedia.Changes.CreateMediaResource.change/3
+
+    warning: unused alias Events
+    │
+ 21 │   alias Kyozo.Workspaces.Events
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/workspace.ex:21:3
+
+    warning: unused alias Mailer
+    │
+ 10 │   alias Kyozo.Mailer
+    │   ~
+    │
+    └─ lib/kyozo/accounts/user/senders/send_magic_link_email.ex:10:3
+
+    warning: unused import Swoosh.Email
+    │
+  9 │   import Swoosh.Email
+    │   ~
+    │
+    └─ lib/kyozo/accounts/user/senders/send_magic_link_email.ex:9:3
+
+    warning: no route path for KyozoWeb.Router matches ~p"/auth/user/magic_link/?token=#{token}"
+    │
+ 18 │           url(~p"/auth/user/magic_link/?token=#{token}")
+    │                 ~
+    │
+    └─ lib/kyozo/accounts/user/senders/send_magic_link_email.ex:18: Kyozo.Accounts.User.Senders.SendMagicLinkEmail.send/3
+
+     warning: unknown key .task_type in expression:
+
+         task.task_type
+
+     the given type does not have the given key:
+
+         dynamic(%Kyozo.Workspaces.Task{
+           __lateral_join_source__: term(),
+           __meta__: term(),
+           __metadata__: term(),
+           __order__: term(),
+           aggregates: term(),
+           calculations: term(),
+           code: term(),
+           created_at: term(),
+           dependencies: term(),
+           description: term(),
+           environment_variables: term(),
+           estimated_complexity: term(),
+           execution_count: term(),
+           execution_time_ms: term(),
+           full_path: term(),
+           has_been_executed: term(),
+           id: term(),
+           is_executable: term(),
+           is_name_generated: term(),
+           language: term(),
+           last_executed_at: term(),
+           last_execution_error: term(),
+           last_execution_output: term(),
+           last_execution_status: term(),
+           last_execution_successful: term(),
+           line_count: term(),
+           line_end: term(),
+           line_start: term(),
+           load_events: term(),
+           metadata: term(),
+           name: term(),
+           notebook: term(),
+           notebook_id: term(),
+           order_index: term(),
+           requires_input: term(),
+           timeout_seconds: term(),
+           total_executions: term(),
+           updated_at: term(),
+           working_directory: term(),
+           workspace: term(),
+           workspace_id: term()
+         })
+
+     where "task" was given the type:
+
+         # type: dynamic(%Kyozo.Workspaces.Task{})
+         # from: lib/kyozo_web/controllers/api/notebooks_json.ex:99:26
+         %Kyozo.Workspaces.Task{} = task
+
+     typing violation found at:
+     │
+ 102 │       task_type: task.task_type,
+     │                       ~~~~~~~~~
+     │
+     └─ lib/kyozo_web/controllers/api/notebooks_json.ex:102:23: KyozoWeb.API.NotebooksJSON.task_data/1
+
+     warning: variable "file_path" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 127 │       file_path = Ash.Changeset.get_attribute(changeset, :file_path)
+     │       ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:127:7: Kyozo.Workspaces.File.Changes.CreateFileStorage.build_storage_options/2
+
+     warning: variable "changeset" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 252 │         |> Ash.Changeset.after_transaction(fn changeset, {:ok, deleted_record} ->
+     │                                               ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:252:47: Kyozo.Workspaces.File.Changes.DeleteFileStorage.change/3
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 292 │     def change(changeset, _opts, context) do
+     │                                  ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:292:34: Kyozo.Workspaces.File.Changes.RenameFile.change/3
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 577 │     def run(input, _opts, context) do
+     │                           ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:577:27: Kyozo.Workspaces.File.Changes.RetrieveContent.run/3
+
+     warning: variable "document" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 578 │       document = input.resource
+     │       ~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:578:7: Kyozo.Workspaces.File.Changes.RetrieveContent.run/3
+
+     warning: variable "file" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 601 │       file = input.resource
+     │       ~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:601:7: Kyozo.Workspaces.File.Changes.ListFileVersions.run/3
+
+     warning: variable "file" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 622 │       file = input.resource
+     │       ~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:622:7: Kyozo.Workspaces.File.Changes.CreateFileVersion.run/3
+
+     warning: variable "file" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 654 │       file = input.resource
+     │       ~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:654:7: Kyozo.Workspaces.File.Changes.RenderFile.run/3
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 716 │     def change(changeset, _opts, context) do
+     │                                  ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:716:34: Kyozo.Workspaces.File.Changes.CreatePrimaryStorage.change/3
+
+     warning: function get_user_id/1 is unused
+     │
+ 817 │     defp get_user_id(%{actor: %{id: id}}), do: id
+     │          ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:817:10: Kyozo.Workspaces.File.Changes.CreatePrimaryStorage (module)
+
+     warning: function determine_storage_backend/1 is unused
+     │
+ 806 │     defp determine_storage_backend(%{"content" => content, "filename" => filename}) do
+     │          ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:806:10: Kyozo.Workspaces.File.Changes.CreatePrimaryStorage (module)
+
+     warning: function build_storage_options/2 is unused
+     │
+ 760 │     defp build_storage_options(changeset, context) do
+     │          ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:760:10: Kyozo.Workspaces.File.Changes.CreatePrimaryStorage (module)
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 828 │     def change(changeset, _opts, context) do
+     │                                  ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:828:34: Kyozo.Workspaces.File.Changes.UpdatePrimaryStorage.change/3
+
+     warning: variable "result" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 890 │         {:ok, result} -> {:ok, storage_entry}
+     │               ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:890:15: Kyozo.Workspaces.File.Changes.UpdatePrimaryStorage.update_storage_entry_content/4
+
+     warning: function update_storage_entry_content/4 is unused
+     │
+ 881 │     defp update_storage_entry_content(storage_entry, content, commit_message, _context) do
+     │          ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:881:10: Kyozo.Workspaces.File.Changes.UpdatePrimaryStorage (module)
+
+     warning: variable "changeset" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 915 │       |> Ash.Changeset.after_action(fn changeset, result, _context ->
+     │                                        ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:915:40: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.change/3
+
+     warning: Ash.Changeset.get_data/1 is undefined or private. Did you mean:
+
+           * get_data/2
+
+     │
+ 203 │       data = Ash.Changeset.get_data(changeset)
+     │                            ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:203:28: Kyozo.Workspaces.File.Changes.UpdateFileStorage.build_storage_options/2
+
+     warning: Ash.Changeset.get_data/1 is undefined or private. Did you mean:
+
+           * get_data/2
+
+     │
+ 217 │       data = Ash.Changeset.get_data(changeset)
+     │                            ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:217:28: Kyozo.Workspaces.File.Changes.UpdateFileStorage.update_stored_file/3
+
+     warning: Ash.Changeset.get_data/1 is undefined or private. Did you mean:
+
+           * get_data/2
+
+     │
+ 317 │       data = Ash.Changeset.get_data(changeset)
+     │                            ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:317:28: Kyozo.Workspaces.File.Changes.RenameFile.build_new_file_path/2
+
+     warning: Ash.Changeset.get_data/1 is undefined or private. Did you mean:
+
+           * get_data/2
+
+     │
+ 323 │       data = Ash.Changeset.get_data(changeset)
+     │                            ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:323:28: Kyozo.Workspaces.File.Changes.RenameFile.validate_new_path/2
+
+     warning: Ash.Changeset.get_data/1 is undefined or private. Did you mean:
+
+           * get_data/2
+
+     │
+ 414 │         data = Ash.Changeset.get_data(changeset)
+     │                              ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:414:30: Kyozo.Workspaces.File.Changes.UpdateViewCount.change/3
+
+     warning: Kyozo.Workspaces.Events.emit_file_event/4 is undefined or private
+     │
+ 465 │       Events.emit_file_event(
+     │              ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:465:14: Kyozo.Workspaces.File.Changes.EmitFileEvent.emit_event/4
+
+     warning: Kyozo.Workspaces.Events.emit_file_event/4 is undefined or private
+     │
+ 484 │       Events.emit_file_event(
+     │              ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:484:14: Kyozo.Workspaces.File.Changes.EmitFileEvent.emit_event/4
+
+     warning: Kyozo.Workspaces.Events.emit_file_event/4 is undefined or private
+     │
+ 498 │       Events.emit_file_event(
+     │              ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:498:14: Kyozo.Workspaces.File.Changes.EmitFileEvent.emit_event/4
+
+     warning: Kyozo.Workspaces.Events.emit_file_event/4 is undefined or private
+     │
+ 518 │       Events.emit_file_event(
+     │              ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:518:14: Kyozo.Workspaces.File.Changes.EmitFileEvent.emit_event/4
+
+     warning: Kyozo.Workspaces.Events.emit_file_event/4 is undefined or private
+     │
+ 531 │       Events.emit_file_event(
+     │              ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:531:14: Kyozo.Workspaces.File.Changes.EmitFileEvent.emit_event/4
+
+     warning: Ash.Changeset.get_data/1 is undefined or private. Did you mean:
+
+           * get_data/2
+
+     │
+ 544 │       case Ash.Changeset.get_data(changeset) do
+     │                          ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:544:26: Kyozo.Workspaces.File.Changes.EmitFileEvent.get_previous_value/3
+
+     warning: Ash.update/4 is undefined or private. Did you mean:
+
+           * update/1
+           * update/2
+           * update/3
+
+     │
+ 566 │       case Ash.update(document, :update_metadata, updates, actor: context.actor) do
+     │                ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:566:16: Kyozo.Workspaces.File.Changes.RecordFileView.run/3
+
+     warning: Ash.update!/4 is undefined or private. Did you mean:
+
+           * update!/1
+           * update!/2
+           * update!/3
+
+     │
+ 670 │         Ash.update!(input, :update_metadata, %{render_cache: new_cache}, actor: context.actor)
+     │             ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:670:13: Kyozo.Workspaces.File.Changes.RenderFile.run/3
+
+      warning: Ash.Changeset.get_context/2 is undefined or private. Did you mean:
+
+            * put_context/3
+            * set_context/2
+
+      │
+ 1010 │         content = Ash.Changeset.get_context(changeset, :storage_content)
+      │                                 ~
+      │
+      └─ lib/kyozo/workspaces/file/changes.ex:1010:33: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.CreateSpecializedResource.create_intermediary_resource/2
+
+      warning: Kyozo.Workspaces.FileMedia.create_from_file/1 is undefined or private
+      │
+ 1014 │           intermediary_module.create_from_file(%{
+      │                               ~
+      │
+      └─ lib/kyozo/workspaces/file/changes.ex:1014:31: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.CreateSpecializedResource.create_intermediary_resource/2
+
+      warning: Kyozo.Workspaces.FileNotebook.create_from_file/1 is undefined or private
+      │
+ 1014 │           intermediary_module.create_from_file(%{
+      │                               ~
+      │
+      └─ lib/kyozo/workspaces/file/changes.ex:1014:31: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.CreateSpecializedResource.create_intermediary_resource/2
+
+      warning: nil.create_from_file/1 is undefined (module nil is not available or is yet to be defined)
+      │
+ 1014 │           intermediary_module.create_from_file(%{
+      │                               ~
+      │
+      └─ lib/kyozo/workspaces/file/changes.ex:1014:31: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.CreateSpecializedResource.create_intermediary_resource/2
+
+     warning: Kyozo.Storage.StorageResource.upload_new_version/3 is undefined or private
+     │
+ 872 │       case Kyozo.Storage.StorageResource.upload_new_version(storage.id, %{
+     │                                          ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:872:42: Kyozo.Workspaces.File.Changes.UpdatePrimaryStorage.update_storage_content/3
+
+      warning: Kyozo.Workspaces.FileMedia.create_from_file/1 is undefined or private
+      │
+ 1056 │               Kyozo.Workspaces.FileMedia.create_from_file(%{
+      │                                          ~
+      │
+      └─ lib/kyozo/workspaces/file/changes.ex:1056:42: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.ResolveToMedia.create_or_find_media_resource/1
+
+      warning: Kyozo.Workspaces.FileNotebook.create_from_file/1 is undefined or private
+      │
+ 1116 │               Kyozo.Workspaces.FileNotebook.create_from_file(%{
+      │                                             ~
+      │
+      └─ lib/kyozo/workspaces/file/changes.ex:1116:45: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.ResolveToNotebook.create_or_find_notebook_resource/1
+
+     warning: Kyozo.Workspaces.update!/1 is deprecated. Use `Ash.update!/2` instead
+     │
+ 972 │       |> Kyozo.Workspaces.update!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:972:27: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.perform_sync/2
+
+     warning: Kyozo.Storage.update!/1 is deprecated. Use `Ash.update!/2` instead
+     │
+ 979 │         |> Kyozo.Storage.update!()
+     │                          ~
+     │
+     └─ lib/kyozo/workspaces/file/changes.ex:979:26: Kyozo.Workspaces.File.Changes.SyncWithStorageMetadata.perform_sync/2
+
+     warning: function format_file_size/1 is unused
+     │
+ 431 │     defp format_file_size(size) when size < 1024, do: "#{size} B"
+     │          ~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:431:10: Kyozo.Storage.AbstractStorage.CommonCalculations (module)
+
+     warning: function categorize_media_type/1 is unused
+     │
+ 436 │     defp categorize_media_type(mime_type) do
+     │          ~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:436:10: Kyozo.Storage.AbstractStorage.CommonCalculations (module)
+
+     warning: function can_preview?/1 is unused
+     │
+ 447 │     defp can_preview?(mime_type) do
+     │          ~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:447:10: Kyozo.Storage.AbstractStorage.CommonCalculations (module)
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 519 │       def change(changeset, opts, context) do
+     │                                   ~~~~~~~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:519:35: Kyozo.Storage.AbstractStorage.Changes.ProcessContent.change/3
+
+     warning: variable "backends" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 573 │         backends = Keyword.get(opts, :backends, [:disk])
+     │         ~~~~~~~~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:573:9: Kyozo.Storage.AbstractStorage.Changes.CreateStorageResource.change/3
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 572 │       def change(changeset, opts, context) do
+     │                                   ~~~~~~~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:572:35: Kyozo.Storage.AbstractStorage.Changes.CreateStorageResource.change/3
+
+     warning: variable "media_type" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 624 │         media_type = Keyword.get(opts, :media_type, :generic)
+     │         ~~~~~~~~~~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:624:9: Kyozo.Storage.AbstractStorage.Changes.ProcessUpload.change/3
+
+     warning: variable "media_type" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 644 │         media_type = Keyword.get(opts, :media_type, :generic)
+     │         ~~~~~~~~~~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:644:9: Kyozo.Storage.AbstractStorage.Changes.CreateFromLocator.change/3
+
+     warning: variable "changeset" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 663 │         |> Ash.Changeset.after_action(fn changeset, result ->
+     │                                          ~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:663:42: Kyozo.Storage.AbstractStorage.Changes.ClearOtherPrimary.change/3
+
+     warning: variable "relationship_type" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 684 │         relationship_type = input.arguments.relationship_type || :backup
+     │         ~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:684:9: Kyozo.Storage.AbstractStorage.Actions.DuplicateToBackend.run/3
+
+     warning: variable "target_backend" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 683 │         target_backend = input.arguments.target_backend
+     │         ~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:683:9: Kyozo.Storage.AbstractStorage.Actions.DuplicateToBackend.run/3
+
+     warning: variable "processing_options" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 694 │         processing_options = input.arguments.processing_options || %{}
+     │         ~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:694:9: Kyozo.Storage.AbstractStorage.Actions.ProcessContent.run/3
+
+     warning: Ash.Changeset.get_context/2 is undefined or private. Did you mean:
+
+           * put_context/3
+           * set_context/2
+
+     │
+ 574 │         processed_content = Ash.Changeset.get_context(changeset, :processed_content)
+     │                                           ~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:574:43: Kyozo.Storage.AbstractStorage.Changes.CreateStorageResource.change/3
+
+     warning: Ash.Changeset.get_context/2 is undefined or private. Did you mean:
+
+           * put_context/3
+           * set_context/2
+
+     │
+ 575 │         processed_metadata = Ash.Changeset.get_context(changeset, :processed_metadata)
+     │                                            ~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:575:44: Kyozo.Storage.AbstractStorage.Changes.CreateStorageResource.change/3
+
+     warning: Kyozo.Storage.AbstractStorage.CommonActions.handle_get_content/2 is undefined or private
+     │
+ 677 │         CommonActions.handle_get_content(storage_entry, context)
+     │                       ~
+     │
+     └─ lib/kyozo/storage/abstract_storage.ex:677:23: Kyozo.Storage.AbstractStorage.Actions.GetContent.run/3
+
+     warning: clauses with the same name and arity (number of arguments) should be grouped together, "defp generate_task_id/0" was previously defined (lib/kyozo_web/live/notebook/editor.ex:366)
+     │
+ 533 │   defp generate_task_id do
+     │        ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:533:8
+
+     warning: clauses with the same name and arity (number of arguments) should be grouped together, "defp executable_language?/1" was previously defined (lib/kyozo_web/live/notebook/editor.ex:362)
+     │
+ 540 │   defp executable_language?(language) do
+     │        ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:540:8
+
+     warning: function cleanup_task_code/1 is unused
+     │
+ 525 │   defp cleanup_task_code(code) do
+     │        ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:525:8: KyozoWeb.Live.Notebook.Editor (module)
+
+    warning: unused alias Blob
+    │
+ 13 │   alias Kyozo.Workspaces.Blob
+    │   ~
+    │
+    └─ lib/kyozo_web/live/notebook/editor.ex:13:3
+
+    warning: unused alias Document
+    │
+ 12 │   alias Kyozo.Workspaces.Document
+    │   ~
+    │
+    └─ lib/kyozo_web/live/notebook/editor.ex:12:3
+
+    warning: unused alias Notebook
+    │
+ 10 │   alias Kyozo.Workspaces.Notebook
+    │   ~
+    │
+    └─ lib/kyozo_web/live/notebook/editor.ex:10:3
+
+     warning: Kyozo.Workspaces.update_notebook/3 is undefined or private. Did you mean:
+
+           * duplicate_notebook/0
+           * duplicate_notebook/1
+           * duplicate_notebook/2
+           * duplicate_notebook!/0
+           * duplicate_notebook!/1
+
+     │
+ 147 │     case Workspaces.update_notebook(socket.assigns.notebook, %{
+     │                     ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:147:21: KyozoWeb.Live.Notebook.Editor.handle_event/3
+
+     warning: Kyozo.Workspaces.update_notebook/3 is undefined or private. Did you mean:
+
+           * duplicate_notebook/0
+           * duplicate_notebook/1
+           * duplicate_notebook/2
+           * duplicate_notebook!/0
+           * duplicate_notebook!/1
+
+     │
+ 290 │         case Workspaces.update_notebook(notebook, notebook_attrs, actor: user) do
+     │                         ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:290:25: KyozoWeb.Live.Notebook.Editor.save_notebook_content/3
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.get_document_content/1 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 242 │         case DocumentBlobRef.get_document_content(notebook.document_id) do
+     │                              ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:242:30: KyozoWeb.Live.Notebook.Editor.load_notebook_with_content/2
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.get_document_content/1 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 423 │     case DocumentBlobRef.get_document_content(notebook.document_id) do
+     │                          ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:423:26: KyozoWeb.Live.Notebook.Editor.export_notebook/2
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.get_document_content/1 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 460 │     DocumentBlobRef.get_document_content(notebook.document_id)
+     │                     ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:460:21: KyozoWeb.Live.Notebook.Editor.export_notebook/2
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.get_document_content/1 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 464 │     case DocumentBlobRef.get_document_content(notebook.document_id) do
+     │                          ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:464:26: KyozoWeb.Live.Notebook.Editor.export_notebook/2
+
+     warning: Kyozo.Workspaces.DocumentBlobRef.update_document_content/3 is undefined (module Kyozo.Workspaces.DocumentBlobRef is not available or is yet to be defined)
+     │
+ 262 │     case DocumentBlobRef.update_document_content(
+     │                          ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:262:26: KyozoWeb.Live.Notebook.Editor.save_notebook_content/3
+
+     warning: Earmark.as_html!/1 is undefined (module Earmark is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+     │
+ 389 │       html = Earmark.as_html!(content)
+     │                      ~
+     │
+     └─ lib/kyozo_web/live/notebook/editor.ex:389:22: KyozoWeb.Live.Notebook.Editor.fallback_markdown_render/1
+
+    warning: variable "children" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 34 │           {"div", attrs, children} ->
+    │                          ~
+    │
+    └─ lib/kyozo/workspaces/extensions/render_markdown/post_processors/task_extractor.ex:34:26: Kyozo.Workspaces.Extensions.RenderMarkdown.PostProcessors.TaskExtractor.process/2
+
+    warning: String.empty?/1 is undefined or private
+    │
+ 72 │     is_executable_language?(language) and not String.empty?(code_text)
+    │                                                      ~
+    │
+    └─ lib/kyozo/workspaces/extensions/render_markdown/post_processors/task_extractor.ex:72:54: Kyozo.Workspaces.Extensions.RenderMarkdown.PostProcessors.TaskExtractor.is_executable_code_block?/2
+
+    warning: unused alias StorageResource
+    │
+ 13 │   alias Kyozo.Storage.StorageResource
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/file/relationships/primary_storage.ex:13:3
+
+    warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+    │
+ 21 │     |> Kyozo.Workspaces.read!()
+    │                         ~
+    │
+    └─ lib/kyozo/workspaces/file/relationships/primary_storage.ex:21:25: Kyozo.Workspaces.File.Relationships.PrimaryStorage.load/3
+
+    warning: Kyozo.Storage.read!/1 is deprecated. Use `Ash.read!/2` instead
+    │
+ 30 │       |> Kyozo.Storage.read!()
+    │                        ~
+    │
+    └─ lib/kyozo/workspaces/file/relationships/primary_storage.ex:30:24: Kyozo.Workspaces.File.Relationships.PrimaryStorage.load/3
+
+     warning: variable "line_count" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 261 │   defp calculate_complexity_score(word_count, heading_count, code_block_count, link_count, list_count, line_count) do
+     │                                                                                                        ~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/extensions/render_markdown/calculations/markdown_stats.ex:261:104: Kyozo.Workspaces.Extensions.RenderMarkdown.Calculations.MarkdownStats.calculate_complexity_score/6
+
+    warning: got "@impl true" for function select/3 but no behaviour specifies such callback. The known callbacks are:
+
+      * Ash.Resource.Calculation.calculate/3 (function)
+      * Ash.Resource.Calculation.describe/1 (function)
+      * Ash.Resource.Calculation.expression/2 (function)
+      * Ash.Resource.Calculation.has_expression?/0 (function)
+      * Ash.Resource.Calculation.init/1 (function)
+      * Ash.Resource.Calculation.load/3 (function)
+      * Ash.Resource.Calculation.strict_loads?/0 (function)
+
+    │
+ 25 │   def select(_query, _opts, _context) do
+    │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo/workspaces/extensions/render_markdown/calculations/markdown_stats.ex:25: Kyozo.Workspaces.Extensions.RenderMarkdown.Calculations.MarkdownStats (module)
+
+    warning: variable "copy_tasks" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 45 │           copy_tasks = copy_tasks ++ [{:documents, source_workspace.id, duplicate_workspace.id}]
+    │           ~
+    │
+    └─ lib/kyozo/workspaces/workspace/changes/duplicate_workspace.ex:45:11: Kyozo.Workspaces.Workspace.Changes.DuplicateWorkspace.change/3
+
+    warning: variable "copy_tasks" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 49 │           copy_tasks = copy_tasks ++ [{:notebooks, source_workspace.id, duplicate_workspace.id}]
+    │           ~
+    │
+    └─ lib/kyozo/workspaces/workspace/changes/duplicate_workspace.ex:49:11: Kyozo.Workspaces.Workspace.Changes.DuplicateWorkspace.change/3
+
+    warning: unused alias Workspace
+    │
+  9 │   alias Kyozo.Workspaces.Workspace
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/workspace/changes/duplicate_workspace.ex:9:3
+
+    warning: the following clause will never match:
+
+        {:error, error}
+
+    because it attempts to match on the result of:
+
+        execute_copy_tasks(copy_tasks, context)
+
+    which has type:
+
+        dynamic(:ok)
+
+    typing violation found at:
+    │
+ 58 │           {:error, error} ->
+    │           ~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo/workspaces/workspace/changes/duplicate_workspace.ex:58: Kyozo.Workspaces.Workspace.Changes.DuplicateWorkspace.change/3
+
+     warning: Kyozo.Workspaces.list_documents/1 is undefined or private. Did you mean:
+
+           * list_events/0
+           * list_events/1
+           * list_events/2
+           * list_events!/0
+           * list_events!/1
+
+     │
+ 109 │     case Kyozo.Workspaces.list_documents(
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes/duplicate_workspace.ex:109:27: Kyozo.Workspaces.Workspace.Changes.DuplicateWorkspace.copy_workspace_content/4
+
+     warning: Kyozo.Workspaces.duplicate_document/2 is undefined or private. Did you mean:
+
+           * duplicate_notebook/0
+           * duplicate_notebook/1
+           * duplicate_notebook/2
+           * duplicate_workspace/0
+           * duplicate_workspace/1
+
+     │
+ 139 │     case Kyozo.Workspaces.duplicate_document(
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes/duplicate_workspace.ex:139:27: Kyozo.Workspaces.Workspace.Changes.DuplicateWorkspace.copy_documents/3
+
+    warning: Kyozo.Workspaces.get_document!/1 is undefined or private
+    │
+ 19 │         case Kyozo.Workspaces.get_document!(document_id) do
+    │                               ~
+    │
+    └─ lib/kyozo/workspaces/notebook/changes.ex:19:31: Kyozo.Workspaces.Notebook.Changes.CreateFromDocument.change/3
+
+     warning: Kyozo.Workspaces.get_document/1 is undefined or private
+     │
+ 223 │           case Kyozo.Workspaces.get_document(document_id) do
+     │                                 ~
+     │
+     └─ lib/kyozo/workspaces/notebook/changes.ex:223:33: Kyozo.Workspaces.Notebook.Changes.ValidateDocumentType.validate/3
+
+    warning: Kyozo.Storage.storage!/1 is undefined or private
+    │
+ 25 │   def contents(locator), do: Kyozo.Storage.storage!(locator).read(locator.id)
+    │                                            ~
+    │
+    └─ lib/kyozo/storage/upload.ex:25:44: Kyozo.Storage.UploadProtocol.Kyozo.Storage.Locator.contents/1
+
+    warning: variable "enabled" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 84 │   def handle_event("toggle_collaborative_mode", %{"enabled" => enabled}, socket) do
+    │                                                                ~~~~~~~
+    │
+    └─ lib/kyozo_web/live/files/editor.ex:84:64: KyozoWeb.Live.Workspaces.Files.Editor.handle_event/3
+
+     warning: Kyozo.Workspaces.get_document/2 is undefined or private
+     │
+ 136 │     case Workspaces.get_document(document_id, actor: user) do
+     │                     ~
+     │
+     └─ lib/kyozo_web/live/files/editor.ex:136:21: KyozoWeb.Live.Workspaces.Files.Editor.load_document_with_content/2
+
+     warning: DocumentBlobRef.get_document_content/1 is undefined (module DocumentBlobRef is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+     │
+ 138 │         case DocumentBlobRef.get_document_content(document_id) do
+     │                              ~
+     │
+     └─ lib/kyozo_web/live/files/editor.ex:138:30: KyozoWeb.Live.Workspaces.Files.Editor.load_document_with_content/2
+
+     warning: DocumentBlobRef.get_document_content/1 is undefined (module DocumentBlobRef is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+     │
+ 206 │     case DocumentBlobRef.get_document_content(document.id) do
+     │                          ~
+     │
+     └─ lib/kyozo_web/live/files/editor.ex:206:26: KyozoWeb.Live.Workspaces.Files.Editor.export_document/2
+
+     warning: DocumentBlobRef.get_document_content/1 is undefined (module DocumentBlobRef is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+     │
+ 238 │     DocumentBlobRef.get_document_content(document.id)
+     │                     ~
+     │
+     └─ lib/kyozo_web/live/files/editor.ex:238:21: KyozoWeb.Live.Workspaces.Files.Editor.export_document/2
+
+     warning: DocumentBlobRef.update_document_content/3 is undefined (module DocumentBlobRef is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+     │
+ 159 │     case DocumentBlobRef.update_document_content(
+     │                          ~
+     │
+     └─ lib/kyozo_web/live/files/editor.ex:159:26: KyozoWeb.Live.Workspaces.Files.Editor.save_document_content/2
+
+     warning: Kyozo.Workspaces.update_document/3 is undefined or private. Did you mean:
+
+           * update_content/1
+           * update_content/2
+           * update_content/3
+           * update_content!/1
+           * update_content!/2
+
+     │
+ 166 │         case Workspaces.update_document(document, %{
+     │                         ~
+     │
+     └─ lib/kyozo_web/live/files/editor.ex:166:25: KyozoWeb.Live.Workspaces.Files.Editor.save_document_content/2
+
+     warning: Earmark.as_html!/1 is undefined (module Earmark is not available or is yet to be defined). Make sure the module name is correct and has been specified in full (or that an alias has been defined)
+     │
+ 209 │         html = Earmark.as_html!(content)
+     │                        ~
+     │
+     └─ lib/kyozo_web/live/files/editor.ex:209:24: KyozoWeb.Live.Workspaces.Files.Editor.export_document/2
+
+    warning: Phoenix.LiveView.push_redirect/2 is deprecated. Use push_navigate/2 instead
+    │
+ 27 │         |> push_redirect(to: ~p"/login")
+    │            ~
+    │
+    └─ lib/kyozo_web/controllers/user_session_controller.ex:27:12: KyozoWeb.UserSessionController.create/2
+
+    warning: unused alias Notebook
+    │
+  8 │   alias Kyozo.Workspaces.Notebook
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/notebook/changes/duplicate_notebook.ex:8:3
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 648 │       def change(changeset, _opts, context) do
+     │                                    ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:648:36: Kyozo.Workspaces.FileNotebook.Changes.CreateFromFile.change/3
+
+     warning: variable "changeset" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 685 │         |> Ash.Changeset.after_action(fn changeset, file_notebook ->
+     │                                          ~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:685:42: Kyozo.Workspaces.FileNotebook.Changes.CreateNotebookResource.change/3
+
+     warning: variable "file_notebook" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 700 │       defp create_notebook_from_file_notebook(file_notebook) do
+     │                                               ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:700:47: Kyozo.Workspaces.FileNotebook.Changes.CreateNotebookResource.create_notebook_from_file_notebook/1
+
+     warning: variable "execution_timeout" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 735 │         execution_timeout = input.arguments.execution_timeout
+     │         ~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:735:9: Kyozo.Workspaces.FileNotebook.Actions.ExecuteCells.run/3
+
+     warning: variable "file_notebook" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 732 │       def run(file_notebook, input, _context) do
+     │               ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:732:15: Kyozo.Workspaces.FileNotebook.Actions.ExecuteCells.run/3
+
+     warning: variable "kernel_name" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 734 │         kernel_name = input.arguments.kernel_name
+     │         ~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:734:9: Kyozo.Workspaces.FileNotebook.Actions.ExecuteCells.run/3
+
+     warning: variable "include_outputs" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 765 │         include_outputs = input.arguments.include_outputs
+     │         ~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:765:9: Kyozo.Workspaces.FileNotebook.Actions.ConvertFormat.run/3
+
+     warning: variable "target_format" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 764 │         target_format = input.arguments.target_format
+     │         ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:764:9: Kyozo.Workspaces.FileNotebook.Actions.ConvertFormat.run/3
+
+     warning: variable "template" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 766 │         template = input.arguments.template
+     │         ~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:766:9: Kyozo.Workspaces.FileNotebook.Actions.ConvertFormat.run/3
+
+     warning: variable "file_notebook" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 777 │       def run(file_notebook, input, _context) do
+     │               ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:777:15: Kyozo.Workspaces.FileNotebook.Actions.ExtractCode.run/3
+
+     warning: variable "include_markdown" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 779 │         include_markdown = input.arguments.include_markdown
+     │         ~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:779:9: Kyozo.Workspaces.FileNotebook.Actions.ExtractCode.run/3
+
+     warning: variable "language" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 778 │         language = input.arguments.language
+     │         ~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:778:9: Kyozo.Workspaces.FileNotebook.Actions.ExtractCode.run/3
+
+     warning: variable "file_notebook" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 792 │       def run(file_notebook, _input, _context) do
+     │               ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:792:15: Kyozo.Workspaces.FileNotebook.Actions.AnalyzeDependencies.run/3
+
+     warning: variable "file_notebook" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 804 │       def run(file_notebook, _input, _context) do
+     │               ~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:804:15: Kyozo.Workspaces.FileNotebook.Actions.ValidateNotebook.run/3
+
+     warning: variable "changeset" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 824 │       def validate(changeset, _opts, _context) do
+     │                    ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:824:20: Kyozo.Workspaces.FileNotebook.Validations.ValidateNotebookFormat.validate/3
+
+     warning: the following clause will never match:
+
+         {:error, reason}
+
+     because it attempts to match on the result of:
+
+         create_notebook_from_file_notebook(file_notebook)
+
+     which has type:
+
+         dynamic({:ok, %{id: term()}})
+
+     typing violation found at:
+     │
+ 692 │             {:error, reason} ->
+     │             ~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/file_notebook.ex:692: Kyozo.Workspaces.FileNotebook.Changes.CreateNotebookResource.change/3
+
+    warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+    │
+ 22 │     |> Kyozo.Workspaces.read!()
+    │                         ~
+    │
+    └─ lib/kyozo/workspaces/file/relationships/primary_notebook.ex:22:25: Kyozo.Workspaces.File.Relationships.PrimaryNotebook.load/3
+
+    warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+    │
+ 33 │       |> Kyozo.Workspaces.read!()
+    │                           ~
+    │
+    └─ lib/kyozo/workspaces/file/relationships/primary_notebook.ex:33:27: Kyozo.Workspaces.File.Relationships.PrimaryNotebook.load/3
+
+    warning: Kyozo.Workspaces.duplicate_notebook/3 is undefined or private. Did you mean:
+
+          * duplicate_notebook/0
+          * duplicate_notebook/1
+          * duplicate_notebook/2
+
+    │
+ 84 │          {:ok, duplicate_notebook} <- Workspaces.duplicate_notebook(
+    │                                                  ~
+    │
+    └─ lib/kyozo_web/controllers/api/notebooks_controller.ex:84:50: KyozoWeb.API.NotebooksController.duplicate/2
+
+     warning: Kyozo.Workspaces.Notebook.execute_task/3 is undefined or private
+     │
+ 250 │     Workspaces.Notebook.execute_task(
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/notebooks_controller.ex:250:25: KyozoWeb.API.NotebooksController.execute_single_task/5
+
+     warning: Kyozo.Workspaces.Notebook.stop_execution/2 is undefined or private
+     │
+ 262 │     Workspaces.Notebook.stop_execution(notebook, actor: actor, tenant: tenant)
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/notebooks_controller.ex:262:25: KyozoWeb.API.NotebooksController.stop_notebook_execution/3
+
+     warning: Kyozo.Workspaces.Notebook.reset_execution/2 is undefined or private
+     │
+ 266 │     Workspaces.Notebook.reset_execution(notebook, actor: actor, tenant: tenant)
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/notebooks_controller.ex:266:25: KyozoWeb.API.NotebooksController.reset_notebook_execution/3
+
+     warning: Kyozo.Workspaces.Notebook.toggle_collaborative_mode/2 is undefined or private
+     │
+ 270 │     Workspaces.Notebook.toggle_collaborative_mode(notebook, actor: actor, tenant: tenant)
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/notebooks_controller.ex:270:25: KyozoWeb.API.NotebooksController.toggle_collaboration/3
+
+     warning: Kyozo.Workspaces.Notebook.update_access_time/2 is undefined or private
+     │
+ 274 │     Workspaces.Notebook.update_access_time(notebook, actor: actor, tenant: tenant)
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/notebooks_controller.ex:274:25: KyozoWeb.API.NotebooksController.update_notebook_access_time/3
+
+    warning: unused import KyozoWeb.Components.Link
+    │
+  4 │   import KyozoWeb.Components.Link
+    │   ~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/groups_live.ex:4:3
+
+    warning: missing required slot "title" for component KyozoWeb.Components.Modal.modal/1
+    │
+ 29 │           <.modal
+    │           ~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/groups_live.ex:29: (file)
+
+    warning: missing required slot "content" for component KyozoWeb.Components.Modal.modal/1
+    │
+ 29 │           <.modal
+    │           ~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/groups_live.ex:29: (file)
+
+    warning: undefined attribute "title" for component KyozoWeb.Components.Modal.modal/1
+    │
+ 31 │             title={gettext("Edit Access Group")}
+    │             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/groups_live.ex:31: (file)
+
+    warning: undefined attribute "cancel" for component KyozoWeb.Components.Modal.modal/1
+    │
+ 32 │             cancel={hide_modal("access-group-form-modal#{group.id}")}
+    │             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ lib/kyozo_web/live/accounts/groups/groups_live.ex:32: (file)
+
+    warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 13 │     def change(changeset, _opts, context) do
+    │                                  ~~~~~~~
+    │
+    └─ lib/kyozo/workspaces/workspace/changes.ex:13:34: Kyozo.Workspaces.Workspace.Changes.InitializeStorage.change/3
+
+     warning: variable "metadata" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 167 │         {:ok, content, metadata} = old_provider.retrieve(
+     │                        ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:167:24: Kyozo.Workspaces.Workspace.Changes.MigrateStorage.migrate_file/4
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 206 │     def run(input, _opts, context) do
+     │                           ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:206:27: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.run/3
+
+     warning: variable "workspace" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 404 │     defp find_orphaned_files(workspace) do
+     │                              ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:404:30: Kyozo.Workspaces.Workspace.Changes.CleanupStorage.find_orphaned_files/1
+
+     warning: variable "workspace" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 410 │     defp find_old_versions(workspace) do
+     │                            ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:410:28: Kyozo.Workspaces.Workspace.Changes.CleanupStorage.find_old_versions/1
+
+     warning: variable "workspace" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 443 │     defp perform_cleanup(workspace, cleanup_results) do
+     │                          ~~~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:443:26: Kyozo.Workspaces.Workspace.Changes.CleanupStorage.perform_cleanup/2
+
+     warning: variable "context" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 470 │     defp delete_workspace_storage(workspace, context) do
+     │                                              ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:470:46: Kyozo.Workspaces.Workspace.Changes.DeleteStorage.delete_workspace_storage/2
+
+     warning: variable "changeset" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+     │
+ 547 │       Ash.Changeset.after_action(changeset, fn changeset, workspace ->
+     │                                                ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:547:48: Kyozo.Workspaces.Workspace.Changes.UpdateStorageMetadata.change/3
+
+    warning: Kyozo.Workspaces.create_document!/2 is undefined or private. Did you mean:
+
+          * create_from_document/0
+          * create_from_document/1
+          * create_from_document!/0
+          * create_from_document!/1
+          * create_from_document!/2
+
+    │
+ 86 │       Kyozo.Workspaces.create_document!(%{
+    │                        ~
+    │
+    └─ lib/kyozo/workspaces/workspace/changes.ex:86:24: Kyozo.Workspaces.Workspace.Changes.CreateInitialFiles.create_initial_readme/2
+
+     warning: Kyozo.Workspaces.list_documents!/1 is undefined or private. Did you mean:
+
+           * list_events/0
+           * list_events/1
+           * list_events!/0
+           * list_events!/1
+           * list_events!/2
+
+     │
+ 147 │       documents = Kyozo.Workspaces.list_documents!(
+     │                                    ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:147:36: Kyozo.Workspaces.Workspace.Changes.MigrateStorage.migrate_workspace_files/3
+
+     warning: Ash.Query.aggregate/3 is undefined or private. Did you mean:
+
+           * aggregate/4
+           * aggregate/5
+
+     │
+ 229 │       |> Ash.Query.aggregate(:sum, :file_size)
+     │                    ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:229:20: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.calculate_total_size/1
+
+     warning: Ash.Query.aggregate/3 is undefined or private. Did you mean:
+
+           * aggregate/4
+           * aggregate/5
+
+     │
+ 235 │       |> Ash.Query.aggregate(:sum, :file_size)
+     │                    ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:235:20: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.calculate_total_size/1
+
+     warning: Ash.Query.aggregate/3 is undefined or private. Did you mean:
+
+           * aggregate/4
+           * aggregate/5
+
+     │
+ 245 │       |> Ash.Query.aggregate(:count, :id)
+     │                    ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:245:20: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.calculate_file_count/1
+
+     warning: Ash.Query.aggregate/3 is undefined or private. Did you mean:
+
+           * aggregate/4
+           * aggregate/5
+
+     │
+ 251 │       |> Ash.Query.aggregate(:count, :id)
+     │                    ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:251:20: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.calculate_file_count/1
+
+     warning: Kyozo.Workspaces.read_one!/1 is deprecated. Use `Ash.read_one!/2` instead
+     │
+ 230 │       |> Kyozo.Workspaces.read_one!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:230:27: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.calculate_total_size/1
+
+     warning: Kyozo.Workspaces.read_one!/1 is deprecated. Use `Ash.read_one!/2` instead
+     │
+ 236 │       |> Kyozo.Workspaces.read_one!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:236:27: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.calculate_total_size/1
+
+     warning: Kyozo.Workspaces.read_one!/1 is deprecated. Use `Ash.read_one!/2` instead
+     │
+ 246 │       |> Kyozo.Workspaces.read_one!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:246:27: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.calculate_file_count/1
+
+     warning: Kyozo.Workspaces.read_one!/1 is deprecated. Use `Ash.read_one!/2` instead
+     │
+ 252 │       |> Kyozo.Workspaces.read_one!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:252:27: Kyozo.Workspaces.Workspace.Changes.GetStorageInfo.calculate_file_count/1
+
+     warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+     │
+ 308 │       |> Kyozo.Workspaces.read!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:308:27: Kyozo.Workspaces.Workspace.Changes.GetWorkspaceStatistics.get_files_by_type/1
+
+     warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+     │
+ 331 │       |> Kyozo.Workspaces.read!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:331:27: Kyozo.Workspaces.Workspace.Changes.GetWorkspaceStatistics.get_recent_activity/1
+
+     warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+     │
+ 339 │       |> Kyozo.Workspaces.read!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:339:27: Kyozo.Workspaces.Workspace.Changes.GetWorkspaceStatistics.get_recent_activity/1
+
+     warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+     │
+ 424 │       |> Kyozo.Workspaces.read!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:424:27: Kyozo.Workspaces.Workspace.Changes.CleanupStorage.find_large_files/1
+
+     warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+     │
+ 430 │       |> Kyozo.Workspaces.read!()
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:430:27: Kyozo.Workspaces.Workspace.Changes.CleanupStorage.find_large_files/1
+
+     warning: Kyozo.Workspaces.Events.WorkspaceCreated.emit/1 is undefined or private
+     │
+ 580 │       Kyozo.Workspaces.Events.WorkspaceCreated.emit(%{
+     │                                                ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:580:48: Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent.emit_event/2
+
+     warning: Kyozo.Workspaces.Events.WorkspaceUpdated.emit/1 is undefined or private
+     │
+ 591 │       Kyozo.Workspaces.Events.WorkspaceUpdated.emit(%{
+     │                                                ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:591:48: Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent.emit_event/2
+
+     warning: Kyozo.Workspaces.Events.WorkspaceDeleted.emit/1 is undefined or private
+     │
+ 600 │       Kyozo.Workspaces.Events.WorkspaceDeleted.emit(%{
+     │                                                ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:600:48: Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent.emit_event/2
+
+     warning: Kyozo.Workspaces.Events.WorkspaceArchived.emit/1 is undefined or private
+     │
+ 609 │       Kyozo.Workspaces.Events.WorkspaceArchived.emit(%{
+     │                                                 ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:609:49: Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent.emit_event/2
+
+     warning: Kyozo.Workspaces.Events.WorkspaceRestored.emit/1 is undefined or private
+     │
+ 618 │       Kyozo.Workspaces.Events.WorkspaceRestored.emit(%{
+     │                                                 ~
+     │
+     └─ lib/kyozo/workspaces/workspace/changes.ex:618:49: Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent.emit_event/2
+
+    warning: unused import KyozoWeb.Serializers
+    │
+  7 │   import KyozoWeb.Serializers
+    │   ~
+    │
+    └─ lib/kyozo_web/user_auth.ex:7:3
+
+    warning: unused alias File
+    │
+  9 │   alias Kyozo.Workspaces.File
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/file/changes/duplicate_file.ex:9:3
+
+    warning: unused alias Storage
+    │
+  8 │   alias Kyozo.Workspaces.Storage
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/file/changes/duplicate_file.ex:8:3
+
+     warning: the underscored variable "_tenant" is used after being set. A leading underscore indicates that the value of the variable should be ignored. If this is intended please rename the variable to remove the underscore
+     │
+ 121 │   def to_tenant(%{id: id} = _tenant, _resource) when is_map(_tenant), do: id
+     │                                                             ~
+     │
+     └─ lib/kyozo/accounts/team.ex:121:61: Ash.ToTenant.Kyozo.Accounts.Team.to_tenant/2
+
+     warning: variable "content" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 304 │   defp build_s3_upload_options(s3_key, content, options) do
+     │                                        ~~~~~~~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:304:40: Kyozo.Workspaces.Storage.S3Provider.build_s3_upload_options/3
+
+     warning: variable "bucket" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 366 │       put_object: fn bucket, key, content, options ->
+     │                      ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:366:22: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "key" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 366 │       put_object: fn bucket, key, content, options ->
+     │                              ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:366:30: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "options" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 366 │       put_object: fn bucket, key, content, options ->
+     │                                            ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:366:44: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "bucket" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 373 │       get_object: fn bucket, key, options ->
+     │                      ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:373:22: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "options" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 373 │       get_object: fn bucket, key, options ->
+     │                                   ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:373:35: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "bucket" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 384 │       delete_object: fn bucket, key, options ->
+     │                         ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:384:25: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "key" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 384 │       delete_object: fn bucket, key, options ->
+     │                                 ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:384:33: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "options" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 384 │       delete_object: fn bucket, key, options ->
+     │                                      ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:384:38: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "bucket" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 387 │       list_objects_v2: fn bucket, options ->
+     │                           ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:387:27: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "options" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 387 │       list_objects_v2: fn bucket, options ->
+     │                                   ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:387:35: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "bucket" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 390 │       head_object: fn bucket, key, options ->
+     │                       ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:390:23: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "options" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 390 │       head_object: fn bucket, key, options ->
+     │                                    ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:390:36: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "bucket" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 399 │       list_object_versions: fn bucket, options ->
+     │                                ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:399:32: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: variable "options" is unused (if the variable is not meant to be used, prefix it with an underscore)
+     │
+ 399 │       list_object_versions: fn bucket, options ->
+     │                                        ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:399:40: Kyozo.Workspaces.Storage.S3Provider.get_s3_client/0
+
+     warning: expected a module (an atom) when invoking put_object/4 in expression:
+
+         get_s3_client().put_object(bucket, s3_key, content, s3_options)
+
+     but got type:
+
+         dynamic(%{
+           delete_object: fun(),
+           get_object: fun(),
+           head_object: fun(),
+           list_object_versions: fun(),
+           list_objects_v2: fun(),
+           put_object: fun()
+         })
+
+     where "bucket" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:212:21
+         bucket
+
+     where "content" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:212:37
+         content
+
+     where "s3_key" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:212:29
+         s3_key
+
+     where "s3_options" was given the type:
+
+         # type: dynamic(list(term(), term()))
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:213:16
+         s3_options = build_s3_upload_options(s3_key, content, options)
+
+     typing violation found at:
+     │
+ 215 │     case get_s3_client().put_object(bucket, s3_key, content, s3_options) do
+     │                          ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:215:26: Kyozo.Workspaces.Storage.S3Provider.upload_to_s3/4
+
+     warning: expected a module (an atom) when invoking get_object/3 in expression:
+
+         get_s3_client().get_object(bucket, s3_key, s3_options)
+
+     but got type:
+
+         dynamic(%{
+           delete_object: fun(),
+           get_object: fun(),
+           head_object: fun(),
+           list_object_versions: fun(),
+           list_objects_v2: fun(),
+           put_object: fun()
+         })
+
+     where "bucket" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:226:25
+         bucket
+
+     where "s3_key" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:226:33
+         s3_key
+
+     where "s3_options" was given the type:
+
+         # type: dynamic(list(term(), term()))
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:227:16
+         s3_options = build_s3_download_options(options)
+
+     typing violation found at:
+     │
+ 229 │     case get_s3_client().get_object(bucket, s3_key, s3_options) do
+     │                          ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:229:26: Kyozo.Workspaces.Storage.S3Provider.download_from_s3/3
+
+     warning: expected a module (an atom) when invoking delete_object/3 in expression:
+
+         get_s3_client().delete_object(bucket, s3_key, s3_options)
+
+     but got type:
+
+         dynamic(%{
+           delete_object: fun(),
+           get_object: fun(),
+           head_object: fun(),
+           list_object_versions: fun(),
+           list_objects_v2: fun(),
+           put_object: fun()
+         })
+
+     where "bucket" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:242:23
+         bucket
+
+     where "s3_key" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:242:31
+         s3_key
+
+     where "s3_options" was given the type:
+
+         # type: dynamic(list(term(), term()))
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:243:16
+         s3_options = build_s3_delete_options(options)
+
+     typing violation found at:
+     │
+ 245 │     case get_s3_client().delete_object(bucket, s3_key, s3_options) do
+     │                          ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:245:26: Kyozo.Workspaces.Storage.S3Provider.delete_from_s3/3
+
+     warning: expected a module (an atom) when invoking list_objects_v2/2 in expression:
+
+         get_s3_client().list_objects_v2(bucket, s3_options)
+
+     but got type:
+
+         dynamic(%{
+           delete_object: fun(),
+           get_object: fun(),
+           head_object: fun(),
+           list_object_versions: fun(),
+           list_objects_v2: fun(),
+           put_object: fun()
+         })
+
+     where "bucket" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:256:24
+         bucket
+
+     where "s3_options" was given the type:
+
+         # type: dynamic(non_empty_list({:max_keys or :prefix, term()}))
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:257:16
+         s3_options = [prefix: prefix, max_keys: Keyword.get(options, :max_keys, 1000)]
+
+     typing violation found at:
+     │
+ 262 │     case get_s3_client().list_objects_v2(bucket, s3_options) do
+     │                          ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:262:26: Kyozo.Workspaces.Storage.S3Provider.list_s3_objects/3
+
+     warning: expected a module (an atom) when invoking head_object/3 in expression:
+
+         get_s3_client().head_object(bucket, s3_key, s3_options)
+
+     but got type:
+
+         dynamic(%{
+           delete_object: fun(),
+           get_object: fun(),
+           head_object: fun(),
+           list_object_versions: fun(),
+           list_objects_v2: fun(),
+           put_object: fun()
+         })
+
+     where "bucket" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:273:23
+         bucket
+
+     where "s3_key" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:273:31
+         s3_key
+
+     where "s3_options" was given the type:
+
+         # type: dynamic(list(term(), term()))
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:274:16
+         s3_options = build_s3_head_options(options)
+
+     typing violation found at:
+     │
+ 276 │     case get_s3_client().head_object(bucket, s3_key, s3_options) do
+     │                          ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:276:26: Kyozo.Workspaces.Storage.S3Provider.head_s3_object/3
+
+     warning: expected a module (an atom) when invoking list_object_versions/2 in expression:
+
+         get_s3_client().list_object_versions(bucket, s3_options)
+
+     but got type:
+
+         dynamic(%{
+           delete_object: fun(),
+           get_object: fun(),
+           head_object: fun(),
+           list_object_versions: fun(),
+           list_objects_v2: fun(),
+           put_object: fun()
+         })
+
+     where "bucket" was given the type:
+
+         # type: dynamic()
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:288:32
+         bucket
+
+     where "s3_options" was given the type:
+
+         # type: dynamic(non_empty_list({:prefix, term()}))
+         # from: lib/kyozo/workspaces/storage/s3_provider.ex:289:16
+         s3_options = [prefix: s3_key]
+
+     typing violation found at:
+     │
+ 291 │     case get_s3_client().list_object_versions(bucket, s3_options) do
+     │                          ~
+     │
+     └─ lib/kyozo/workspaces/storage/s3_provider.ex:291:26: Kyozo.Workspaces.Storage.S3Provider.list_s3_object_versions/3
+
+     warning: unknown key .created_at in expression:
+
+         team.created_at
+
+     the given type does not have the given key:
+
+         dynamic(%Kyozo.Accounts.Team{
+           __lateral_join_source__: term(),
+           __meta__: term(),
+           __metadata__: term(),
+           __order__: term(),
+           aggregates: term(),
+           calculations: term(),
+           description: term(),
+           domain: term(),
+           id: term(),
+           inserted_at: term(),
+           invitations: term(),
+           name: term(),
+           owner: term(),
+           owner_user_id: term(),
+           updated_at: term(),
+           user_teams: term(),
+           users: term(),
+           users_join_assoc: term()
+         })
+
+     where "team" was given the type:
+
+         # type: dynamic(%Kyozo.Accounts.Team{})
+         # from: lib/kyozo_web/controllers/api/workspaces_json.ex:120:26
+         %Kyozo.Accounts.Team{} = team
+
+     typing violation found at:
+     │
+ 124 │       created_at: team.created_at,
+     │                        ~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/controllers/api/workspaces_json.ex:124:24: KyozoWeb.API.WorkspacesJSON.team_data/1
+
+    warning: Kyozo.Workspaces.list_documents/1 is undefined or private. Did you mean:
+
+          * list_events/0
+          * list_events/1
+          * list_events/2
+          * list_events!/0
+          * list_events!/1
+
+    │
+ 15 │     with {:ok, documents} <- Workspaces.list_documents(
+    │                                         ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:15:41: KyozoWeb.API.DocumentsController.index/2
+
+    warning: Kyozo.Workspaces.get_document/2 is undefined or private
+    │
+ 28 │     with {:ok, document} <- Workspaces.get_document(id, 
+    │                                        ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:28:40: KyozoWeb.API.DocumentsController.show/2
+
+    warning: Kyozo.Workspaces.get_document/2 is undefined or private
+    │
+ 56 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+    │                                        ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:56:40: KyozoWeb.API.DocumentsController.update/2
+
+    warning: Kyozo.Workspaces.get_document/2 is undefined or private
+    │
+ 71 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+    │                                        ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:71:40: KyozoWeb.API.DocumentsController.delete/2
+
+    warning: Kyozo.Workspaces.get_document/2 is undefined or private
+    │
+ 81 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+    │                                        ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:81:40: KyozoWeb.API.DocumentsController.duplicate/2
+
+    warning: Kyozo.Workspaces.get_document/2 is undefined or private
+    │
+ 99 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+    │                                        ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:99:40: KyozoWeb.API.DocumentsController.content/2
+
+     warning: Kyozo.Workspaces.get_document/2 is undefined or private
+     │
+ 109 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+     │                                        ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:109:40: KyozoWeb.API.DocumentsController.update_content/2
+
+     warning: Kyozo.Workspaces.get_document/2 is undefined or private
+     │
+ 125 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+     │                                        ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:125:40: KyozoWeb.API.DocumentsController.versions/2
+
+     warning: Kyozo.Workspaces.get_document/2 is undefined or private
+     │
+ 136 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+     │                                        ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:136:40: KyozoWeb.API.DocumentsController.render_as/2
+
+     warning: Kyozo.Workspaces.get_document/2 is undefined or private
+     │
+ 170 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+     │                                        ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:170:40: KyozoWeb.API.DocumentsController.rename/2
+
+     warning: Kyozo.Workspaces.get_document/2 is undefined or private
+     │
+ 186 │     with {:ok, document} <- Workspaces.get_document(id, actor: current_user, tenant: current_team),
+     │                                        ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:186:40: KyozoWeb.API.DocumentsController.view/2
+
+    warning: Kyozo.Workspaces.create_document/2 is undefined or private. Did you mean:
+
+          * create_from_document/0
+          * create_from_document/1
+          * create_from_document/2
+          * create_from_document!/0
+          * create_from_document!/1
+
+    │
+ 41 │     with {:ok, document} <- Workspaces.create_document(
+    │                                        ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:41:40: KyozoWeb.API.DocumentsController.create/2
+
+    warning: Kyozo.Workspaces.update_document/3 is undefined or private. Did you mean:
+
+          * update_content/1
+          * update_content/2
+          * update_content/3
+          * update_content!/1
+          * update_content!/2
+
+    │
+ 57 │          {:ok, updated_document} <- Workspaces.update_document(
+    │                                                ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:57:48: KyozoWeb.API.DocumentsController.update/2
+
+    warning: Kyozo.Workspaces.delete_document/2 is undefined or private
+    │
+ 72 │          {:ok, _document} <- Workspaces.delete_document(document, actor: current_user, tenant: current_team) do
+    │                                         ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:72:41: KyozoWeb.API.DocumentsController.delete/2
+
+    warning: Kyozo.Workspaces.duplicate_document/3 is undefined or private. Did you mean:
+
+          * duplicate_notebook/0
+          * duplicate_notebook/1
+          * duplicate_notebook/2
+          * duplicate_workspace/0
+          * duplicate_workspace/1
+
+    │
+ 82 │          {:ok, duplicate_document} <- Workspaces.duplicate_document(
+    │                                                  ~
+    │
+    └─ lib/kyozo_web/controllers/api/documents_controller.ex:82:50: KyozoWeb.API.DocumentsController.duplicate/2
+
+     warning: Kyozo.Workspaces.Document.get_content/2 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+     │
+ 244 │         Workspaces.Document.get_content(document, actor: actor, tenant: tenant)
+     │                             ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:244:29: KyozoWeb.API.DocumentsController.get_document_content/4
+
+     warning: Kyozo.Workspaces.Document.get_content/3 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+     │
+ 248 │         Workspaces.Document.get_content(document, %{version: version_id}, actor: actor, tenant: tenant)
+     │                             ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:248:29: KyozoWeb.API.DocumentsController.get_document_content/4
+
+     warning: Kyozo.Workspaces.Document.update_content/3 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+     │
+ 253 │     Workspaces.Document.update_content(
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:253:25: KyozoWeb.API.DocumentsController.update_document_content/5
+
+     warning: Kyozo.Workspaces.Document.list_versions/2 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+     │
+ 262 │     Workspaces.Document.list_versions(document, actor: actor, tenant: tenant)
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:262:25: KyozoWeb.API.DocumentsController.get_document_versions/3
+
+     warning: Kyozo.Workspaces.Document.render_as/3 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+     │
+ 266 │     Workspaces.Document.render_as(
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:266:25: KyozoWeb.API.DocumentsController.render_document_as/5
+
+     warning: Kyozo.Workspaces.Document.upload_document/2 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+     │
+ 275 │     Workspaces.Document.upload_document(params, actor: actor, tenant: tenant)
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:275:25: KyozoWeb.API.DocumentsController.upload_document/3
+
+     warning: Kyozo.Workspaces.Document.rename_document/3 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+     │
+ 279 │     Workspaces.Document.rename_document(
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:279:25: KyozoWeb.API.DocumentsController.rename_document/5
+
+     warning: Kyozo.Workspaces.Document.view_document/2 is undefined (module Kyozo.Workspaces.Document is not available or is yet to be defined)
+     │
+ 288 │     Workspaces.Document.view_document(document, actor: actor, tenant: tenant)
+     │                         ~
+     │
+     └─ lib/kyozo_web/controllers/api/documents_controller.ex:288:25: KyozoWeb.API.DocumentsController.record_document_view/3
+
+     warning: Logger.warn/1 is deprecated. Use Logger.warning/2 instead
+     │
+ 299 │         Logger.warn("Failed to create S3 backup for #{file_path}: #{inspect(reason)}")
+     │                ~
+     │
+     └─ lib/kyozo/workspaces/storage/hybrid_provider.ex:299:16: Kyozo.Workspaces.Storage.HybridProvider.create_s3_backup/4
+
+    warning: unused alias Storage
+    │
+ 13 │   alias Kyozo.Workspaces.Storage
+    │   ~
+    │
+    └─ lib/kyozo/workspaces/storage/hybrid_provider.ex:13:3
+
+     warning: default values for the optional arguments in read_file/3 are never used
+     │
+ 251 │   defp read_file(repo_path, file_path, version \\ nil) do
+     │        ~
+     │
+     └─ lib/kyozo/workspaces/storage/git_provider.ex:251:8: Kyozo.Workspaces.Storage.GitProvider (module)
+
+    warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+    │
+ 22 │     |> Kyozo.Workspaces.read!()
+    │                         ~
+    │
+    └─ lib/kyozo/workspaces/file/relationships/primary_media.ex:22:25: Kyozo.Workspaces.File.Relationships.PrimaryMedia.load/3
+
+    warning: Kyozo.Workspaces.read!/1 is deprecated. Use `Ash.read!/2` instead
+    │
+ 33 │       |> Kyozo.Workspaces.read!()
+    │                           ~
+    │
+    └─ lib/kyozo/workspaces/file/relationships/primary_media.ex:33:27: Kyozo.Workspaces.File.Relationships.PrimaryMedia.load/3
+
+    warning: unused alias Team
+    │
+ 11 │   alias Kyozo.Teams.Team
+    │   ~
+    │
+    └─ lib/kyozo_web/live/teams/index.ex:11:3
+
+    warning: unused import KyozoWeb.Components.Button
+    │
+  7 │   import KyozoWeb.Components.Button
+    │   ~
+    │
+    └─ lib/kyozo_web/live/teams/index.ex:7:3
+
+    warning: unused import KyozoWeb.Components.Modal
+    │
+  8 │   import KyozoWeb.Components.Modal
+    │   ~
+    │
+    └─ lib/kyozo_web/live/teams/index.ex:8:3
+
+    warning: Kyozo.Teams.get_team/2 is undefined (module Kyozo.Teams is not available or is yet to be defined)
+    │
+ 73 │       case Teams.get_team(id, actor: socket.assigns.current_user) do
+    │                  ~
+    │
+    └─ lib/kyozo_web/live/teams/index.ex:73:18: KyozoWeb.Live.Teams.Index.apply_action/3
+
+    warning: Kyozo.Teams.get_team/2 is undefined (module Kyozo.Teams is not available or is yet to be defined)
+    │
+ 96 │       case Teams.get_team(id, actor: socket.assigns.current_user) do
+    │                  ~
+    │
+    └─ lib/kyozo_web/live/teams/index.ex:96:18: KyozoWeb.Live.Teams.Index.handle_event/3
+
+     warning: Kyozo.Teams.leave_team/2 is undefined (module Kyozo.Teams is not available or is yet to be defined)
+     │
+ 122 │       case Teams.leave_team(id, actor: socket.assigns.current_user) do
+     │                  ~
+     │
+     └─ lib/kyozo_web/live/teams/index.ex:122:18: KyozoWeb.Live.Teams.Index.handle_event/3
+
+    warning: Kyozo.Storage.Upload.contents/1 is undefined or private
+    │
+  8 │     {:ok, contents} = Upload.contents(upload)
+    │                              ~
+    │
+    └─ lib/kyozo/storage/providers/ram.ex:8:30: Kyozo.Storage.Storages.RAM.put/2
+
+    warning: Kyozo.Storage.Upload.name/1 is undefined or private
+    │
+ 17 │     {:ok, Path.join(serialized_pid, Upload.name(upload))}
+    │                                            ~
+    │
+    └─ lib/kyozo/storage/providers/ram.ex:17:44: Kyozo.Storage.Storages.RAM.put/2
+
+    warning: unused alias Workspace
+    │
+ 11 │   alias Kyozo.Workspaces.{Workspace, File, Notebook}
+    │   ~
+    │
+    └─ lib/kyozo_web/live/workspace/dashboard.ex:11:3
+
+    warning: unused alias Workspaces
+    │
+ 10 │   alias Kyozo.Workspaces
+    │   ~
+    │
+    └─ lib/kyozo_web/live/workspace/dashboard.ex:10:3
+
+     warning: Kyozo.Workspaces.get_file_content/1 is undefined or private. Did you mean:
+
+           * get_blob_content/0
+           * get_blob_content/1
+           * get_file/1
+           * get_file/2
+           * get_file/3
+
+     │
+ 421 │           case Kyozo.Workspaces.get_file_content(file.id) do
+     │                                 ~
+     │
+     └─ lib/kyozo_web/live/workspace/dashboard.ex:421:33: KyozoWeb.Live.Workspace.Dashboard.load_file_content/1
+
+     warning: no route path for KyozoWeb.Router matches "/workspaces/#{assigns.workspace.id}/dashboard/edit/#{assigns.selected_file.id}"
+     │
+ 117 │             phx-click={JS.patch(~p"/workspaces/#{@workspace.id}/dashboard/edit/#{@selected_file.id}")}
+     │             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/live/workspace/dashboard.html.heex:117: KyozoWeb.Live.Workspace.Dashboard.render/1
+
+     warning: undefined attribute "size" for component KyozoWeb.Components.Button.button/1
+     │
+ 116 │             size="sm"
+     │             ~~~~~~~~~
+     │
+     └─ lib/kyozo_web/live/workspace/dashboard.html.heex:116: (file)
+
+     warning: undefined attribute "size" for component KyozoWeb.Components.Button.button/1
+     │
+ 108 │             size="sm" 
+     │             ~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/live/workspace/dashboard.html.heex:108: (file)
+
+     warning: attribute "variant" in component KyozoWeb.Components.Button.button/1 must be one of ["primary", "secondary", "accent", "warning", "danger", "ghost"], got: "outline"
+     │
+ 109 │             variant="outline"
+     │             ~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/kyozo_web/live/workspace/dashboard.html.heex:109: (file)
+
+    warning: variable "changeset" is unused (there is a variable with the same name in the context, use the pin operator (^) to match on it or prefix this variable with underscore if it is not meant to be used)
+    │
+ 12 │     |> Ash.Changeset.after_action(fn changeset, document ->
+    │                                      ~
+    │
+    └─ lib/kyozo/projects/changes/parse_document.ex:12:38: Kyozo.Projects.Changes.ParseDocument.change/3
+
+    warning: Kyozo.Projects.update!/1 is deprecated. Use `Ash.update!/2` instead
+    │
+ 21 │           |> Kyozo.Projects.update!()
+    │                             ~
+    │
+    └─ lib/kyozo/projects/changes/parse_document.ex:21:29: Kyozo.Projects.Changes.ParseDocument.change/3
+
+    warning: Kyozo.Projects.update/1 is deprecated. Use `Ash.update/2` instead
+    │
+ 39 │         |> Kyozo.Projects.update()
+    │                           ~
+    │
+    └─ lib/kyozo/projects/changes/parse_document.ex:39:27: Kyozo.Projects.Changes.ParseDocument.parse_document_content/1
+
+    warning: Kyozo.Projects.update/1 is deprecated. Use `Ash.update/2` instead
+    │
+ 75 │         |> Kyozo.Projects.update()
+    │                           ~
+    │
+    └─ lib/kyozo/projects/changes/parse_document.ex:75:27: Kyozo.Projects.Changes.ParseDocument.parse_document_content/1
+
+    warning: Kyozo.Projects.create/1 is deprecated. Use `Ash.create/2` instead
+    │
+ 96 │            |> Kyozo.Projects.create() do
+    │                              ~
+    │
+    └─ lib/kyozo/projects/changes/parse_document.ex:96:30: Kyozo.Projects.Changes.ParseDocument.create_tasks_for_document/2
+
+[warning] Starting AshAuthentication with `debug_authentication_failures?` turned on.
+
+You should only ever do this in your development environment for
+debugging purposes as it will leak PII into your log.
+
+If you do not want this on then please remove the following line from
+your configuration:
+
+    config :ash_authentication, debug_authentication_failures?: true
+
+[info] Running KyozoWeb.Endpoint with Bandit 1.7.0 at 127.0.0.1:4000 (http)
+[info] Access KyozoWeb.Endpoint at http://localhost:4000
+[vite.config] Running in development mode
+[vite.config] Copying non-fingerprinted assets in dev mode...
+[vite.config] Source dir not found: /Users/locnguyen/src/code/kyozo_api/assets/seo
+[vite.config] Source dir not found: /Users/locnguyen/src/code/kyozo_api/assets/icons
+3:00:33 AM [vite-plugin-svelte] The following Svelte compilerOptions are controlled by vite-plugin-svelte and essential to its functionality. User-specified values are ignored. Please remove them from your configuration: generate
+3:00:34 AM [vite-plugin-svelte] svelte 5 has hmr integrated in core. Please remove the vitePlugin.hot option and use compilerOptions.hmr instead
+
+  VITE v7.0.6  ready in 813 ms
+
+  ➜  Local:   http://localhost:5180/
+[vite-plugin-static-copy] No items found.
+Getting extensions in current project...
+[info] GET /workspaces
+[debug] Processing with KyozoWeb.KyozoWeb.Live.Workspace.Index.__live__/0
+  Parameters: %{}
+  Pipelines: [:browser]
+[info] Sent 500 in 63ms
+[notice] SIGTERM received - shutting down
+
+[error] ** (UndefinedFunctionError) function KyozoWeb.KyozoWeb.Live.Workspace.Index.__live__/0 is undefined (module KyozoWeb.KyozoWeb.Live.Workspace.Index is not available)
+    KyozoWeb.KyozoWeb.Live.Workspace.Index.__live__()
+    (phoenix_live_view 1.1.3) lib/phoenix_live_view/static.ex:303: Phoenix.LiveView.Static.load_live!/2
+    (phoenix_live_view 1.1.3) lib/phoenix_live_view/static.ex:128: Phoenix.LiveView.Static.do_render/4
+    (phoenix_live_view 1.1.3) lib/phoenix_live_view/controller.ex:39: Phoenix.LiveView.Controller.live_render/3
+    (phoenix 1.8.0) lib/phoenix/router.ex:416: Phoenix.Router.__call__/5
+    (kyozo 0.1.0) lib/kyozo_web/endpoint.ex:1: KyozoWeb.Endpoint.plug_builder_call/2
+    (kyozo 0.1.0) deps/plug/lib/plug/debugger.ex:155: KyozoWeb.Endpoint."call (overridable 3)"/2
+    (kyozo 0.1.0) lib/kyozo_web/endpoint.ex:1: KyozoWeb.Endpoint.call/2
+    (phoenix 1.8.0) lib/phoenix/endpoint/sync_code_reload_plug.ex:22: Phoenix.Endpoint.SyncCodeReloadPlug.do_call/4
+    (bandit 1.7.0) lib/bandit/pipeline.ex:131: Bandit.Pipeline.call_plug!/2
+    (bandit 1.7.0) lib/bandit/pipeline.ex:42: Bandit.Pipeline.run/5
+    (bandit 1.7.0) lib/bandit/http1/handler.ex:13: Bandit.HTTP1.Handler.handle_data/3
+    (bandit 1.7.0) lib/bandit/delegating_handler.ex:18: Bandit.DelegatingHandler.handle_data/3
+    (bandit 1.7.0) lib/bandit/delegating_handler.ex:8: Bandit.DelegatingHandler.handle_continue/2
+    (stdlib 6.2.2) gen_server.erl:2335: :gen_server.try_handle_continue/3
+    (stdlib 6.2.2) gen_server.erl:2244: :gen_server.loop/7
+    (stdlib 6.2.2) proc_lib.erl:329: :proc_lib.init_p_do_apply/3
+
+[info] DRAINING 1 of 1 total connection(s) for socket Phoenix.LiveReloader.Socket every 2000ms - round 1 of 1
+[notice] SIGTERM received - shutting down
+

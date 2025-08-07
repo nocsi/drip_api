@@ -1,0 +1,127 @@
+openapi: 3.1.0
+info:
+  title: kyozo.runner.v2
+paths: {}
+components:
+  schemas:
+    kyozo.runner.v2.CommandMode:
+      type: string
+      title: CommandMode
+      enum:
+        - COMMAND_MODE_UNSPECIFIED
+        - COMMAND_MODE_INLINE
+        - COMMAND_MODE_FILE
+        - COMMAND_MODE_TERMINAL
+        - COMMAND_MODE_CLI
+    kyozo.runner.v2.ProgramConfig:
+      type: object
+      oneOf:
+        - properties:
+            commands:
+              title: commands
+              description: |-
+                commands are commands to be executed by the program.
+                 The commands are joined and executed as a script.
+              $ref: '#/components/schemas/kyozo.runner.v2.ProgramConfig.CommandList'
+          title: commands
+          required:
+            - commands
+        - properties:
+            script:
+              type: string
+              title: script
+              description: |-
+                script is code to be executed by the program.
+                 Individual lines are joined with the new line character.
+          title: script
+          required:
+            - script
+      properties:
+        programName:
+          type: string
+          title: program_name
+          description: |-
+            program_name is a name of the program to execute.
+             If it's not a path (relative or absolute), the runner
+             will try to resolve the name.
+             For example: "sh", "/bin/bash".
+        arguments:
+          type: array
+          items:
+            type: string
+          title: arguments
+          description: arguments is a list of arguments passed to the program.
+        directory:
+          type: string
+          title: directory
+          description: directory to execute the program in.
+        languageId:
+          type: string
+          title: language_id
+          description: |-
+            language_id associated with script to allow interpreter
+             detection if no specific interpreter program is provided.
+        background:
+          type: boolean
+          title: background
+          description: |-
+            background indicates a background process
+             required to handle running background tasks via CLI in C/I
+        fileExtension:
+          type: string
+          title: file_extension
+          description: |-
+            file_extension associated with script. Some interpreters are strict
+             about file extensions, such as tsc which requires "ts" extension.
+        env:
+          type: array
+          items:
+            type: string
+          title: env
+          description: |-
+            env is a list of additional environment variables
+             that will be injected to the executed program.
+        interactive:
+          type: boolean
+          title: interactive
+          description: |-
+            interactive, if true, uses a pseudo-tty to execute the program.
+             Otherwise, the program is executed using in-memory buffers for I/O.
+        mode:
+          title: mode
+          description: |-
+            TODO(adamb): understand motivation for this. In theory, source
+             should tell whether to execute it inline or as a file.
+          $ref: '#/components/schemas/kyozo.runner.v2.CommandMode'
+        knownId:
+          type: string
+          title: known_id
+          description: optional well known id for cell/block
+        knownName:
+          type: string
+          title: known_name
+          description: optional well known name for cell/block
+        runId:
+          type: string
+          title: run_id
+          description: optional run ID to track the execution of the program
+      title: ProgramConfig
+      additionalProperties: false
+      description: |-
+        ProgramConfig is a configuration for a program to execute.
+         From this configuration, any program can be built.
+    kyozo.runner.v2.ProgramConfig.CommandList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+          title: items
+          description: |-
+            commands are commands to be executed by the program.
+             The commands are joined and executed as a script.
+             For example: ["echo 'Hello, World'", "ls -l /etc"].
+      title: CommandList
+      additionalProperties: false
+security: []

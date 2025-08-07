@@ -1,0 +1,42 @@
+defmodule KyozoWeb.AuthenticationTest do
+  use KyozoWeb.ConnCase, async: true
+
+  test "register for a new account", %{conn: conn} do
+    conn
+    |> visit(~p"/")
+    |> click_link("Register")
+    |> within(
+      "#user-password-register-with-password-wrapper",
+      fn session ->
+        session
+        |> fill_in("Email", with: "newaccount@sevenseacat.net")
+        |> fill_in("Password", with: "password")
+        |> fill_in("Password Confirmation", with: "password")
+        |> click_button("Register")
+      end
+    )
+    |> assert_path(~p"/")
+    |> assert_has(flash(:info), text: "You are now signed in")
+    |> assert_has("strong", text: "newaccount@sevenseacat.net")
+  end
+
+  test "sign in to an existing account", %{conn: conn} do
+    generate(user(email: "other@sevenseacat.net", password: "password"))
+
+    conn
+    |> visit(~p"/")
+    |> click_link("Sign In")
+    |> within(
+      "#user-password-sign-in-with-password-wrapper",
+      fn session ->
+        session
+        |> fill_in("Email", with: "other@sevenseacat.net")
+        |> fill_in("Password", with: "password")
+        |> click_button("Sign in")
+      end
+    )
+    |> assert_path(~p"/")
+    |> assert_has(flash(:info), text: "You are now signed in")
+    |> assert_has("strong", text: "other@sevenseacat.net")
+  end
+end

@@ -1,0 +1,469 @@
+openapi: 3.1.0
+info:
+  title: kyozo.notebook.v1alpha1
+  version: 1.0.1
+paths:
+  /kyozo.notebook.v1alpha1.NotebookService/ResolveNotebook:
+    post:
+      tags:
+        - kyozo.notebook.v1alpha1.NotebookService
+      summary: ResolveNotebook
+      description: |-
+        ResolveNotebook takes [kyozo.parser.v1.Notebook] and a cell index and
+         returns a script that runs the cell taking the whole notebook into account.
+      operationId: kyozo.notebook.v1alpha1.NotebookService.ResolveNotebook
+      parameters:
+        - name: Connect-Protocol-Version
+          in: header
+          required: true
+          schema:
+            $ref: '#/components/schemas/connect-protocol-version'
+        - name: Connect-Timeout-Ms
+          in: header
+          schema:
+            $ref: '#/components/schemas/connect-timeout-header'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/kyozo.notebook.v1alpha1.ResolveNotebookRequest'
+        required: true
+      responses:
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/connect.error'
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/kyozo.notebook.v1alpha1.ResolveNotebookResponse'
+components:
+  schemas:
+    kyozo.parser.v1.CellKind:
+      type: string
+      title: CellKind
+      enum:
+        - CELL_KIND_UNSPECIFIED
+        - CELL_KIND_MARKUP
+        - CELL_KIND_CODE
+        - CELL_KIND_DOC_RESULTS
+    kyozo.parser.v1.CellRole:
+      type: string
+      title: CellRole
+      enum:
+        - CELL_ROLE_UNSPECIFIED
+        - CELL_ROLE_USER
+        - CELL_ROLE_ASSISTANT
+    kyozo.runner.v1.CommandMode:
+      type: string
+      title: CommandMode
+      enum:
+        - COMMAND_MODE_UNSPECIFIED
+        - COMMAND_MODE_INLINE_SHELL
+        - COMMAND_MODE_TEMP_FILE
+        - COMMAND_MODE_TERMINAL
+        - COMMAND_MODE_DAGGER
+    google.protobuf.BoolValue:
+      type: boolean
+      description: |-
+        Wrapper message for `bool`.
+
+         The JSON representation for `BoolValue` is JSON `true` and `false`.
+
+         Not recommended for use in new APIs, but still useful for legacy APIs and
+         has no plan to be removed.
+    google.protobuf.Int64Value:
+      oneOf:
+        - type: string
+        - type: number
+      description: |-
+        Wrapper message for `int64`.
+
+         The JSON representation for `Int64Value` is JSON string.
+
+         Not recommended for use in new APIs, but still useful for legacy APIs and
+         has no plan to be removed.
+    google.protobuf.UInt32Value:
+      type: object
+      properties:
+        value:
+          type: integer
+          title: value
+          description: The uint32 value.
+      title: UInt32Value
+      additionalProperties: false
+      description: |-
+        Wrapper message for `uint32`.
+
+         The JSON representation for `UInt32Value` is JSON number.
+
+         Not recommended for use in new APIs, but still useful for legacy APIs and
+         has no plan to be removed.
+    kyozo.notebook.v1alpha1.ResolveNotebookRequest:
+      type: object
+      properties:
+        notebook:
+          title: notebook
+          $ref: '#/components/schemas/kyozo.parser.v1.Notebook'
+        commandMode:
+          title: command_mode
+          $ref: '#/components/schemas/kyozo.runner.v1.CommandMode'
+        cellIndex:
+          title: cell_index
+          $ref: '#/components/schemas/google.protobuf.UInt32Value'
+      title: ResolveNotebookRequest
+      additionalProperties: false
+    kyozo.notebook.v1alpha1.ResolveNotebookResponse:
+      type: object
+      properties:
+        script:
+          type: string
+          title: script
+      title: ResolveNotebookResponse
+      additionalProperties: false
+    kyozo.parser.v1.Cell:
+      type: object
+      properties:
+        kind:
+          title: kind
+          description: CellKind is the type of cell, e.g. markup or code.
+          $ref: '#/components/schemas/kyozo.parser.v1.CellKind'
+        value:
+          type: string
+          title: value
+          description: Value is the contents of the cell.
+        languageId:
+          type: string
+          title: language_id
+          description: LanguageID is the language of the cell.
+        metadata:
+          type: object
+          title: metadata
+          additionalProperties:
+            type: string
+            title: value
+          description: Metadata is additional metadata about the cell in k/v format.
+        textRange:
+          title: text_range
+          description: TextRange is the range of the cell covering in the markdown source.
+          $ref: '#/components/schemas/kyozo.parser.v1.TextRange'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/kyozo.parser.v1.CellOutput'
+          title: outputs
+          description: Outputs are the outputs of the cell, e.g. stdout, stderr, or other media types.
+        executionSummary:
+          title: execution_summary
+          description: ExecutionSummary is the summary of the cell execution, e.g. success/failure and execution time.
+          $ref: '#/components/schemas/kyozo.parser.v1.CellExecutionSummary'
+        refId:
+          type: string
+          title: ref_id
+          description: RefID is the agent's original unique identifier.
+        role:
+          title: role
+          description: Role is the role of the cell, e.g. user or assistant.
+          $ref: '#/components/schemas/kyozo.parser.v1.CellRole'
+        callId:
+          type: string
+          title: call_id
+          description: CallID is the unique identifier of the cell call.
+        docResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/kyozo.parser.v1.DocResult'
+          title: doc_results
+          description: DocResults are doc results for a cell returned by, e.g., file search
+      title: Cell
+      additionalProperties: false
+    kyozo.parser.v1.Cell.MetadataEntry:
+      type: object
+      properties:
+        key:
+          type: string
+          title: key
+        value:
+          type: string
+          title: value
+      title: MetadataEntry
+      additionalProperties: false
+    kyozo.parser.v1.CellExecutionSummary:
+      type: object
+      properties:
+        executionOrder:
+          title: execution_order
+          $ref: '#/components/schemas/google.protobuf.UInt32Value'
+        success:
+          title: success
+          $ref: '#/components/schemas/google.protobuf.BoolValue'
+        timing:
+          title: timing
+          $ref: '#/components/schemas/kyozo.parser.v1.ExecutionSummaryTiming'
+      title: CellExecutionSummary
+      additionalProperties: false
+    kyozo.parser.v1.CellOutput:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/kyozo.parser.v1.CellOutputItem'
+          title: items
+        metadata:
+          type: object
+          title: metadata
+          additionalProperties:
+            type: string
+            title: value
+        processInfo:
+          title: process_info
+          $ref: '#/components/schemas/kyozo.parser.v1.CellOutputProcessInfo'
+      title: CellOutput
+      additionalProperties: false
+    kyozo.parser.v1.CellOutput.MetadataEntry:
+      type: object
+      properties:
+        key:
+          type: string
+          title: key
+        value:
+          type: string
+          title: value
+      title: MetadataEntry
+      additionalProperties: false
+    kyozo.parser.v1.CellOutputItem:
+      type: object
+      properties:
+        data:
+          type: string
+          title: data
+          format: byte
+        type:
+          type: string
+          title: type
+        mime:
+          type: string
+          title: mime
+      title: CellOutputItem
+      additionalProperties: false
+    kyozo.parser.v1.CellOutputProcessInfo:
+      type: object
+      properties:
+        exitReason:
+          title: exit_reason
+          $ref: '#/components/schemas/kyozo.parser.v1.ProcessInfoExitReason'
+        pid:
+          title: pid
+          $ref: '#/components/schemas/google.protobuf.Int64Value'
+      title: CellOutputProcessInfo
+      additionalProperties: false
+    kyozo.parser.v1.DocResult:
+      type: object
+      properties:
+        fileId:
+          type: string
+          title: file_id
+          description: The unique ID of the file.
+        fileName:
+          type: string
+          title: file_name
+          description: The name of the file.
+        score:
+          type: number
+          title: score
+          format: double
+          description: The relevance score of the file.
+        link:
+          type: string
+          title: link
+          description: 'Link to display for this file TOO(jlewi): Should we include the file contents?'
+      title: DocResult
+      additionalProperties: false
+    kyozo.parser.v1.ExecutionSummaryTiming:
+      type: object
+      properties:
+        startTime:
+          title: start_time
+          $ref: '#/components/schemas/google.protobuf.Int64Value'
+        endTime:
+          title: end_time
+          $ref: '#/components/schemas/google.protobuf.Int64Value'
+      title: ExecutionSummaryTiming
+      additionalProperties: false
+    kyozo.parser.v1.Frontmatter:
+      type: object
+      properties:
+        shell:
+          type: string
+          title: shell
+        cwd:
+          type: string
+          title: cwd
+        skipPrompts:
+          type: boolean
+          title: skip_prompts
+        kyozo:
+          title: kyozo
+          $ref: '#/components/schemas/kyozo.parser.v1.FrontmatterKyozo'
+        category:
+          type: string
+          title: category
+          description: Deprecated category in favor of Tag
+        terminalRows:
+          type: string
+          title: terminal_rows
+        tag:
+          type: string
+          title: tag
+      title: Frontmatter
+      additionalProperties: false
+    kyozo.parser.v1.FrontmatterKyozo:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        version:
+          type: string
+          title: version
+        session:
+          title: session
+          $ref: '#/components/schemas/kyozo.parser.v1.KyozoSession'
+      title: FrontmatterKyozo
+      additionalProperties: false
+    kyozo.parser.v1.Notebook:
+      type: object
+      properties:
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/kyozo.parser.v1.Cell'
+          title: cells
+        metadata:
+          type: object
+          title: metadata
+          additionalProperties:
+            type: string
+            title: value
+        frontmatter:
+          title: frontmatter
+          $ref: '#/components/schemas/kyozo.parser.v1.Frontmatter'
+      title: Notebook
+      additionalProperties: false
+    kyozo.parser.v1.Notebook.MetadataEntry:
+      type: object
+      properties:
+        key:
+          type: string
+          title: key
+        value:
+          type: string
+          title: value
+      title: MetadataEntry
+      additionalProperties: false
+    kyozo.parser.v1.ProcessInfoExitReason:
+      type: object
+      properties:
+        type:
+          type: string
+          title: type
+        code:
+          title: code
+          $ref: '#/components/schemas/google.protobuf.UInt32Value'
+      title: ProcessInfoExitReason
+      additionalProperties: false
+    kyozo.parser.v1.KyozoSession:
+      type: object
+      properties:
+        id:
+          type: string
+          title: id
+        document:
+          title: document
+          $ref: '#/components/schemas/kyozo.parser.v1.KyozoSessionDocument'
+      title: KyozoSession
+      additionalProperties: false
+    kyozo.parser.v1.KyozoSessionDocument:
+      type: object
+      properties:
+        relativePath:
+          type: string
+          title: relative_path
+      title: KyozoSessionDocument
+      additionalProperties: false
+    kyozo.parser.v1.TextRange:
+      type: object
+      properties:
+        start:
+          type: integer
+          title: start
+        end:
+          type: integer
+          title: end
+      title: TextRange
+      additionalProperties: false
+    connect-protocol-version:
+      type: number
+      title: Connect-Protocol-Version
+      enum:
+        - 1
+      description: Define the version of the Connect protocol
+      const: 1
+    connect-timeout-header:
+      type: number
+      title: Connect-Timeout-Ms
+      description: Define the timeout, in ms
+    connect.error:
+      type: object
+      properties:
+        code:
+          type: string
+          examples:
+            - not_found
+          enum:
+            - canceled
+            - unknown
+            - invalid_argument
+            - deadline_exceeded
+            - not_found
+            - already_exists
+            - permission_denied
+            - resource_exhausted
+            - failed_precondition
+            - aborted
+            - out_of_range
+            - unimplemented
+            - internal
+            - unavailable
+            - data_loss
+            - unauthenticated
+          description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+        message:
+          type: string
+          description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+        detail:
+          $ref: '#/components/schemas/google.protobuf.Any'
+      title: Connect Error
+      additionalProperties: true
+      description: 'Error type returned by Connect: https://connectrpc.com/docs/go/errors/#http-representation'
+    google.protobuf.Any:
+      type: object
+      properties:
+        type:
+          type: string
+        value:
+          type: string
+          format: binary
+        debug:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+security: []
+tags:
+  - name: kyozo.notebook.v1alpha1.NotebookService

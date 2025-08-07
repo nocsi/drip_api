@@ -1,0 +1,420 @@
+openapi: 3.1.0
+info:
+  title: kyozo.stream.v1
+paths: {}
+components:
+  schemas:
+    google.rpc.Code:
+      type: string
+      title: Code
+      enum:
+        - OK
+        - CANCELLED
+        - UNKNOWN
+        - INVALID_ARGUMENT
+        - DEADLINE_EXCEEDED
+        - NOT_FOUND
+        - ALREADY_EXISTS
+        - PERMISSION_DENIED
+        - UNAUTHENTICATED
+        - RESOURCE_EXHAUSTED
+        - FAILED_PRECONDITION
+        - ABORTED
+        - OUT_OF_RANGE
+        - UNIMPLEMENTED
+        - INTERNAL
+        - UNAVAILABLE
+        - DATA_LOSS
+      description: |-
+        The canonical error codes for gRPC APIs.
+
+
+         Sometimes multiple error codes may apply.  Services should return
+         the most specific error code that applies.  For example, prefer
+         `OUT_OF_RANGE` over `FAILED_PRECONDITION` if both codes apply.
+         Similarly prefer `NOT_FOUND` or `ALREADY_EXISTS` over `FAILED_PRECONDITION`.
+    kyozo.runner.v2.CommandMode:
+      type: string
+      title: CommandMode
+      enum:
+        - COMMAND_MODE_UNSPECIFIED
+        - COMMAND_MODE_INLINE
+        - COMMAND_MODE_FILE
+        - COMMAND_MODE_TERMINAL
+        - COMMAND_MODE_CLI
+    kyozo.runner.v2.ExecuteStop:
+      type: string
+      title: ExecuteStop
+      enum:
+        - EXECUTE_STOP_UNSPECIFIED
+        - EXECUTE_STOP_INTERRUPT
+        - EXECUTE_STOP_KILL
+    kyozo.runner.v2.SessionStrategy:
+      type: string
+      title: SessionStrategy
+      enum:
+        - SESSION_STRATEGY_UNSPECIFIED
+        - SESSION_STRATEGY_MOST_RECENT
+      description: |-
+        SessionStrategy determines a session selection in
+         an initial execute request.
+    google.protobuf.UInt32Value:
+      type: object
+      properties:
+        value:
+          type: integer
+          title: value
+          description: The uint32 value.
+      title: UInt32Value
+      additionalProperties: false
+      description: |-
+        Wrapper message for `uint32`.
+
+         The JSON representation for `UInt32Value` is JSON number.
+
+         Not recommended for use in new APIs, but still useful for legacy APIs and
+         has no plan to be removed.
+    kyozo.runner.v2.ExecuteRequest:
+      type: object
+      properties:
+        config:
+          title: config
+          $ref: '#/components/schemas/kyozo.runner.v2.ProgramConfig'
+        inputData:
+          type: string
+          title: input_data
+          format: byte
+          description: |-
+            input_data is a byte array that will be send as input
+             to the program.
+        stop:
+          title: stop
+          description: |-
+            stop requests the running process to be stopped.
+             It is allowed only in the consecutive calls.
+          $ref: '#/components/schemas/kyozo.runner.v2.ExecuteStop'
+        winsize:
+          title: winsize
+          description: |-
+            sets pty winsize
+             has no effect in non-interactive mode
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.Winsize'
+        sessionId:
+          type: string
+          title: session_id
+          description: |-
+            session_id indicates in which Session the program should execute.
+             Executing in a Session might provide additional context like
+             environment variables.
+        sessionStrategy:
+          title: session_strategy
+          description: session_strategy is a strategy for selecting the session.
+          $ref: '#/components/schemas/kyozo.runner.v2.SessionStrategy'
+        project:
+          title: project
+          description: project used to load environment variables from .env files.
+          nullable: true
+          $ref: '#/components/schemas/kyozo.runner.v2.Project'
+        storeStdoutInEnv:
+          type: boolean
+          title: store_stdout_in_env
+          description: |-
+            store_stdout_in_env, if true, will store the stdout under well known name
+             and the last ran block in the environment variable `__`.
+      title: ExecuteRequest
+      additionalProperties: false
+    kyozo.runner.v2.ExecuteResponse:
+      type: object
+      properties:
+        exitCode:
+          title: exit_code
+          description: exit_code is sent only in the final message.
+          $ref: '#/components/schemas/google.protobuf.UInt32Value'
+        stdoutData:
+          type: string
+          title: stdout_data
+          format: byte
+          description: stdout_data contains bytes from stdout since the last response.
+        stderrData:
+          type: string
+          title: stderr_data
+          format: byte
+          description: stderr_data contains bytes from stderr since the last response.
+        pid:
+          title: pid
+          description: |-
+            pid contains the process' PID.
+
+             This is only sent once in an initial response for background processes.
+          $ref: '#/components/schemas/google.protobuf.UInt32Value'
+        mimeType:
+          type: string
+          title: mime_type
+          description: |-
+            mime_type is a detected MIME type of the stdout_data.
+
+             This is only sent once in the first response containing stdout_data.
+      title: ExecuteResponse
+      additionalProperties: false
+    kyozo.runner.v2.ProgramConfig:
+      type: object
+      oneOf:
+        - properties:
+            commands:
+              title: commands
+              description: |-
+                commands are commands to be executed by the program.
+                 The commands are joined and executed as a script.
+              $ref: '#/components/schemas/kyozo.runner.v2.ProgramConfig.CommandList'
+          title: commands
+          required:
+            - commands
+        - properties:
+            script:
+              type: string
+              title: script
+              description: |-
+                script is code to be executed by the program.
+                 Individual lines are joined with the new line character.
+          title: script
+          required:
+            - script
+      properties:
+        programName:
+          type: string
+          title: program_name
+          description: |-
+            program_name is a name of the program to execute.
+             If it's not a path (relative or absolute), the runner
+             will try to resolve the name.
+             For example: "sh", "/bin/bash".
+        arguments:
+          type: array
+          items:
+            type: string
+          title: arguments
+          description: arguments is a list of arguments passed to the program.
+        directory:
+          type: string
+          title: directory
+          description: directory to execute the program in.
+        languageId:
+          type: string
+          title: language_id
+          description: |-
+            language_id associated with script to allow interpreter
+             detection if no specific interpreter program is provided.
+        background:
+          type: boolean
+          title: background
+          description: |-
+            background indicates a background process
+             required to handle running background tasks via CLI in C/I
+        fileExtension:
+          type: string
+          title: file_extension
+          description: |-
+            file_extension associated with script. Some interpreters are strict
+             about file extensions, such as tsc which requires "ts" extension.
+        env:
+          type: array
+          items:
+            type: string
+          title: env
+          description: |-
+            env is a list of additional environment variables
+             that will be injected to the executed program.
+        interactive:
+          type: boolean
+          title: interactive
+          description: |-
+            interactive, if true, uses a pseudo-tty to execute the program.
+             Otherwise, the program is executed using in-memory buffers for I/O.
+        mode:
+          title: mode
+          description: |-
+            TODO(adamb): understand motivation for this. In theory, source
+             should tell whether to execute it inline or as a file.
+          $ref: '#/components/schemas/kyozo.runner.v2.CommandMode'
+        knownId:
+          type: string
+          title: known_id
+          description: optional well known id for cell/block
+        knownName:
+          type: string
+          title: known_name
+          description: optional well known name for cell/block
+        runId:
+          type: string
+          title: run_id
+          description: optional run ID to track the execution of the program
+      title: ProgramConfig
+      additionalProperties: false
+      description: |-
+        ProgramConfig is a configuration for a program to execute.
+         From this configuration, any program can be built.
+    kyozo.runner.v2.ProgramConfig.CommandList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+          title: items
+          description: |-
+            commands are commands to be executed by the program.
+             The commands are joined and executed as a script.
+             For example: ["echo 'Hello, World'", "ls -l /etc"].
+      title: CommandList
+      additionalProperties: false
+    kyozo.runner.v2.Project:
+      type: object
+      properties:
+        root:
+          type: string
+          title: root
+          description: |-
+            root is a root directory of the project.
+             The semantic is the same as for the "--project"
+             flag in "kyozo".
+        envLoadOrder:
+          type: array
+          items:
+            type: string
+          title: env_load_order
+          description: |-
+            env_load_order is list of environment files
+             to try and load env from.
+      title: Project
+      additionalProperties: false
+    kyozo.runner.v2.Winsize:
+      type: object
+      properties:
+        rows:
+          type: integer
+          title: rows
+        cols:
+          type: integer
+          title: cols
+        x:
+          type: integer
+          title: x
+        y:
+          type: integer
+          title: y
+      title: Winsize
+      additionalProperties: false
+    kyozo.stream.v1.Ping:
+      type: object
+      properties:
+        timestamp:
+          type:
+            - integer
+            - string
+          title: timestamp
+          format: int64
+      title: Ping
+      additionalProperties: false
+      description: Ping message for protocol-level keep-alive
+    kyozo.stream.v1.Pong:
+      type: object
+      properties:
+        timestamp:
+          type:
+            - integer
+            - string
+          title: timestamp
+          format: int64
+      title: Pong
+      additionalProperties: false
+      description: Pong message for protocol-level keep-alive response
+    kyozo.stream.v1.WebsocketRequest:
+      type: object
+      oneOf:
+        - properties:
+            executeRequest:
+              title: execute_request
+              description: Add other payloads here as needed.
+              $ref: '#/components/schemas/kyozo.runner.v2.ExecuteRequest'
+          title: execute_request
+          required:
+            - executeRequest
+      properties:
+        ping:
+          title: ping
+          description: |-
+            Protocol-level ping for frontend heartbeat. Unlike websocket servers which
+             have a spec-integral heartbeat (https://developer.mozilla.org/en-US/docs/Web/API/WebWebsockets_API/Writing_WebWebsocket_servers#pings_and_pongs_the_heartbeat_of_websockets),
+             we need to specify our own to cover client->server. The integral heartbeat
+             only works server->client and the browser sandbox is not privy to it.
+             Once the server receives a ping, it will send a pong response with the
+             exact same timestamp.
+          $ref: '#/components/schemas/kyozo.stream.v1.Ping'
+        authorization:
+          type: string
+          title: authorization
+          description: Optional authorization header, similar to the HTTP Authorization header.
+        knownId:
+          type: string
+          title: known_id
+          description: Optional Known ID to track the origin cell/block of the request.
+        runId:
+          type: string
+          title: run_id
+          description: Optional Run ID to track and resume execution.
+      title: WebsocketRequest
+      additionalProperties: false
+      description: |-
+        WebsocketRequest defines the message sent by the client over a websocket.
+         The request is a union of types that indicate the type of message.
+    kyozo.stream.v1.WebsocketResponse:
+      type: object
+      oneOf:
+        - properties:
+            executeResponse:
+              title: execute_response
+              description: Add other payloads here as needed.
+              $ref: '#/components/schemas/kyozo.runner.v2.ExecuteResponse'
+          title: execute_response
+          required:
+            - executeResponse
+      properties:
+        pong:
+          title: pong
+          description: |-
+            Protocol-level pong for frontend heartbeat. Once the server receives
+             a ping, it will send a pong response with the exact same timestamp.
+             This allows the frontend (client) to detect if the connection is
+             still alive or stale/inactive. See WebsocketRequest's ping for more details.
+          $ref: '#/components/schemas/kyozo.stream.v1.Pong'
+        status:
+          title: status
+          description: Optional websocket-level status.
+          $ref: '#/components/schemas/kyozo.stream.v1.WebsocketStatus'
+        knownId:
+          type: string
+          title: known_id
+          description: Optional Known ID to track the origin cell/block of the request.
+        runId:
+          type: string
+          title: run_id
+          description: Optional Run ID to track and resume execution.
+      title: WebsocketResponse
+      additionalProperties: false
+      description: |-
+        WebsocketResponse defines the message sent by the server over a websocket.
+         The response is a union of types that indicate the type of message.
+    kyozo.stream.v1.WebsocketStatus:
+      type: object
+      properties:
+        code:
+          title: code
+          $ref: '#/components/schemas/google.rpc.Code'
+        message:
+          type: string
+          title: message
+      title: WebsocketStatus
+      additionalProperties: false
+      description: Represents websocket-level status (e.g., for auth, protocol, or other errors).
+security: []

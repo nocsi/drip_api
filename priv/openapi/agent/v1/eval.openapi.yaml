@@ -1,0 +1,274 @@
+openapi: 3.1.0
+info:
+  title: agent.v1
+paths: {}
+components:
+  schemas:
+    agent.v1.Assertion.Result:
+      type: string
+      title: Result
+      enum:
+        - RESULT_UNSPECIFIED
+        - RESULT_TRUE
+        - RESULT_FALSE
+        - RESULT_SKIPPED
+      description: Outcome of an assertion after a test run.
+    agent.v1.Assertion.Type:
+      type: string
+      title: Type
+      enum:
+        - TYPE_UNSPECIFIED
+        - TYPE_SHELL_REQUIRED_FLAG
+        - TYPE_TOOL_INVOKED
+        - TYPE_FILE_RETRIEVED
+        - TYPE_LLM_JUDGE
+        - TYPE_CODEBLOCK_REGEX
+      description: What we are checking for.
+    agent.v1.Assertion:
+      type: object
+      oneOf:
+        - properties:
+            codeblockRegex:
+              title: codeblock_regex
+              $ref: '#/components/schemas/agent.v1.Assertion.CodeblockRegex'
+          title: codeblock_regex
+          required:
+            - codeblockRegex
+        - properties:
+            fileRetrieval:
+              title: file_retrieval
+              $ref: '#/components/schemas/agent.v1.Assertion.FileRetrieval'
+          title: file_retrieval
+          required:
+            - fileRetrieval
+        - properties:
+            llmJudge:
+              title: llm_judge
+              $ref: '#/components/schemas/agent.v1.Assertion.LLMJudge'
+          title: llm_judge
+          required:
+            - llmJudge
+        - properties:
+            shellRequiredFlag:
+              title: shell_required_flag
+              $ref: '#/components/schemas/agent.v1.Assertion.ShellRequiredFlag'
+          title: shell_required_flag
+          required:
+            - shellRequiredFlag
+        - properties:
+            toolInvocation:
+              title: tool_invocation
+              $ref: '#/components/schemas/agent.v1.Assertion.ToolInvocation'
+          title: tool_invocation
+          required:
+            - toolInvocation
+      properties:
+        name:
+          type: string
+          title: name
+          minLength: 1
+        type:
+          title: type
+          $ref: '#/components/schemas/agent.v1.Assertion.Type'
+        result:
+          title: result
+          $ref: '#/components/schemas/agent.v1.Assertion.Result'
+        failureReason:
+          type: string
+          title: failure_reason
+          description: If the assertion failed, this will contain the reason.
+      title: Assertion
+      required:
+        - name
+        - type
+      additionalProperties: false
+      description: |-
+        -------------------------------------------------------------------------
+         Assertions
+         -------------------------------------------------------------------------
+    agent.v1.Assertion.CodeblockRegex:
+      type: object
+      properties:
+        regex:
+          type: string
+          title: regex
+          minLength: 1
+          description: The regex pattern to match against code blocks
+      title: CodeblockRegex
+      required:
+        - regex
+      additionalProperties: false
+      description: Checks if at least one code block matches the regex.
+    agent.v1.Assertion.FileRetrieval:
+      type: object
+      properties:
+        fileId:
+          type: string
+          title: file_id
+          minLength: 1
+        fileName:
+          type: string
+          title: file_name
+          description: Optional human-readable name
+      title: FileRetrieval
+      required:
+        - fileId
+      additionalProperties: false
+      description: Verifies that a file **is** or **is not** retrieved.
+    agent.v1.Assertion.LLMJudge:
+      type: object
+      properties:
+        prompt:
+          type: string
+          title: prompt
+          minLength: 1
+      title: LLMJudge
+      required:
+        - prompt
+      additionalProperties: false
+      description: Asks an LLM to grade the assistant's answer.
+    agent.v1.Assertion.ShellRequiredFlag:
+      type: object
+      properties:
+        command:
+          type: string
+          title: command
+          minLength: 1
+          description: e.g. "kubectl"
+        flags:
+          type: array
+          items:
+            type: string
+            minItems: 1
+          title: flags
+          minItems: 1
+          description: e.g. ["--context"]
+      title: ShellRequiredFlag
+      required:
+        - command
+        - flags
+      additionalProperties: false
+      description: Verifies that a shell command includes specific flags.
+    agent.v1.Assertion.ToolInvocation:
+      type: object
+      properties:
+        toolName:
+          type: string
+          title: tool_name
+          minLength: 1
+          description: e.g. "file_search"
+      title: ToolInvocation
+      required:
+        - toolName
+      additionalProperties: false
+      description: Verifies that a tool **is** or **is not** invoked.
+    agent.v1.EvalDataset:
+      type: object
+      properties:
+        samples:
+          type: array
+          items:
+            $ref: '#/components/schemas/agent.v1.EvalSample'
+          title: samples
+      title: EvalDataset
+      additionalProperties: false
+    agent.v1.EvalSample:
+      type: object
+      properties:
+        kind:
+          type: string
+          title: kind
+          minLength: 1
+          description: Resource kind, always "EvalSample"
+        metadata:
+          title: metadata
+          description: Standard metadata (name, labels, etc.)
+          $ref: '#/components/schemas/agent.v1.ObjectMeta'
+        inputText:
+          type: string
+          title: input_text
+          minLength: 1
+          description: The input text to be evaluated
+        assertions:
+          type: array
+          items:
+            $ref: '#/components/schemas/agent.v1.Assertion'
+          title: assertions
+          minItems: 1
+          description: List of assertions to check for this input
+      title: EvalSample
+      required:
+        - kind
+        - metadata
+        - inputText
+        - assertions
+      additionalProperties: false
+      description: |-
+        -------------------------------------------------------------------------
+         EvalSample – Represents a single evaluation input and its expected assertions
+         -------------------------------------------------------------------------
+    agent.v1.Experiment:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+          title: api_version
+          minLength: 1
+          description: API version of the resource, e.g. "cloudassistant.io/v1alpha1".
+        kind:
+          type: string
+          title: kind
+          minLength: 1
+          description: Kind of the resource. Always "Experiment" for this CRD.
+        metadata:
+          title: metadata
+          description: Standard Kubernetes object metadata (name, labels, annotations, etc.).
+          $ref: '#/components/schemas/agent.v1.ObjectMeta'
+        spec:
+          title: spec
+          description: User-defined configuration for the experiment.
+          $ref: '#/components/schemas/agent.v1.ExperimentSpec'
+      title: Experiment
+      required:
+        - apiVersion
+        - kind
+        - metadata
+        - spec
+      additionalProperties: false
+    agent.v1.ExperimentSpec:
+      type: object
+      properties:
+        datasetPath:
+          type: string
+          title: dataset_path
+          minLength: 1
+          description: Path to the folder containing the dataset to evaluate.
+        outputDir:
+          type: string
+          title: output_dir
+          minLength: 1
+          description: Directory where experiment reports will be written.
+        inferenceEndpoint:
+          type: string
+          title: inference_endpoint
+          minLength: 1
+          description: URL of the backend inference service to call during evaluation.
+      title: ExperimentSpec
+      required:
+        - datasetPath
+        - outputDir
+        - inferenceEndpoint
+      additionalProperties: false
+    agent.v1.ObjectMeta:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+          minLength: 1
+          description: Name of the resource, e.g. "experiment-test".
+      title: ObjectMeta
+      required:
+        - name
+      additionalProperties: false
+security: []
