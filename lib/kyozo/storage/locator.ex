@@ -1,4 +1,11 @@
 defmodule Kyozo.Storage.Locator do
+  @moduledoc """
+  Storage locator for managing file locations across different storage backends.
+  
+  Provides unique identifiers for stored content and tracks which backend
+  is responsible for each piece of content.
+  """
+
   defstruct [:id, :storage, metadata: %{}]
 
   @type t() :: %__MODULE__{
@@ -7,6 +14,20 @@ defmodule Kyozo.Storage.Locator do
           metadata: map()
         }
 
+  @doc """
+  Generates a new unique storage locator.
+  
+  Creates a UUIDv7 for time-ordered identifiers that work well
+  with database indexing and provide some temporal ordering.
+  """
+  def generate do
+    Ash.UUID.generate()
+  end
+
+  @doc """
+  Creates a new locator struct from attributes.
+  Raises on invalid data.
+  """
   def new!(attrs) do
     case new(attrs) do
       {:ok, locator} -> locator
@@ -14,6 +35,10 @@ defmodule Kyozo.Storage.Locator do
     end
   end
 
+  @doc """
+  Creates a new locator struct from attributes.
+  Returns {:ok, locator} or {:error, reason}.
+  """
   def new(attrs) when is_list(attrs),
     do: attrs |> Map.new() |> new()
 
@@ -35,4 +60,31 @@ defmodule Kyozo.Storage.Locator do
        do: {:error, "storage must be string or atom"}
 
   defp validate(struct), do: {:ok, struct}
+
+  @doc """
+  Converts a locator to a map representation.
+  """
+  def to_map(%__MODULE__{} = locator) do
+    Map.from_struct(locator)
+  end
+
+  @doc """
+  Extracts the backend type from a locator.
+  """
+  def get_backend(%__MODULE__{storage: storage}) when is_atom(storage), do: storage
+  def get_backend(%__MODULE__{storage: storage}) when is_binary(storage), do: String.to_existing_atom(storage)
+
+  @doc """
+  Updates locator metadata.
+  """
+  def put_metadata(%__MODULE__{} = locator, key, value) do
+    %{locator | metadata: Map.put(locator.metadata, key, value)}
+  end
+
+  @doc """
+  Gets a value from locator metadata.
+  """
+  def get_metadata(%__MODULE__{metadata: metadata}, key, default \\ nil) do
+    Map.get(metadata, key, default)
+  end
 end

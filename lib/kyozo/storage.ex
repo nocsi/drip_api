@@ -39,17 +39,17 @@ defmodule Kyozo.Storage do
 
   use Ash.Domain,
     validate_config_inclusion?: false,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain, AshOban.Domain]
+    extensions: [AshJsonApi.Domain, AshGraphql.Domain]
 
   alias Kyozo.Storage.{StorageResource, Upload, Locator}
+
+  graphql do
+    authorize? true
+  end
 
   json_api do
     authorize? true
     prefix "/api/v1/storage"
-  end
-
-  graphql do
-    authorize? true
   end
 
   resources do
@@ -62,9 +62,7 @@ defmodule Kyozo.Storage do
       define :update_storage_resource, action: :update
       define :destroy_storage_resource, action: :destroy
     end
-
   end
-
 
   @doc """
   Stores content in the appropriate storage backend.
@@ -123,11 +121,14 @@ defmodule Kyozo.Storage do
     storage_options = Keyword.get(opts, :storage_options, %{})
     actor = Keyword.get(opts, :actor)
 
-    StorageResource.create(%{
-      upload: upload,
-      storage_backend: backend,
-      storage_options: storage_options
-    }, actor: actor)
+    StorageResource.create(
+      %{
+        upload: upload,
+        storage_backend: backend,
+        storage_options: storage_options
+      },
+      actor: actor
+    )
   end
 
   @doc """
@@ -277,17 +278,19 @@ defmodule Kyozo.Storage do
     import Ecto.Query
 
     # Cancel jobs for this specific storage resource
-    cancelled_jobs = Kyozo.Repo.all(
-      from j in Oban.Job,
-      where: fragment("?->>'storage_resource_id' = ?", j.args, ^storage_resource.id) and
-             j.state in ["available", "scheduled"],
-      select: j.id
-    )
+    cancelled_jobs =
+      Kyozo.Repo.all(
+        from j in Oban.Job,
+          where:
+            fragment("?->>'storage_resource_id' = ?", j.args, ^storage_resource.id) and
+              j.state in ["available", "scheduled"],
+          select: j.id
+      )
 
     if length(cancelled_jobs) > 0 do
       Oban.cancel_all_jobs(
         from j in Oban.Job,
-        where: j.id in ^cancelled_jobs
+          where: j.id in ^cancelled_jobs
       )
 
       {:ok, length(cancelled_jobs)}
@@ -368,38 +371,52 @@ defmodule Kyozo.Storage do
     import Ecto.Query
 
     # Get resource statistics
-    resource_stats = case Ash.read(StorageResource) do
-      {:ok, resources} ->
-        Enum.reduce(resources, %{
-          unprocessed_resources: 0,
-          total_resources: 0
-        }, fn resource, acc ->
-          metadata = resource.storage_metadata || %{}
+    resource_stats =
+      case Ash.read(StorageResource) do
+        {:ok, resources} ->
+          Enum.reduce(
+            resources,
+            %{
+              unprocessed_resources: 0,
+              total_resources: 0
+            },
+            fn resource, acc ->
+              metadata = resource.storage_metadata || %{}
 
-          %{
-            unprocessed_resources: acc.unprocessed_resources +
-              if(Map.get(metadata, "processed") != true, do: 1, else: 0),
-            total_resources: acc.total_resources + 1
-          }
-        end)
+              %{
+                unprocessed_resources:
+                  acc.unprocessed_resources +
+                    if(Map.get(metadata, "processed") != true, do: 1, else: 0),
+                total_resources: acc.total_resources + 1
+              }
+            end
+          )
 
-      {:error, _reason} ->
-        %{unprocessed_resources: 0, total_resources: 0}
-    end
+        {:error, _reason} ->
+          %{unprocessed_resources: 0, total_resources: 0}
+      end
 
     # Get Oban job statistics
-    oban_stats = Kyozo.Repo.all(
-      from j in Oban.Job,
-      where: j.queue in ["storage_processing", "storage_cleanup", "storage_versions", "storage_bulk"],
-      group_by: [j.queue, j.state],
-      select: %{queue: j.queue, state: j.state, count: count(j.id)}
-    )
-    |> Enum.reduce(%{}, fn %{queue: queue, state: state, count: count}, acc ->
-      queue_atom = String.to_atom(queue)
-      Map.update(acc, queue_atom, %{state => count}, fn queue_stats ->
-        Map.put(queue_stats, state, count)
+    oban_stats =
+      Kyozo.Repo.all(
+        from j in Oban.Job,
+          where:
+            j.queue in [
+              "storage_processing",
+              "storage_cleanup",
+              "storage_versions",
+              "storage_bulk"
+            ],
+          group_by: [j.queue, j.state],
+          select: %{queue: j.queue, state: j.state, count: count(j.id)}
+      )
+      |> Enum.reduce(%{}, fn %{queue: queue, state: state, count: count}, acc ->
+        queue_atom = String.to_atom(queue)
+
+        Map.update(acc, queue_atom, %{state => count}, fn queue_stats ->
+          Map.put(queue_stats, state, count)
+        end)
       end)
-    end)
 
     stats = Map.merge(resource_stats, %{oban_stats: oban_stats})
     {:ok, stats}
@@ -426,7 +443,8 @@ defmodule Kyozo.Storage do
       storage_resource.id,
       content: content,
       storage_options: storage_options,
-      priority: 10  # High priority for immediate processing
+      # High priority for immediate processing
+      priority: 10
     )
   end
 
@@ -453,7 +471,8 @@ defmodule Kyozo.Storage do
       content: content,
       version_name: version_name,
       commit_message: commit_message,
-      priority: 10  # High priority for immediate processing
+      # High priority for immediate processing
+      priority: 10
     )
   end
 
@@ -485,11 +504,12 @@ defmodule Kyozo.Storage do
       batch_size: batch_size
     }
 
-    args = if backend do
-      Map.put(args, :backend, backend)
-    else
-      args
-    end
+    args =
+      if backend do
+        Map.put(args, :backend, backend)
+      else
+        args
+      end
 
     # Use the first available storage resource to trigger the scheduled action
     case list_storage_resources(limit: 1) do
@@ -578,33 +598,37 @@ defmodule Kyozo.Storage do
   def get_storage_stats(backend \\ nil) do
     query = StorageResource
 
-    query = if backend do
-      Ash.Query.filter(query, storage_backend == ^backend)
-    else
-      query
-    end
+    query =
+      if backend do
+        Ash.Query.filter(query, storage_backend == ^backend)
+      else
+        query
+      end
 
     case Ash.read(query) do
       {:ok, resources} ->
         total_files = length(resources)
-        total_size = Enum.reduce(resources, 0, & &1.file_size + &2)
+        total_size = Enum.reduce(resources, 0, &(&1.file_size + &2))
 
-        by_backend = resources
-        |> Enum.group_by(& &1.storage_backend)
-        |> Enum.map(fn {backend, files} ->
-          {backend, %{
-            count: length(files),
-            total_size: Enum.reduce(files, 0, & &1.file_size + &2)
-          }}
-        end)
-        |> Enum.into(%{})
+        by_backend =
+          resources
+          |> Enum.group_by(& &1.storage_backend)
+          |> Enum.map(fn {backend, files} ->
+            {backend,
+             %{
+               count: length(files),
+               total_size: Enum.reduce(files, 0, &(&1.file_size + &2))
+             }}
+          end)
+          |> Enum.into(%{})
 
-        {:ok, %{
-          total_files: total_files,
-          total_size: total_size,
-          formatted_total_size: format_file_size(total_size),
-          by_backend: by_backend
-        }}
+        {:ok,
+         %{
+           total_files: total_files,
+           total_size: total_size,
+           formatted_total_size: format_file_size(total_size),
+           by_backend: by_backend
+         }}
 
       {:error, reason} ->
         {:error, reason}
@@ -614,6 +638,7 @@ defmodule Kyozo.Storage do
   @doc """
   Lists all storage resources with optional filtering.
   """
+
   # def list_storage_resources(opts \\ []) do
   #   query = StorageResource
   #   |> Ash.Query.load([:storage_info])
@@ -650,7 +675,8 @@ defmodule Kyozo.Storage do
   Validates content against MIME type and size constraints.
   """
   def validate_content(content, mime_type, opts \\ []) do
-    max_size = Keyword.get(opts, :max_size, 100 * 1024 * 1024) # 100MB default
+    # 100MB default
+    max_size = Keyword.get(opts, :max_size, 100 * 1024 * 1024)
 
     cond do
       byte_size(content) > max_size ->
@@ -675,15 +701,37 @@ defmodule Kyozo.Storage do
     extension = Path.extname(file_name)
 
     extension in [
-      ".ex", ".exs", ".py", ".js", ".ts", ".rb", ".go",
-      ".rs", ".java", ".c", ".cpp", ".h", ".hpp",
-      ".php", ".html", ".css", ".scss", ".sql",
-      ".sh", ".bash", ".zsh", ".fish", ".dockerfile"
+      ".ex",
+      ".exs",
+      ".py",
+      ".js",
+      ".ts",
+      ".rb",
+      ".go",
+      ".rs",
+      ".java",
+      ".c",
+      ".cpp",
+      ".h",
+      ".hpp",
+      ".php",
+      ".html",
+      ".css",
+      ".scss",
+      ".sql",
+      ".sh",
+      ".bash",
+      ".zsh",
+      ".fish",
+      ".dockerfile"
     ]
   end
 
   defp format_file_size(size) when size < 1024, do: "#{size} B"
   defp format_file_size(size) when size < 1024 * 1024, do: "#{Float.round(size / 1024, 1)} KB"
-  defp format_file_size(size) when size < 1024 * 1024 * 1024, do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+
+  defp format_file_size(size) when size < 1024 * 1024 * 1024,
+    do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+
   defp format_file_size(size), do: "#{Float.round(size / (1024 * 1024 * 1024), 1)} GB"
 end

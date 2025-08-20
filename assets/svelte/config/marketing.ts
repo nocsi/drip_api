@@ -3,16 +3,20 @@ import { type MarketingConfig } from '$lib/config';
 export const marketingConfig: MarketingConfig = {
 	mainNav: [
 		{
-			title: 'Pricing',
-			href: '#'
+			title: 'Platform',
+			href: '#platform'
 		},
 		{
-			title: 'Blog',
-			href: '#'
+			title: 'Architecture', 
+			href: '#architecture'
 		},
 		{
-			title: 'Documentation',
-			href: '#'
+			title: 'Live Demo',
+			href: '#demo'
+		},
+		{
+			title: 'Get Started',
+			href: '#get-started'
 		}
 	]
 };

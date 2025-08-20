@@ -75,7 +75,7 @@ defmodule Kyozo.Workspaces do
       define :list_events
       define :list_workspace_events, args: [:workspace_id]
     end
-  end
+    resource Kyozo.Workspaces.DocumentBlobRef  end
 
   @doc """
   Subscribe to workspace events for real-time updates.

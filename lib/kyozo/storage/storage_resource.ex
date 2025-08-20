@@ -1,5 +1,19 @@
 defmodule Kyozo.Storage.StorageResource do
-  @derive {Jason.Encoder, only: [:id, :locator_id, :file_name, :mime_type, :file_size, :checksum, :version, :storage_backend, :storage_metadata, :is_versioned, :created_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :locator_id,
+             :file_name,
+             :mime_type,
+             :file_size,
+             :checksum,
+             :version,
+             :storage_backend,
+             :storage_metadata,
+             :is_versioned,
+             :created_at,
+             :updated_at
+           ]}
 
   @moduledoc """
   Base storage resource for managing file storage across different backends.
@@ -32,9 +46,22 @@ defmodule Kyozo.Storage.StorageResource do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource, AshOban]
+    extensions: [AshJsonApi.Resource]
 
   alias Kyozo.Storage.{Upload, Locator}
+
+  json_api do
+    type "storage_resource"
+
+    routes do
+      base "/storage_resources"
+      get :read
+      index :list
+      post :create
+      patch :update
+      delete :destroy
+    end
+  end
 
   postgres do
     table "storage_resources"
@@ -51,22 +78,205 @@ defmodule Kyozo.Storage.StorageResource do
     end
   end
 
-  json_api do
-    type "storage_resource"
+  actions do
+    default_accept [
+      :file_name,
+      :mime_type,
+      :file_size,
+      :checksum,
+      :version,
+      :storage_backend,
+      :storage_metadata,
+      :is_versioned
+    ]
 
-    routes do
-      base "/storage_resources"
-      get :read
-      index :list
-      post :create
-      patch :update
-      delete :destroy
+    defaults [:read, :update, :destroy]
+
+    read :list do
+      prepare build(load: [:storage_info])
     end
+
+    create :create do
+      accept [
+        :file_name,
+        :mime_type,
+        :file_size,
+        :checksum,
+        :version,
+        :storage_backend,
+        :storage_metadata,
+        :is_versioned
+      ]
+
+      argument :content, :string
+      argument :upload, :struct, constraints: [instance_of: Upload]
+      argument :locator_id, :string
+
+      change {__MODULE__.Changes.ProcessStorage, []}
+      validate {__MODULE__.Validations.ValidateContent, []}
+    end
+
+    create :create_storage_entry do
+      accept [
+        :file_name,
+        :mime_type,
+        :file_size,
+        :checksum,
+        :version,
+        :storage_backend,
+        :storage_metadata,
+        :is_versioned
+      ]
+
+      argument :content, :string, allow_nil?: false
+      argument :storage_options, :map, default: %{}
+
+      change {__MODULE__.Changes.CreateFromContent, []}
+    end
+
+    action :store_content, :struct do
+      argument :content, :string, allow_nil?: false
+      argument :file_name, :string, allow_nil?: false
+      argument :storage_backend, :atom
+      argument :storage_options, :map, default: %{}
+
+      run {__MODULE__.Actions.StoreContent, []}
+    end
+
+    action :retrieve_content, :string do
+      run {__MODULE__.Actions.RetrieveContent, []}
+    end
+
+    action :delete_content, :struct do
+      run {__MODULE__.Actions.DeleteContent, []}
+    end
+
+    action :create_version, :struct do
+      argument :content, :string, allow_nil?: false
+      argument :version_name, :string
+      argument :commit_message, :string
+
+      run {__MODULE__.Actions.CreateVersion, []}
+    end
+
+    # Actions for scheduling Oban jobs
+    action :schedule_bulk_processing, :struct do
+      argument :operation, :atom, default: :process_unprocessed
+      argument :batch_size, :integer, default: 50
+      argument :backend, :atom
+
+      run {__MODULE__.Actions.ScheduleBulkProcessing, []}
+    end
+
+    action :schedule_maintenance, :struct do
+      argument :maintenance_type, :atom, allow_nil?: false
+      argument :max_age_hours, :integer, default: 168
+      argument :batch_size, :integer, default: 25
+
+      run {__MODULE__.Actions.ScheduleMaintenance, []}
+    end
+  end
+
+  policies do
+    bypass AshObanInteraction do
+      authorize_if always()
+    end
+
+    # Allow AshOban to trigger background jobs with preserved actor context
+    # bypass AshOban.Checks.AshObanInteraction do
+    #   authorize_if always()
+    # end
+
+    # Allow reading storage resources
+    policy action_type(:read) do
+      authorize_if always()
+    end
+
+    # Only allow creating/updating storage resources for authenticated users
+    policy action_type([:create, :update]) do
+      authorize_if actor_present()
+    end
+
+    # Only allow destroying storage resources for authorized users
+    policy action_type(:destroy) do
+      authorize_if actor_present()
+    end
+
+    # Background job actions - allow AshOban to execute with preserved actor context
+    policy action([:process_storage_async, :cleanup_content_async, :create_version_async]) do
+      # Allow AshOban background jobs
+      authorize_if AshOban.Checks.AshObanInteraction
+      # Also allow authenticated users for manual triggering
+      authorize_if actor_present()
+    end
+  end
+
+  validations do
+    validate present([
+               :locator_id,
+               :file_name,
+               :mime_type,
+               :file_size,
+               :checksum,
+               :storage_backend
+             ])
+
+    validate {__MODULE__.Validations.ValidateStorageBackend, []}
+    validate {__MODULE__.Validations.ValidateFileSize, []}
   end
 
   multitenancy do
     strategy :context
   end
+
+  # oban do
+  #   scheduled_actions do
+  #     # Process unprocessed storage resources every 5 minutes
+  #     schedule :process_unprocessed, "*/5 * * * *" do
+  #       action :schedule_bulk_processing
+
+  #       action_input(%{
+  #         operation: :process_unprocessed,
+  #         batch_size: 50
+  #       })
+
+  #       worker_module_name(__MODULE__.Process.UnprocessedWorker)
+  #     end
+
+  #     # Cleanup maintenance daily at 2 AM
+  #     schedule :daily_cleanup, "0 2 * * *" do
+  #       action :schedule_maintenance
+
+  #       action_input(%{
+  #         maintenance_type: :cleanup
+  #       })
+
+  #       worker_module_name(__MODULE__.Process.CleanupWorker)
+  #     end
+
+  #     # Version creation maintenance every 10 minutes
+  #     schedule :version_creation, "*/10 * * * *" do
+  #       action :schedule_maintenance
+
+  #       action_input(%{
+  #         maintenance_type: :version_creation
+  #       })
+
+  #       worker_module_name(__MODULE__.Process.VersionCreationWorker)
+  #     end
+
+  #     # Weekly health check on Sundays at 3 AM
+  #     schedule :weekly_health_check, "0 3 * * 0" do
+  #       action :schedule_maintenance
+
+  #       action_input(%{
+  #         maintenance_type: :health_check
+  #       })
+
+  #       worker_module_name(__MODULE__.Process.HealthCheckWorker)
+  #     end
+  #   end
+  # end
 
   # GraphQL disabled - internal storage resource
   # graphql do
@@ -166,119 +376,6 @@ defmodule Kyozo.Storage.StorageResource do
     # Add other storage types as they're implemented
   end
 
-  actions do
-    default_accept [:file_name, :mime_type, :file_size, :checksum, :version, :storage_backend, :storage_metadata, :is_versioned]
-    defaults [:read, :update, :destroy]
-
-    read :list do
-      prepare build(load: [:storage_info])
-    end
-
-    create :create do
-      accept [:file_name, :mime_type, :file_size, :checksum, :version, :storage_backend, :storage_metadata, :is_versioned]
-
-      argument :content, :string
-      argument :upload, :struct, constraints: [instance_of: Upload]
-      argument :locator_id, :string
-
-      change {__MODULE__.Changes.ProcessStorage, []}
-      validate {__MODULE__.Validations.ValidateContent, []}
-    end
-
-    create :create_storage_entry do
-      accept [:file_name, :mime_type, :file_size, :checksum, :version, :storage_backend, :storage_metadata, :is_versioned]
-
-      argument :content, :string, allow_nil?: false
-      argument :storage_options, :map, default: %{}
-
-      change {__MODULE__.Changes.CreateFromContent, []}
-    end
-
-    action :store_content, :struct do
-      argument :content, :string, allow_nil?: false
-      argument :file_name, :string, allow_nil?: false
-      argument :storage_backend, :atom
-      argument :storage_options, :map, default: %{}
-
-      run {__MODULE__.Actions.StoreContent, []}
-    end
-
-    action :retrieve_content, :string do
-      run {__MODULE__.Actions.RetrieveContent, []}
-    end
-
-    action :delete_content, :struct do
-      run {__MODULE__.Actions.DeleteContent, []}
-    end
-
-    action :create_version, :struct do
-      argument :content, :string, allow_nil?: false
-      argument :version_name, :string
-      argument :commit_message, :string
-
-      run {__MODULE__.Actions.CreateVersion, []}
-    end
-
-    # Actions for scheduling Oban jobs
-    action :schedule_bulk_processing, :struct do
-      argument :operation, :atom, default: :process_unprocessed
-      argument :batch_size, :integer, default: 50
-      argument :backend, :atom
-
-      run {__MODULE__.Actions.ScheduleBulkProcessing, []}
-    end
-
-    action :schedule_maintenance, :struct do
-      argument :maintenance_type, :atom, allow_nil?: false
-      argument :max_age_hours, :integer, default: 168
-      argument :batch_size, :integer, default: 25
-
-      run {__MODULE__.Actions.ScheduleMaintenance, []}
-    end
-  end
-
-  oban do
-    scheduled_actions do
-      # Process unprocessed storage resources every 5 minutes
-      schedule :process_unprocessed, "*/5 * * * *" do
-        action :schedule_bulk_processing
-        action_input %{
-          operation: :process_unprocessed,
-          batch_size: 50
-        }
-        worker_module_name __MODULE__.Process.UnprocessedWorker
-      end
-
-      # Cleanup maintenance daily at 2 AM
-      schedule :daily_cleanup, "0 2 * * *" do
-        action :schedule_maintenance
-        action_input %{
-          maintenance_type: :cleanup
-        }
-        worker_module_name __MODULE__.Process.CleanupWorker
-
-      end
-
-      # Version creation maintenance every 10 minutes
-      schedule :version_creation, "*/10 * * * *" do
-        action :schedule_maintenance
-        action_input %{
-          maintenance_type: :version_creation
-        }
-        worker_module_name __MODULE__.Process.VersionCreationWorker
-      end
-
-      # Weekly health check on Sundays at 3 AM
-      schedule :weekly_health_check, "0 3 * * 0" do
-        action :schedule_maintenance
-        action_input %{
-          maintenance_type: :health_check
-        }
-        worker_module_name __MODULE__.Process.HealthCheckWorker
-      end
-    end
-  end
-
   calculations do
     calculate :storage_info, :map do
       load [:locator_id, :storage_backend, :storage_metadata, :file_size, :mime_type]
@@ -322,49 +419,13 @@ defmodule Kyozo.Storage.StorageResource do
     end
   end
 
-  validations do
-    validate present([:locator_id, :file_name, :mime_type, :file_size, :checksum, :storage_backend])
-    validate {__MODULE__.Validations.ValidateStorageBackend, []}
-    validate {__MODULE__.Validations.ValidateFileSize, []}
-  end
-
-  policies do
-    bypass AshObanInteraction do
-      authorize_if always()
-    end
-    # Allow AshOban to trigger background jobs with preserved actor context
-    # bypass AshOban.Checks.AshObanInteraction do
-    #   authorize_if always()
-    # end
-
-    # Allow reading storage resources
-    policy action_type(:read) do
-      authorize_if always()
-    end
-
-    # Only allow creating/updating storage resources for authenticated users
-    policy action_type([:create, :update]) do
-      authorize_if actor_present()
-    end
-
-    # Only allow destroying storage resources for authorized users
-    policy action_type(:destroy) do
-      authorize_if actor_present()
-    end
-
-    # Background job actions - allow AshOban to execute with preserved actor context
-    policy action([:process_storage_async, :cleanup_content_async, :create_version_async]) do
-      # Allow AshOban background jobs
-      authorize_if AshOban.Checks.AshObanInteraction
-      # Also allow authenticated users for manual triggering
-      authorize_if actor_present()
-    end
-  end
-
   # Helper functions
   defp format_file_size(size) when size < 1024, do: "#{size} B"
   defp format_file_size(size) when size < 1024 * 1024, do: "#{Float.round(size / 1024, 1)} KB"
-  defp format_file_size(size) when size < 1024 * 1024 * 1024, do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+
+  defp format_file_size(size) when size < 1024 * 1024 * 1024,
+    do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+
   defp format_file_size(size), do: "#{Float.round(size / (1024 * 1024 * 1024), 1)} GB"
 
   # Change modules
@@ -442,16 +503,18 @@ defmodule Kyozo.Storage.StorageResource do
         locator_id = Locator.generate()
 
         # Determine if this should be versioned based on backend
-        is_versioned = storage_backend in [:git, :hybrid] and
-                      String.starts_with?(mime_type, "text/")
+        is_versioned =
+          storage_backend in [:git, :hybrid] and
+            String.starts_with?(mime_type, "text/")
 
         # Set up the changeset with basic attributes
-        changeset = changeset
-        |> Ash.Changeset.change_attribute(:locator_id, locator_id)
-        |> Ash.Changeset.change_attribute(:mime_type, mime_type)
-        |> Ash.Changeset.change_attribute(:file_size, byte_size(content))
-        |> Ash.Changeset.change_attribute(:checksum, checksum)
-        |> Ash.Changeset.change_attribute(:is_versioned, is_versioned)
+        changeset =
+          changeset
+          |> Ash.Changeset.change_attribute(:locator_id, locator_id)
+          |> Ash.Changeset.change_attribute(:mime_type, mime_type)
+          |> Ash.Changeset.change_attribute(:file_size, byte_size(content))
+          |> Ash.Changeset.change_attribute(:checksum, checksum)
+          |> Ash.Changeset.change_attribute(:is_versioned, is_versioned)
 
         # Store the content using the appropriate provider
         provider = get_storage_provider(storage_backend)
@@ -491,11 +554,12 @@ defmodule Kyozo.Storage.StorageResource do
           batch_size: batch_size
         ]
 
-        opts = if backend do
-          Keyword.put(opts, :backend, backend)
-        else
-          opts
-        end
+        opts =
+          if backend do
+            Keyword.put(opts, :backend, backend)
+          else
+            opts
+          end
 
         case Kyozo.Storage.Workers.schedule_bulk_processing(opts) do
           {:ok, job} -> {:ok, %{job_id: job.id, operation: operation}}
@@ -508,12 +572,12 @@ defmodule Kyozo.Storage.StorageResource do
       def run(_storage_resource, input, _context) do
         maintenance_type = input.arguments.maintenance_type
 
-        case Kyozo.Storage.Workers.schedule_bulk_processing([
-          operation: "schedule_maintenance",
-          maintenance_type: to_string(maintenance_type),
-          max_age_hours: input.arguments.max_age_hours,
-          batch_size: input.arguments.batch_size
-        ]) do
+        case Kyozo.Storage.Workers.schedule_bulk_processing(
+               operation: "schedule_maintenance",
+               maintenance_type: to_string(maintenance_type),
+               max_age_hours: input.arguments.max_age_hours,
+               batch_size: input.arguments.batch_size
+             ) do
           {:ok, job} -> {:ok, %{job_id: job.id, maintenance_type: maintenance_type}}
           {:error, reason} -> {:error, reason}
         end
@@ -534,7 +598,8 @@ defmodule Kyozo.Storage.StorageResource do
 
         case Kyozo.Storage.StorageResource.create_storage_entry(attrs,
                content: content,
-               storage_options: storage_options) do
+               storage_options: storage_options
+             ) do
           {:ok, storage_resource} -> {:ok, storage_resource}
           {:error, reason} -> {:error, reason}
         end
@@ -591,10 +656,12 @@ defmodule Kyozo.Storage.StorageResource do
             case provider.create_version(storage_resource.locator_id, content, commit_message) do
               {:ok, version_info} ->
                 # Update the storage resource with new version info
-                {:ok, updated_resource} = Ash.update(storage_resource, %{
-                  version: version_name,
-                  storage_metadata: Map.merge(storage_resource.storage_metadata || %{}, version_info)
-                })
+                {:ok, updated_resource} =
+                  Ash.update(storage_resource, %{
+                    version: version_name,
+                    storage_metadata:
+                      Map.merge(storage_resource.storage_metadata || %{}, version_info)
+                  })
 
                 {:ok, updated_resource}
 

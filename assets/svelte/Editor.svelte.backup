@@ -1,0 +1,127 @@
+<script lang="ts">
+	import { onMount, createEventDispatcher } from 'svelte';
+	
+	console.log('Editor.svelte: Component script is executing!');
+
+	// Props that can be passed from LiveView or parent components
+	interface Props {
+		initialContent?: any;
+		editable?: boolean;
+		placeholder?: string;
+		className?: string;
+	}
+
+	let {
+		initialContent = {},
+		editable = true,
+		placeholder = "Start writing...",
+		className = ""
+	}: Props = $props();
+
+	const dispatch = createEventDispatcher();
+	let editorElement: HTMLDivElement;
+	let content = $state('');
+
+	onMount(() => {
+		console.log('Editor.svelte: onMount called!', { initialContent, editable, placeholder });
+		// Simple textarea-based editor for now
+		if (initialContent?.content) {
+			content = JSON.stringify(initialContent.content, null, 2);
+		}
+		console.log('Editor.svelte: Component fully mounted with content:', content);
+	});
+
+	function handleInput(event: Event) {
+		const target = event.target as HTMLTextAreaElement;
+		content = target.value;
+		
+		// Dispatch content change event to LiveView
+		dispatch('content_changed', {
+			content: {
+				type: "doc",
+				content: []
+			}
+		});
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		// Handle basic keyboard shortcuts
+		if (event.ctrlKey || event.metaKey) {
+			switch (event.key) {
+				case 'b':
+					event.preventDefault();
+					// Bold functionality would go here
+					break;
+				case 'i':
+					event.preventDefault();
+					// Italic functionality would go here
+					break;
+			}
+		}
+	}
+</script>
+
+<div class="editor-container {className}">
+	<!-- Debug info -->
+	<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 text-xs">
+		🎯 Editor Component Rendered! Props: editable={editable}, content length={content.length}
+	</div>
+	
+	<div class="editor-toolbar bg-gray-50 border-b p-2 flex gap-2">
+		<button 
+			class="px-3 py-1 bg-white border rounded hover:bg-gray-100 text-sm"
+			onclick={() => dispatch('format', { type: 'bold' })}
+		>
+			Bold
+		</button>
+		<button 
+			class="px-3 py-1 bg-white border rounded hover:bg-gray-100 text-sm"
+			onclick={() => dispatch('format', { type: 'italic' })}
+		>
+			Italic
+		</button>
+		<button 
+			class="px-3 py-1 bg-white border rounded hover:bg-gray-100 text-sm"
+			onclick={() => dispatch('format', { type: 'heading' })}
+		>
+			Heading
+		</button>
+	</div>
+	
+	<div class="editor-content">
+		<textarea
+			bind:this={editorElement}
+			bind:value={content}
+			{placeholder}
+			readonly={!editable}
+			oninput={handleInput}
+			onkeydown={handleKeydown}
+			class="w-full min-h-[400px] p-4 border-none outline-none resize-none font-mono text-sm bg-white"
+		></textarea>
+	</div>
+	
+	<div class="editor-status bg-gray-50 border-t p-2 text-xs text-gray-600">
+		<span>Characters: {content.length}</span>
+		<span class="ml-4">Words: {content.split(/\s+/).filter(w => w.length > 0).length}</span>
+		<span class="ml-4 float-right">
+			{editable ? 'Editable' : 'Read Only'}
+		</span>
+	</div>
+</div>
+
+<style>
+	.editor-container {
+		border: 1px solid #e5e7eb;
+		border-radius: 0.5rem;
+		background: white;
+		overflow: hidden;
+	}
+	
+	.editor-content {
+		background: white;
+	}
+	
+	textarea:focus {
+		outline: none;
+	}
+</style>

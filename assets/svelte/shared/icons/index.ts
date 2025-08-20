@@ -37,6 +37,7 @@ import GoogleIcon from './google-icon.svelte';
 import GitHubIcon from './github-icon.svelte';
 import TwitterIcon from './twitter-icon.svelte';
 import AppleIcon from './apple-icon.svelte';
+import KyozoLogo from './kyozo-logo.svelte';
 
 export type Icon = LucideIcon;
 
@@ -61,7 +62,7 @@ export const Icons = {
 	home: Home,
 	laptop: Laptop,
 	lineChart: LineChart,
-	logo: Trophy,
+	logo: KyozoLogo,
 	media: Image,
 	messages: MessagesSquare,
 	moon: Moon,

@@ -1,7 +1,6 @@
 import Config
 config :ash, policies: [show_policy_breakdowns?: true]
 
-
 # Configure your database
 config :kyozo, Kyozo.Repo,
   username: "postgres",
@@ -27,19 +26,11 @@ config :kyozo, KyozoWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "FFBjCsV3sinGFlIttNMrZz6kOLV+F3+bLivlA9JhJN8wOhlgq5+0vzts+kO5MqXw",
   watchers: [
-    # node: ["build.js", "--watch", cd: Path.expand("../assets", __DIR__)],
-    pnpm: [
-      "vite",
-      "serve",
-      "--mode",
-      "development",
-      "--config",
-      "vite.config.mts",
+    bun: [
+      "run",
+      "dev",
       cd: Path.expand("../assets", __DIR__)
     ]
-    #     "dev": "vite --config vite.config.mts"
-    # esbuild: {Esbuild, :install_and_run, [:kyozo, ~w(--sourcemap=inline --watch)]},
-    # tailwind: {Tailwind, :install_and_run, [:kyozo, ~w(--watch)]}
   ]
 
 # ## SSL Support
@@ -76,16 +67,16 @@ config :kyozo, KyozoWeb.Endpoint,
   ]
 
 config :kyozo, Kyozo.Mailer,
-   adapter: Swoosh.Adapters.SMTP,
-   relay: System.get_env("MAILTRAP_SERVER", "smtp.mailtrap.io"),
-   username: System.get_env("MAILTRAP_USERNAME", "YOUR USERNAME"),
-   password: System.get_env("MAILTRAP_PASSWORD", "YOUR PASSWORD"),
-   ssl: false,
-   tls: :never,
-   auth: :always,
-   port: System.get_env("MAILTRAP_PORT", "2525"),
-   retries: System.get_env("MAILTRAP_RETRIES", "2"),
-   no_mx_lookups: System.get_env("MAILTRAP_NO_MX_LOOKUPS", "false")
+  adapter: Swoosh.Adapters.SMTP,
+  relay: System.get_env("MAILTRAP_SERVER", "smtp.mailtrap.io"),
+  username: System.get_env("MAILTRAP_USERNAME", "YOUR USERNAME"),
+  password: System.get_env("MAILTRAP_PASSWORD", "YOUR PASSWORD"),
+  ssl: false,
+  tls: :never,
+  auth: :always,
+  port: System.get_env("MAILTRAP_PORT", "2525"),
+  retries: System.get_env("MAILTRAP_RETRIES", "2"),
+  no_mx_lookups: System.get_env("MAILTRAP_NO_MX_LOOKUPS", "false")
 
 # Enable dev routes for dashboard and mailbox
 config :kyozo, dev_routes: true, token_signing_secret: "HGcuS+aLVn83xvSiCblt3LCx11VPsWVA"
@@ -109,12 +100,10 @@ config :phoenix_live_view,
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
 
-config :kyozo, Kyozo.Mailer,
-  adapter: Swoosh.Adapters.Local
+config :kyozo, Kyozo.Mailer, adapter: Swoosh.Adapters.Local
 
 config :ash_authentication, debug_authentication_failures?: true
 config :ash_authentication, :bypass_require_interaction_for_confirmation?, true
-
 
 config :ash, :pub_sub, debug?: true
 
@@ -127,7 +116,6 @@ config :kyozo,
   apple_private_key_path: System.get_env("APPLE_PRIVATE_KEY_PATH"),
   apple_redirect_uri: "http://localhost:4000/auth/apple/callback"
 
-
 # S3 development configuration
 config :kyozo, :s3_storage,
   bucket: System.get_env("S3_BUCKET", "kyozo-dev-storage"),
@@ -135,11 +123,12 @@ config :kyozo, :s3_storage,
 
 # Use disk storage by default in development, set BLOB_STORAGE_BACKEND=s3 to test S3
 config :kyozo,
-  blob_storage_backend: (case System.get_env("BLOB_STORAGE_BACKEND") do
-    "s3" -> :s3
-    _ -> :disk
-  end)
+  blob_storage_backend:
+    (case System.get_env("BLOB_STORAGE_BACKEND") do
+       "s3" -> :s3
+       _ -> :disk
+     end)
 
 # LiveSvelte configuration for Vite integration
 config :live_svelte,
-  vite_host: "http://localhost:5173"
+  vite_host: "http://localhost:5180"

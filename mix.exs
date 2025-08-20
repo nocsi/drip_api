@@ -52,7 +52,7 @@ defmodule Kyozo.MixProject do
       {:ash_ai, "~> 0.2"},
       {:sourceror, "~> 1.8"},
       {:ash, "~> 3.0"},
-      {:mdex, "~> 0.2"},
+      {:rustler, "~> 0.31"},
       {:phoenix, "~> 1.8.0-rc.1", override: true},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.10"},
@@ -90,7 +90,7 @@ defmodule Kyozo.MixProject do
       {:sweet_xml, "~> 0.7"},
       {:gen_smtp, "~> 1.3"},
       {:mail, ">= 0.0.0"},
-      {:tidewave, "~> 0.2", only: :dev}
+      {:yaml_elixir, "~> 2.11"}
     ]
   end
 
@@ -117,7 +117,12 @@ defmodule Kyozo.MixProject do
         "cmd --cd assets pnpm vite build --mode production --config vite.config.mts",
         "phx.digest"
       ],
-      "phx.routes": ["phx.routes", "ash_authentication.phoenix.routes"]
+      "ash.setup": [
+        "ash.setup",
+        "ash_postgres.generate_migrations",
+        "ash_postgres.migrate",
+        "ash_postgres.migrate --tenants"
+      ]
     ]
   end
 end

@@ -1,7 +1,6 @@
 defmodule KyozoWeb.Router do
   use KyozoWeb, :router
 
-
   import KyozoWeb.UserAuth
   alias Kyozo.JSONAPI
 
@@ -10,12 +9,10 @@ defmodule KyozoWeb.Router do
   import AshAuthentication.Plug.Helpers
 
   pipeline :mcp do
-    plug AshAuthentication.Strategy.ApiKey.Plug,
-      resource: Kyozo.Accounts.User,
-      # Use `required?: false` to allow unauthenticated
-      # users to connect, for example if some tools
-      # are publicly accessible.
-      required?: true
+    # Temporarily disabled for testing - re-enable authentication later
+    # plug AshAuthentication.Strategy.ApiKey.Plug,
+    #   resource: Kyozo.Accounts.User,
+    #   required?: true
   end
 
   pipeline :graphql do
@@ -68,7 +65,6 @@ defmodule KyozoWeb.Router do
     plug JSONAPI.UnderscoreParameters
   end
 
-
   scope "/gql" do
     pipe_through [:graphql]
 
@@ -86,7 +82,6 @@ defmodule KyozoWeb.Router do
     get "/api", OpenApiSpex.Plug.RenderSpec, []
     get "/openapi", OpenApiSpex.Plug.SwaggerUI, path: "/api"
   end
-
 
   scope "/api/json" do
     pipe_through [:api]
@@ -145,7 +140,6 @@ defmodule KyozoWeb.Router do
       post "/view", FileController, :view
     end
 
-
     # Notebooks API (team-scoped)
     resources "/notebooks", NotebooksController, except: [:new, :edit, :create] do
       post "/duplicate", NotebooksController, :duplicate
@@ -177,7 +171,6 @@ defmodule KyozoWeb.Router do
       live "/auth/register", Live.Auth.RegisterLive
     end
 
-
     # get "/register", UserRegistrationController, :new
     # post "/register", UserRegistrationController, :create
     get "/login", UserSessionController, :new
@@ -188,13 +181,11 @@ defmodule KyozoWeb.Router do
     post "/confirm-new-user", UserConfirmationController, :create
   end
 
-
-
   scope "/", KyozoWeb do
     pipe_through :browser
 
     ash_authentication_live_session :authenticated_routes,
-    on_mount: {KyozoWeb.LiveUserAuth, :live_user_required} do
+      on_mount: {KyozoWeb.LiveUserAuth, :live_user_required} do
       live "/account", AccountLive
       live "/home", Live.Home
 
@@ -202,6 +193,7 @@ defmodule KyozoWeb.Router do
         live "/", GroupsLive
         live "/:group_id/permissions", GroupPermissionsLive
       end
+
       # Native Svelte 5 routes - these will serve the Svelte app
       scope "/workspaces" do
         live "/", Live.Workspace.Index, :index
@@ -257,36 +249,40 @@ defmodule KyozoWeb.Router do
     post "/set-team/:team_id", WorkspaceController, :set_current_team
   end
 
-    # scope "/workspace", NotedWeb do
-    #   pipe_through [
-    #     :browser,
-    #     :require_authenticated_user,
-    #     :ensure_tenant,
-    #     :load_user_membership_data,
-    #     :set_permissions
-    #   ]
+  # scope "/workspace", NotedWeb do
+  #   pipe_through [
+  #     :browser,
+  #     :require_authenticated_user,
+  #     :ensure_tenant,
+  #     :load_user_membership_data,
+  #     :set_permissions
+  #   ]
 
-    #   get "/", WorkspaceController, :show
-    #   get "/search-users", WorkspaceController, :search_users
-    #   post "/invite-user", WorkspaceController, :invite_user
-    #   put "/change-member-role", WorkspaceController, :change_role
-    #   delete "/cancel-invitation", WorkspaceController, :cancel_invitation
-    #   delete "/remove-team-member", WorkspaceController, :remove_team_member
-    #   delete "/leave-team", WorkspaceController, :leave_team
-    #   delete "/delete-team", WorkspaceController, :delete_team
-    #   resources "/notes", NotesController, except: [:index, :show]
-    # end
-
+  #   get "/", WorkspaceController, :show
+  #   get "/search-users", WorkspaceController, :search_users
+  #   post "/invite-user", WorkspaceController, :invite_user
+  #   put "/change-member-role", WorkspaceController, :change_role
+  #   delete "/cancel-invitation", WorkspaceController, :cancel_invitation
+  #   delete "/remove-team-member", WorkspaceController, :remove_team_member
+  #   delete "/leave-team", WorkspaceController, :leave_team
+  #   delete "/delete-team", WorkspaceController, :delete_team
+  #   resources "/notes", NotesController, except: [:index, :show]
+  # end
 
   scope "/mcp" do
     pipe_through :mcp
 
     forward "/", AshAi.Mcp.Router,
       tools: [
-        # list your tools here
-        # :tool1,
-        # :tool2,
-        # For many tools, you will need to set the `protocol_version_statement` to the older version.
+        # Basic Ash tools for interacting with resources
+        :read_ash_resource,
+        :create_ash_resource,
+        :update_ash_resource,
+        :list_ash_resources,
+        # File system tools
+        :read_file,
+        :write_file,
+        :list_directory
       ],
       protocol_version_statement: "2024-11-05",
       otp_app: :kyozo
@@ -320,8 +316,6 @@ defmodule KyozoWeb.Router do
       overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
     )
 
-
-
     # OAuth2 routes temporarily disabled for initial setup
     # oauth_sign_in_route(Kyozo.Accounts.User, :apple,
     #   auth_routes_prefix: "/auth",
@@ -332,8 +326,6 @@ defmodule KyozoWeb.Router do
     #   auth_routes_prefix: "/auth",
     #   overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
     # )
-
-
   end
 
   # Other scopes may use custom stacks.

@@ -24,18 +24,8 @@
     # Claude.Hooks.PostToolUse.RelatedFiles,     # Suggests updating test files when implementation changes
   ],
 
-  # MCP servers (Tidewave is automatically configured for Phoenix projects)
-  # mcp_servers: [:tidewave],
-  #
-  # You can also specify custom configuration like port:
-  # mcp_servers: [
-  #   {:tidewave, [port: 5000]}
-  # ],
-  #
-  # To disable a server without removing it:
-  # mcp_servers: [
-  #   {:tidewave, [port: 4000, enabled?: false]}
-  # ],
+  # MCP servers - using AshAi.Mcp instead of Tidewave
+  # AshAi.Mcp is configured in the router at /mcp endpoint
 
   # Subagents provide specialized expertise with their own context
   subagents: [

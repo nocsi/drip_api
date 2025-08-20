@@ -1,0 +1,80 @@
+# Development Dockerfile for Kyozo API
+# Optimized for faster rebuilds and development workflow
+
+ARG ELIXIR_VERSION=1.16
+ARG OTP_VERSION=26
+ARG DEBIAN_VERSION=bullseye-20230612-slim
+
+ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
+
+FROM ${BUILDER_IMAGE}
+
+# Install system dependencies
+RUN apt-get update -y && apt-get install -y \
+    build-essential \
+    git \
+    curl \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    pkg-config \
+    inotify-tools \
+    postgresql-client \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Rust for NIF compilation
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Node.js 20 and pnpm
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g pnpm@latest \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install hex and rebar
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+# Set development environment
+ENV MIX_ENV="dev"
+ENV NODE_ENV="development"
+
+# Copy dependency files first for better caching
+COPY mix.exs mix.lock ./
+RUN mix deps.get
+
+# Install Node dependencies
+COPY assets/package.json assets/pnpm-lock.yaml ./assets/
+WORKDIR /app/assets
+RUN pnpm install
+WORKDIR /app
+
+# Copy config files
+COPY config config
+RUN mix deps.compile
+
+# Copy native code and build
+COPY native ./native
+WORKDIR /app/native/markdown_ld_nif
+RUN cargo build
+WORKDIR /app
+
+# Copy application code
+COPY . .
+
+# Compile the application
+RUN mix compile
+
+# Expose ports
+EXPOSE 4000 4001
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:4000/api/health || exit 1
+
+# Default command for development
+CMD ["mix", "phx.server"]

@@ -13,7 +13,7 @@
 	} from "@lucide/svelte";
 	import { isAuthenticated } from "$lib/stores/accountStore";
 
-	import Footer from "./Footer.svelte";
+
 </script>
 
 <svelte:head>
@@ -116,6 +116,5 @@
 		</section>
 	</div>
 
-	<!-- Footer -->
-	<Footer />
+
 </div>

@@ -8,6 +8,7 @@
     ui 
   } from '../stores/index';
   import { Button } from '../ui/button';
+  import { Icons } from '../shared/icons';
   import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
   import { Badge } from '../ui/badge';
   import { Separator } from '../ui/separator';
@@ -149,9 +150,7 @@
   <!-- Logo/Brand -->
   <div class="flex items-center px-4 py-6">
     <div class="flex items-center space-x-3">
-      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-        <span class="text-sm font-bold text-primary-foreground">K</span>
-      </div>
+      <Icons.logo size={32} />
       <span class="text-xl font-bold text-foreground">Kyozo</span>
     </div>
   </div>

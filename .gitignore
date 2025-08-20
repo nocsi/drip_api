@@ -52,3 +52,5 @@ node_modules/
 .claude
 
 /assets/node_modules/
+
+priv/*

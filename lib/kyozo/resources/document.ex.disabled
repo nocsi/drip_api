@@ -1,0 +1,641 @@
+defmodule Kyozo.Resources.Document do
+  @moduledoc """
+  Ash resource for managing documents with CRDT state support.
+
+  Represents documents in workspaces with support for real-time collaborative
+  editing, version history, and conflict-free state management using CRDTs.
+
+  Features:
+  - CRDT state storage and retrieval
+  - Vector clock management for distributed editing
+  - Document metadata and content management
+  - Version history tracking
+  - Access control and permissions
+  - Search and indexing support
+  - File attachment handling
+  """
+
+  use Ash.Resource,
+    domain: Kyozo.Workspaces,
+    data_layer: AshPostgres.DataLayer,
+    extensions: [AshJsonApi.Resource, AshGraphql.Resource],
+    authorizers: [Ash.Policy.Authorizer],
+    validate_domain_inclusion?: false
+
+  graphql do
+    type :document
+
+    queries do
+      read_one :get_document, :read
+      list :list_documents, :read
+    end
+
+    mutations do
+      create :create_document, :create
+      update :update_document, :update
+      destroy :destroy_document, :destroy
+    end
+  end
+
+  json_api do
+    type "document"
+
+    routes do
+      base "/documents"
+      get :read
+      index :read
+      post :create
+      patch :update
+      delete :destroy
+    end
+  end
+
+  postgres do
+    table "documents"
+    repo Kyozo.Repo
+
+    references do
+      reference :workspace, on_delete: :delete, on_update: :update
+      reference :owner, on_delete: :nilify, on_update: :update
+      reference :parent_document, on_delete: :nilify, on_update: :update
+    end
+
+    custom_indexes do
+      index [:workspace_id, :name], unique: true, where: "deleted_at IS NULL"
+      index [:workspace_id, :type]
+      index [:workspace_id, :status]
+      index [:owner_id, :created_at]
+      index [:content], using: "gin"
+      index [:metadata], using: "gin"
+      index [:search_vector], using: "gin"
+    end
+
+    check_constraints do
+      check_constraint :valid_status,
+        check: "status IN ('draft', 'active', 'archived', 'deleted')",
+        name: "documents_status_check"
+
+      check_constraint :valid_type,
+        check: "type IN ('markdown', 'text', 'code', 'notebook', 'diagram')",
+        name: "documents_type_check"
+
+      check_constraint :positive_size,
+        check: "size >= 0",
+        name: "documents_positive_size_check"
+    end
+
+    custom_statements do
+      statement :update_document_search_vector_function do
+        up """
+        CREATE OR REPLACE FUNCTION update_document_search_vector()
+        RETURNS TRIGGER AS $$
+        BEGIN
+          NEW.search_vector :=
+            setweight(to_tsvector('english', COALESCE(NEW.name, '')), 'A') ||
+            setweight(to_tsvector('english', COALESCE(NEW.description, '')), 'B') ||
+            setweight(to_tsvector('english', COALESCE(NEW.content, '')), 'C');
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+
+        down "DROP FUNCTION IF EXISTS update_document_search_vector();"
+      end
+
+      statement :update_document_search_vector_trigger do
+        up """
+        CREATE TRIGGER update_document_search_vector_trigger
+        BEFORE INSERT OR UPDATE ON documents
+        FOR EACH ROW
+        EXECUTE FUNCTION update_document_search_vector();
+        """
+
+        down "DROP TRIGGER IF EXISTS update_document_search_vector_trigger ON documents;"
+      end
+    end
+  end
+
+  actions do
+    defaults [:destroy]
+
+    create :create do
+      accept [
+        :name,
+        :description,
+        :type,
+        :content,
+        :content_type,
+        :language,
+        :metadata,
+        :tags,
+        :visibility,
+        :is_template,
+        :file_path
+      ]
+
+      argument :workspace_id, :uuid do
+        allow_nil? false
+      end
+
+      change relate_actor(:owner)
+      change manage_relationship(:workspace_id, :workspace, type: :append_and_remove)
+
+      change fn changeset, _context ->
+        changeset
+        |> Ash.Changeset.change_attribute(:size, calculate_content_size(changeset))
+        |> Ash.Changeset.change_attribute(:file_hash, calculate_file_hash(changeset))
+        |> Ash.Changeset.change_attribute(
+          :last_edited_by,
+          get_in(changeset.context, [:actor, :id])
+        )
+        |> Ash.Changeset.change_attribute(:last_edited_at, DateTime.utc_now())
+      end
+    end
+
+    update :update do
+      accept [
+        :name,
+        :description,
+        :content,
+        :content_type,
+        :language,
+        :metadata,
+        :tags,
+        :visibility,
+        :status,
+        :version,
+        :is_template
+      ]
+
+      change fn changeset, context ->
+        changeset
+        |> Ash.Changeset.change_attribute(:size, calculate_content_size(changeset))
+        |> Ash.Changeset.change_attribute(:file_hash, calculate_file_hash(changeset))
+        |> Ash.Changeset.change_attribute(:last_edited_by, get_in(context, [:actor, :id]))
+        |> Ash.Changeset.change_attribute(:last_edited_at, DateTime.utc_now())
+        |> Ash.Changeset.change_attribute(
+          :revision,
+          (Ash.Changeset.get_attribute(changeset, :revision) || 0) + 1
+        )
+      end
+
+      change after_action(fn changeset, document, _context ->
+               # Create version snapshot after significant updates
+               if should_create_version?(changeset) do
+                 create_version_snapshot(document)
+               end
+
+               {changeset, document}
+             end)
+    end
+
+    update :update_crdt_state do
+      accept [:crdt_state, :vector_clock, :last_operation_id]
+
+      change fn changeset, context ->
+        changeset
+        |> Ash.Changeset.change_attribute(:last_edited_by, get_in(context, [:actor, :id]))
+        |> Ash.Changeset.change_attribute(:last_edited_at, DateTime.utc_now())
+      end
+    end
+
+    update :add_collaborator do
+      argument :user_id, :uuid do
+        allow_nil? false
+      end
+
+      change fn changeset, _context ->
+        user_id = changeset.arguments[:user_id]
+        current_editors = Ash.Changeset.get_attribute(changeset, :active_editors) || []
+
+        unless user_id in current_editors do
+          # Limit active editors
+          new_editors = [user_id | current_editors] |> Enum.take(50)
+          Ash.Changeset.change_attribute(changeset, :active_editors, new_editors)
+        else
+          changeset
+        end
+      end
+    end
+
+    update :remove_collaborator do
+      argument :user_id, :uuid do
+        allow_nil? false
+      end
+
+      change fn changeset, _context ->
+        user_id = changeset.arguments[:user_id]
+        current_editors = Ash.Changeset.get_attribute(changeset, :active_editors) || []
+        new_editors = List.delete(current_editors, user_id)
+        Ash.Changeset.change_attribute(changeset, :active_editors, new_editors)
+      end
+    end
+
+    update :soft_delete do
+      change fn changeset, _context ->
+        changeset
+        |> Ash.Changeset.change_attribute(:status, :deleted)
+        |> Ash.Changeset.change_attribute(:deleted_at, DateTime.utc_now())
+      end
+    end
+
+    read :read do
+      primary? true
+      filter expr(is_nil(deleted_at))
+    end
+
+    read :search do
+      argument :query, :string do
+        allow_nil? false
+      end
+
+      argument :workspace_id, :uuid
+
+      filter expr(
+               if not is_nil(^arg(:workspace_id)) do
+                 workspace_id == ^arg(:workspace_id)
+               else
+                 true
+               end and
+                 is_nil(deleted_at) and
+                 fragment("? @@ plainto_tsquery('english', ?)", search_vector, arg(:query))
+             )
+
+      prepare build(
+                sort: [
+                  updated_at: :desc
+                ]
+              )
+    end
+
+    read :by_workspace do
+      argument :workspace_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(
+               workspace_id == ^arg(:workspace_id) and
+                 is_nil(deleted_at)
+             )
+
+      prepare build(sort: [updated_at: :desc])
+    end
+
+    read :by_type do
+      argument :type, :atom do
+        allow_nil? false
+        constraints one_of: [:markdown, :text, :code, :notebook, :diagram]
+      end
+
+      argument :workspace_id, :uuid
+
+      filter expr(
+               type == ^arg(:type) and
+                 if not is_nil(^arg(:workspace_id)) do
+                   workspace_id == ^arg(:workspace_id)
+                 else
+                   true
+                 end and
+                 is_nil(deleted_at)
+             )
+    end
+
+    read :templates do
+      filter expr(is_template == true and is_nil(deleted_at))
+      prepare build(sort: [name: :asc])
+    end
+
+    read :recent do
+      argument :days, :integer do
+        default 7
+      end
+
+      filter expr(
+               updated_at >= ago(^arg(:days), :day) and
+                 is_nil(deleted_at)
+             )
+
+      prepare build(sort: [updated_at: :desc])
+    end
+  end
+
+  policies do
+    # Bypass for system operations
+    bypass actor_attribute_equals(:admin, true) do
+      authorize_if always()
+    end
+
+    # Document owner has full access
+    policy action_type(:read) do
+      authorize_if relates_to_actor_via(:owner)
+      authorize_if expr(visibility == :public)
+    end
+
+    policy action_type(:read) do
+      forbid_unless expr(visibility == :workspace)
+      authorize_if relates_to_actor_via([:workspace, :members])
+    end
+
+    policy action_type(:create) do
+      authorize_if relates_to_actor_via([:workspace, :members])
+      authorize_if actor_attribute_equals(:can_create_documents, true)
+    end
+
+    policy action_type([:update, :destroy]) do
+      authorize_if relates_to_actor_via(:owner)
+    end
+
+    policy action_type([:update, :destroy]) do
+      forbid_unless relates_to_actor_via([:document_collaborators, :user])
+      authorize_if actor_attribute_equals(:can_edit, true)
+    end
+
+    # CRDT state updates require special permissions
+    policy action(:update_crdt_state) do
+      authorize_if relates_to_actor_via(:owner)
+    end
+
+    policy action(:update_crdt_state) do
+      forbid_unless relates_to_actor_via([:document_collaborators, :user])
+      authorize_if expr(active_editors |> contains(^actor(:id)))
+    end
+  end
+
+  preparations do
+    prepare build(load: [:workspace, :owner])
+  end
+
+  changes do
+    change after_action(fn changeset, document, _context ->
+             # Notify subscribers of document changes
+             if Ash.Changeset.changing_attributes?(changeset) do
+               Phoenix.PubSub.broadcast(
+                 Kyozo.PubSub,
+                 "document:#{document.id}",
+                 {:document_updated, document}
+               )
+
+               Phoenix.PubSub.broadcast(
+                 Kyozo.PubSub,
+                 "workspace:#{document.workspace_id}:documents",
+                 {:document_updated, document}
+               )
+             end
+
+             {changeset, document}
+           end)
+  end
+
+  validations do
+    validate present([:name, :type, :workspace_id, :owner_id])
+
+    validate match(:name, ~r/^[^\/\\\:\*\?\"\<\>\|]+$/) do
+      message "Document name contains invalid characters"
+    end
+
+    validate string_length(:name, min: 1, max: 255)
+    validate string_length(:description, max: 1000)
+
+    validate one_of(:type, [:markdown, :text, :code, :notebook, :diagram])
+    validate one_of(:status, [:draft, :active, :archived, :deleted])
+    validate one_of(:visibility, [:private, :workspace, :public])
+
+    validate compare(:size, greater_than_or_equal_to: 0) do
+      message "Document size cannot be negative"
+    end
+
+    # Custom validations
+    validate {Kyozo.Validations.ValidateDocumentContent, []}
+    validate {Kyozo.Validations.ValidateWorkspaceAccess, []}
+    validate {Kyozo.Validations.ValidateCRDTState, []}
+  end
+
+  attributes do
+    uuid_primary_key :id
+
+    attribute :name, :string do
+      allow_nil? false
+      constraints min_length: 1, max_length: 255
+      description "The name/title of the document"
+    end
+
+    attribute :description, :string do
+      constraints max_length: 1000
+      description "Optional description of the document"
+    end
+
+    attribute :type, :atom do
+      allow_nil? false
+      default :markdown
+      constraints one_of: [:markdown, :text, :code, :notebook, :diagram]
+      description "The type of document content"
+    end
+
+    attribute :status, :atom do
+      allow_nil? false
+      default :draft
+      constraints one_of: [:draft, :active, :archived, :deleted]
+      description "The current status of the document"
+    end
+
+    attribute :content, :string do
+      description "The main content of the document"
+    end
+
+    attribute :content_type, :string do
+      default "text/markdown"
+      constraints max_length: 100
+      description "MIME type of the content"
+    end
+
+    attribute :size, :integer do
+      allow_nil? false
+      default 0
+      description "Size of the document content in bytes"
+    end
+
+    attribute :language, :string do
+      constraints max_length: 50
+      description "Programming language for code documents"
+    end
+
+    attribute :metadata, :map do
+      default %{}
+      description "Additional metadata as JSON"
+    end
+
+    # CRDT-specific attributes
+    attribute :crdt_state, :map do
+      default %{}
+      description "CRDT state for conflict-free collaborative editing"
+      sensitive? true
+    end
+
+    attribute :vector_clock, :map do
+      default %{}
+      description "Vector clock for ordering operations across nodes"
+      sensitive? true
+    end
+
+    attribute :last_operation_id, :string do
+      description "ID of the last applied operation"
+    end
+
+    attribute :revision, :integer do
+      allow_nil? false
+      default 1
+      description "Document revision number"
+    end
+
+    # Search and indexing
+    attribute :search_vector, :string do
+      description "Full-text search vector"
+      writable? false
+    end
+
+    attribute :tags, {:array, :string} do
+      default []
+      description "Tags for categorizing the document"
+    end
+
+    # Access control
+    attribute :visibility, :atom do
+      allow_nil? false
+      default :private
+      constraints one_of: [:private, :workspace, :public]
+      description "Visibility level of the document"
+    end
+
+    attribute :permissions, :map do
+      default %{}
+      description "Fine-grained permissions for the document"
+    end
+
+    # Collaboration tracking
+    attribute :active_editors, {:array, :string} do
+      default []
+      description "List of currently active editor user IDs"
+    end
+
+    attribute :last_edited_by, :string do
+      description "User ID of the last person to edit"
+    end
+
+    attribute :last_edited_at, :utc_datetime_usec do
+      description "Timestamp of last edit"
+    end
+
+    # File system integration
+    attribute :file_path, :string do
+      constraints max_length: 1000
+      description "Optional file system path"
+    end
+
+    attribute :file_hash, :string do
+      constraints max_length: 64
+      description "SHA256 hash of file content"
+    end
+
+    # Versioning
+    attribute :version, :string do
+      default "1.0.0"
+      constraints max_length: 20
+      description "Semantic version of the document"
+    end
+
+    attribute :is_template, :boolean do
+      allow_nil? false
+      default false
+      description "Whether this document is a template"
+    end
+
+    # Soft delete
+    attribute :deleted_at, :utc_datetime_usec do
+      description "Timestamp when document was soft deleted"
+    end
+
+    # Standard timestamps
+    create_timestamp :created_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    belongs_to :workspace, Kyozo.Resources.Workspace do
+      allow_nil? false
+      attribute_writable? false
+    end
+
+    belongs_to :owner, Kyozo.Resources.User do
+      allow_nil? false
+      description "User who created the document"
+    end
+
+    belongs_to :parent_document, Kyozo.Resources.Document do
+      description "Parent document if this is a nested/child document"
+    end
+
+    has_many :child_documents, Kyozo.Resources.Document do
+      destination_attribute :parent_document_id
+      description "Nested/child documents"
+    end
+
+    has_many :document_versions, Kyozo.Resources.DocumentVersion do
+      description "Version history of the document"
+    end
+
+    has_many :document_collaborators, Kyozo.Resources.DocumentCollaborator do
+      description "Users who have access to collaborate on this document"
+    end
+
+    has_many :document_comments, Kyozo.Resources.DocumentComment do
+      description "Comments on the document"
+    end
+
+    has_many :document_attachments, Kyozo.Resources.DocumentAttachment do
+      description "File attachments for the document"
+    end
+
+    many_to_many :shared_with_users, Kyozo.Resources.User do
+      through Kyozo.Resources.DocumentShare
+      source_attribute_on_join_resource :document_id
+      destination_attribute_on_join_resource :user_id
+      description "Users this document is explicitly shared with"
+    end
+  end
+
+  # Custom functions for change operations
+  defp calculate_content_size(changeset) do
+    case Ash.Changeset.get_attribute(changeset, :content) do
+      nil -> 0
+      content when is_binary(content) -> byte_size(content)
+      _ -> 0
+    end
+  end
+
+  defp calculate_file_hash(changeset) do
+    case Ash.Changeset.get_attribute(changeset, :content) do
+      nil ->
+        nil
+
+      content when is_binary(content) ->
+        :crypto.hash(:sha256, content) |> Base.encode16(case: :lower)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp should_create_version?(changeset) do
+    # Create version if content changed significantly or major version bump
+    content_changed = Ash.Changeset.changing_attribute?(changeset, :content)
+    version_changed = Ash.Changeset.changing_attribute?(changeset, :version)
+
+    content_changed or version_changed
+  end
+
+  defp create_version_snapshot(document) do
+    # This would create a DocumentVersion record
+    # Implementation would depend on the DocumentVersion resource
+    :ok
+  end
+end

@@ -11,7 +11,7 @@ defmodule Kyozo.Application do
 
     children = [
       # {NodeJS.Supervisor, [path: LiveSvelte.SSR.NodeJS.server_path(), pool_size: 4]},
-      {Kyozo.NodeJS.Supervisor, [path: node_path, pool_size: 4]},
+      # {Kyozo.NodeJS.Supervisor, [path: node_path, pool_size: 4]},  # DISABLED - causes server startup hang
       KyozoWeb.Telemetry,
       Kyozo.Repo,
       {DNSCluster, query: Application.get_env(:kyozo, :dns_cluster_query) || :ignore},
