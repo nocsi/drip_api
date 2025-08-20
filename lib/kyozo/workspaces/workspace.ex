@@ -1,5 +1,20 @@
 defmodule Kyozo.Workspaces.Workspace do
-  @derive {Jason.Encoder, only: [:id, :name, :description, :status, :storage_backend, :settings, :tags, :storage_path, :git_repository_url, :git_branch, :created_at, :updated_at, :archived_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :name,
+             :description,
+             :status,
+             :storage_backend,
+             :settings,
+             :tags,
+             :storage_path,
+             :git_repository_url,
+             :git_branch,
+             :created_at,
+             :updated_at,
+             :archived_at
+           ]}
 
   @moduledoc """
   Workspace resource representing a collaborative workspace container.
@@ -15,10 +30,28 @@ defmodule Kyozo.Workspaces.Workspace do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   alias Kyozo.Workspaces.Storage
   alias Kyozo.Workspaces.Events
+
+  # GraphQL configuration removed during GraphQL cleanup
+
+  json_api do
+    type "workspace"
+
+    routes do
+      base "/workspaces"
+      get :read
+      index :read
+      post :create
+      patch :update
+      delete :destroy
+    end
+
+    # JSON-LD context metadata temporarily disabled during GraphQL cleanup
+    # TODO: Re-enable JSON-LD metadata when AshJsonApi meta function is available
+  end
 
   postgres do
     table "workspaces"
@@ -38,34 +71,6 @@ defmodule Kyozo.Workspaces.Workspace do
     end
   end
 
-  json_api do
-    type "workspace"
-
-    routes do
-      base "/workspaces"
-      get :read
-      index :read
-      post :create
-      patch :update
-      delete :destroy
-    end
-  end
-
-  graphql do
-    type :workspace
-
-    queries do
-      list :list_workspaces, :read
-      get :get_workspace, :read
-    end
-
-    mutations do
-      create :create_workspace, :create
-      update :update_workspace, :update
-      destroy :delete_workspace, :destroy
-    end
-  end
-
   # TODO: Re-enable events after fixing AshEvents.Resource extension
   # events do
   #   event :workspace_created, Kyozo.Workspaces.Events.WorkspaceCreated
@@ -81,38 +86,45 @@ defmodule Kyozo.Workspaces.Workspace do
 
     read :list_workspaces do
       prepare build(
-        load: [:created_by_user, :file_count, :notebook_count, :total_size, :last_activity],
-        filter: [status: [:active, :archived]]
-      )
+                load: [
+                  :created_by_user,
+                  :file_count,
+                  :notebook_count,
+                  :total_size,
+                  :last_activity
+                ],
+                filter: [status: [:active, :archived]]
+              )
     end
 
     read :list_active_workspaces do
       prepare build(
-        filter: [status: :active],
-        load: [:created_by_user, :file_count, :notebook_count, :last_activity],
-        sort: [updated_at: :desc]
-      )
+                filter: [status: :active],
+                load: [:created_by_user, :file_count, :notebook_count, :last_activity],
+                sort: [updated_at: :desc]
+              )
     end
 
     read :list_archived_workspaces do
       prepare build(
-        filter: [status: :archived],
-        load: [:created_by_user, :file_count, :notebook_count],
-        sort: [archived_at: :desc]
-      )
+                filter: [status: :archived],
+                load: [:created_by_user, :file_count, :notebook_count],
+                sort: [archived_at: :desc]
+              )
     end
 
     read :search_workspaces do
       argument :query, :string, allow_nil?: false
 
       prepare build(
-        filter: expr(
-          contains(name, ^arg(:query)) or
-          contains(description, ^arg(:query)) or
-          contains(tags, ^arg(:query))
-        ),
-        load: [:created_by_user, :file_count, :notebook_count]
-      )
+                filter:
+                  expr(
+                    contains(name, ^arg(:query)) or
+                      contains(description, ^arg(:query)) or
+                      contains(tags, ^arg(:query))
+                  ),
+                load: [:created_by_user, :file_count, :notebook_count]
+              )
     end
 
     create :create_workspace do
@@ -125,7 +137,9 @@ defmodule Kyozo.Workspaces.Workspace do
       change {Kyozo.Workspaces.Workspace.Changes.InitializeStorage, []}
       change {Kyozo.Workspaces.Workspace.Changes.CreateInitialFiles, []}
 
-      after_action {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_created}
+      after_action(
+        {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_created}
+      )
     end
 
     create :seed_workspace do
@@ -140,7 +154,9 @@ defmodule Kyozo.Workspaces.Workspace do
 
       change {Kyozo.Workspaces.Workspace.Changes.ValidateSettings, []}
 
-      after_action {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_updated}
+      after_action(
+        {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_updated}
+      )
     end
 
     update :archive_workspace do
@@ -149,7 +165,9 @@ defmodule Kyozo.Workspaces.Workspace do
       change set_attribute(:status, :archived)
       change set_attribute(:archived_at, expr(now()))
 
-      after_action {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_archived}
+      after_action(
+        {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_archived}
+      )
     end
 
     update :restore_workspace do
@@ -158,7 +176,9 @@ defmodule Kyozo.Workspaces.Workspace do
       change set_attribute(:status, :active)
       change set_attribute(:archived_at, nil)
 
-      after_action {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_restored}
+      after_action(
+        {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_restored}
+      )
     end
 
     update :change_storage_backend do
@@ -167,7 +187,9 @@ defmodule Kyozo.Workspaces.Workspace do
 
       change {Kyozo.Workspaces.Workspace.Changes.MigrateStorage, []}
 
-      after_action {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_updated}
+      after_action(
+        {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_updated}
+      )
     end
 
     action :get_storage_info, :map do
@@ -199,7 +221,9 @@ defmodule Kyozo.Workspaces.Workspace do
       change set_attribute(:status, :deleted)
       change set_attribute(:deleted_at, expr(now()))
 
-      after_action {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_deleted}
+      after_action(
+        {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_deleted}
+      )
     end
 
     destroy :hard_delete do
@@ -207,7 +231,9 @@ defmodule Kyozo.Workspaces.Workspace do
 
       change {Kyozo.Workspaces.Workspace.Changes.DeleteStorage, []}
 
-      after_action {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_deleted}
+      after_action(
+        {Kyozo.Workspaces.Workspace.Changes.EmitWorkspaceEvent, event: :workspace_deleted}
+      )
     end
   end
 
@@ -247,6 +273,32 @@ defmodule Kyozo.Workspaces.Workspace do
     publish_all :create, ["workspaces", :team_id]
     publish_all :update, ["workspaces", :team_id]
     publish_all :destroy, ["workspaces", :team_id]
+  end
+
+  preparations do
+    prepare build(load: [:created_by_user])
+
+    prepare build(filter: [deleted_at: [is_nil: true]])
+  end
+
+  changes do
+    # Temporarily disabled to isolate BadFunctionError
+    # change before_action({Kyozo.Workspaces.Workspace.Changes.BuildStoragePath, []}), on: [:create]
+    # change before_action({Kyozo.Workspaces.Workspace.Changes.NormalizeSettings, []}), on: [:create, :update]
+    change after_action({Kyozo.Workspaces.Workspace.Changes.UpdateStorageMetadata, []}),
+      on: [:update]
+  end
+
+  validations do
+    validate present([:name, :team_id, :storage_backend, :status])
+
+    validate match(:name, ~r/^[a-zA-Z0-9\-_\s]+$/) do
+      message "Name can only contain letters, numbers, spaces, hyphens, and underscores"
+    end
+
+    validate {Kyozo.Workspaces.Workspace.Validations.ValidateStorageBackend, []}
+    validate {Kyozo.Workspaces.Workspace.Validations.ValidateSettings, []}
+    validate {Kyozo.Workspaces.Workspace.Validations.UniqueNamePerTeam, []}
   end
 
   multitenancy do
@@ -372,26 +424,35 @@ defmodule Kyozo.Workspaces.Workspace do
 
       calculation fn workspaces, _context ->
         Enum.map(workspaces, fn workspace ->
-          (workspace.files|| 0) + (workspace.notebook_count || 0)
+          (workspace.files || 0) + (workspace.notebook_count || 0)
         end)
       end
     end
 
     calculate :total_size, :integer do
       calculation expr(
-        sum(files, field: :file_size, query: [filter: [deleted_at: [is_nil: true]]]) +
-        sum(notebooks, field: :file_size, query: [filter: [deleted_at: [is_nil: true]]])
-      )
+                    sum(files, field: :file_size, query: [filter: [deleted_at: [is_nil: true]]]) +
+                      sum(notebooks,
+                        field: :file_size,
+                        query: [filter: [deleted_at: [is_nil: true]]]
+                      )
+                  )
     end
 
     calculate :last_activity, :utc_datetime_usec do
       calculation expr(
-        max([
-          max(files, field: :updated_at, query: [filter: [deleted_at: [is_nil: true]]]),
-          max(notebooks, field: :updated_at, query: [filter: [deleted_at: [is_nil: true]]]),
-          updated_at
-        ])
-      )
+                    max([
+                      max(files,
+                        field: :updated_at,
+                        query: [filter: [deleted_at: [is_nil: true]]]
+                      ),
+                      max(notebooks,
+                        field: :updated_at,
+                        query: [filter: [deleted_at: [is_nil: true]]]
+                      ),
+                      updated_at
+                    ])
+                  )
     end
 
     calculate :storage_info, :map do
@@ -427,31 +488,6 @@ defmodule Kyozo.Workspaces.Workspace do
         end)
       end
     end
-  end
-
-  validations do
-    validate present([:name, :team_id, :storage_backend, :status])
-
-    validate match(:name, ~r/^[a-zA-Z0-9\-_\s]+$/) do
-      message "Name can only contain letters, numbers, spaces, hyphens, and underscores"
-    end
-
-    validate {Kyozo.Workspaces.Workspace.Validations.ValidateStorageBackend, []}
-    validate {Kyozo.Workspaces.Workspace.Validations.ValidateSettings, []}
-    validate {Kyozo.Workspaces.Workspace.Validations.UniqueNamePerTeam, []}
-  end
-
-  changes do
-    # Temporarily disabled to isolate BadFunctionError
-    # change before_action({Kyozo.Workspaces.Workspace.Changes.BuildStoragePath, []}), on: [:create]
-    # change before_action({Kyozo.Workspaces.Workspace.Changes.NormalizeSettings, []}), on: [:create, :update]
-    change after_action({Kyozo.Workspaces.Workspace.Changes.UpdateStorageMetadata, []}), on: [:update]
-  end
-
-  preparations do
-    prepare build(load: [:created_by_user])
-
-    prepare build(filter: [deleted_at: [is_nil: true]])
   end
 
   # Resource-specific functions
@@ -495,7 +531,8 @@ defmodule Kyozo.Workspaces.Workspace do
     %{
       "auto_save" => true,
       "auto_commit" => false,
-      "max_file_size" => 10_485_760, # 10MB
+      # 10MB
+      "max_file_size" => 10_485_760,
       "allowed_file_types" => ["*"],
       "enable_notifications" => true,
       "enable_real_time_collaboration" => true,

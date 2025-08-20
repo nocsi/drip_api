@@ -4,7 +4,7 @@ defmodule Kyozo.Workspaces.Task do
     domain: Kyozo.Workspaces,
     authorizers: [Ash.Policy.Authorizer],
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table "workspace_tasks"
@@ -30,14 +30,7 @@ defmodule Kyozo.Workspaces.Task do
     end
   end
 
-  graphql do
-    type :task
-
-    queries do
-      get :get_task, :read
-      list :list_tasks, :read
-    end
-  end
+  # GraphQL configuration removed during GraphQL cleanup
 
   attributes do
     uuid_v7_primary_key :id

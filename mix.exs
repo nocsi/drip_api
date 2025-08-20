@@ -41,8 +41,6 @@ defmodule Kyozo.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:assent, "~> 0.2"},
       {:picosat_elixir, "~> 0.2"},
-      {:absinthe_phoenix, "~> 2.0"},
-      {:ash_graphql, "~> 1.0"},
       {:open_api_spex, "~> 3.0"},
       {:ash_json_api, "~> 1.0"},
       {:ash_phoenix, "~> 2.0"},

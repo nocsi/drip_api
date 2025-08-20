@@ -15,7 +15,7 @@ defmodule Kyozo.Workspaces.File do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, Kyozo.Workspaces.Extensions.RenderMarkdown]
+    extensions: [AshJsonApi.Resource, Kyozo.Workspaces.Extensions.RenderMarkdown]
 
   alias Kyozo.Workspaces.Storage
   alias Kyozo.Workspaces.Events
@@ -67,15 +67,7 @@ defmodule Kyozo.Workspaces.File do
     end
   end
 
-  graphql do
-    type :file
-
-    queries do
-      get :get_file, :read
-      list :list_files, :read
-    end
-  end
-
+  # GraphQL configuration removed during GraphQL cleanup
 
   # TODO: Re-enable events after fixing AshEvents.Resource extension
   # events do

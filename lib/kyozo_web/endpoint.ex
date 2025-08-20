@@ -1,6 +1,5 @@
 defmodule KyozoWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :kyozo
-  use Absinthe.Phoenix.Endpoint
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
@@ -16,7 +15,7 @@ defmodule KyozoWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
-  socket "/ws/gql", KyozoWeb.GraphqlSocket, websocket: true, longpoll: true
+  # GraphQL WebSocket removed during GraphQL cleanup
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -52,7 +51,7 @@ defmodule KyozoWeb.Endpoint do
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
   plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json, AshJsonApi.Plug.Parser, Absinthe.Plug.Parser],
+    parsers: [:urlencoded, :multipart, :json, AshJsonApi.Plug.Parser],
     pass: ["*/*"],
     json_decoder: Phoenix.json_library()
 

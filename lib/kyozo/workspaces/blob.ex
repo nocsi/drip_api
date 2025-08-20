@@ -13,7 +13,7 @@ defmodule Kyozo.Workspaces.Blob do
     domain: Kyozo.Workspaces,
     authorizers: [Ash.Policy.Authorizer],
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   require Ash.Query
 
@@ -39,13 +39,7 @@ defmodule Kyozo.Workspaces.Blob do
     end
   end
 
-  graphql do
-    type :blob
-
-    queries do
-      get :get_blob, :read
-    end
-  end
+  # GraphQL configuration removed during GraphQL cleanup
 
   actions do
     defaults [:read, :destroy]

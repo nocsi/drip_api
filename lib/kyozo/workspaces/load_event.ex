@@ -4,7 +4,7 @@ defmodule Kyozo.Workspaces.LoadEvent do
     domain: Kyozo.Workspaces,
     authorizers: [Ash.Policy.Authorizer],
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   postgres do
     table "workspace_load_events"
@@ -27,14 +27,7 @@ defmodule Kyozo.Workspaces.LoadEvent do
     end
   end
 
-  graphql do
-    type :load_event
-
-    queries do
-      get :get_load_event, :read
-      list :list_load_events, :read
-    end
-  end
+  # GraphQL configuration removed during GraphQL cleanup
 
   attributes do
     uuid_v7_primary_key :id

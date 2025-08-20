@@ -1,13 +1,11 @@
 defmodule Kyozo.Projects do
   use Ash.Domain,
     otp_app: :kyozo,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain]
+    extensions: [AshJsonApi.Domain]
+
+  # GraphQL configuration removed during GraphQL cleanup
 
   json_api do
-    authorize? false
-  end
-
-  graphql do
     authorize? false
   end
 

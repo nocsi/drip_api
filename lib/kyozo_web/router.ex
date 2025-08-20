@@ -15,11 +15,6 @@ defmodule KyozoWeb.Router do
     #   required?: true
   end
 
-  pipeline :graphql do
-    plug :load_from_bearer
-    plug :set_actor, :user
-    plug AshGraphql.Plug
-  end
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -65,16 +60,6 @@ defmodule KyozoWeb.Router do
     plug JSONAPI.UnderscoreParameters
   end
 
-  scope "/gql" do
-    pipe_through [:graphql]
-
-    forward "/playground", Absinthe.Plug.GraphiQL,
-      schema: Module.concat(["KyozoWeb.GraphqlSchema"]),
-      socket: Module.concat(["KyozoWeb.GraphqlSocket"]),
-      interface: :simple
-
-    forward "/", Absinthe.Plug, schema: Module.concat(["KyozoWeb.GraphqlSchema"])
-  end
 
   scope "/" do
     pipe_through [:openapi]
@@ -87,10 +72,31 @@ defmodule KyozoWeb.Router do
     pipe_through [:api]
 
     forward "/swaggerui", OpenApiSpex.Plug.SwaggerUI,
-      path: "/api/json/open_api",
+      path: "/api/v1/openapi.json",
       default_model_expand_depth: 4
 
     forward "/", KyozoWeb.AshJsonApiRouter
+  end
+
+  scope "/api/v2" do
+    pipe_through :api
+
+    # OpenAPI spec with JSON-LD
+    get "/openapi", KyozoWeb.ApiDocsController, :openapi
+    get "/openapi.json", KyozoWeb.ApiDocsController, :openapi
+    get "/context", KyozoWeb.ApiDocsController, :json_ld_context
+    get "/docs", KyozoWeb.ApiDocsController, :docs_viewer
+  end
+
+  # Legacy v1 API redirect
+  scope "/api/v1" do
+    pipe_through :api
+
+    # Redirect v1 to v2 for backwards compatibility
+    get "/openapi", KyozoWeb.ApiDocsController, :openapi
+    get "/openapi.json", KyozoWeb.ApiDocsController, :openapi
+    get "/context", KyozoWeb.ApiDocsController, :json_ld_context
+    get "/docs", KyozoWeb.ApiDocsController, :docs_viewer
   end
 
   scope "/api/v1", KyozoWeb.API do
@@ -316,16 +322,9 @@ defmodule KyozoWeb.Router do
       overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
     )
 
-    # OAuth2 routes temporarily disabled for initial setup
-    # oauth_sign_in_route(Kyozo.Accounts.User, :apple,
-    #   auth_routes_prefix: "/auth",
-    #   overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
-    # )
-
-    # oauth_sign_in_route(Kyozo.Accounts.User, :google,
-    #   auth_routes_prefix: "/auth",
-    #   overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
-    # )
+    # OAuth2 routes - removed due to GraphQL dependency removal
+    # TODO: Re-implement OAuth routes using AshAuthentication.Phoenix directly
+    # without GraphQL/Absinthe dependencies
   end
 
   # Other scopes may use custom stacks.

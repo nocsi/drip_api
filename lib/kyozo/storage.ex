@@ -39,13 +39,11 @@ defmodule Kyozo.Storage do
 
   use Ash.Domain,
     validate_config_inclusion?: false,
-    extensions: [AshJsonApi.Domain, AshGraphql.Domain]
+    extensions: [AshJsonApi.Domain]
 
   alias Kyozo.Storage.{StorageResource, Upload, Locator}
 
-  graphql do
-    authorize? true
-  end
+  # GraphQL configuration removed during GraphQL cleanup
 
   json_api do
     authorize? true

@@ -18,7 +18,7 @@ defmodule Kyozo.Workspaces.Notebook do
     authorizers: [Ash.Policy.Authorizer],
     notifiers: [Ash.Notifier.PubSub],
     data_layer: AshPostgres.DataLayer,
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource, Kyozo.Workspaces.Extensions.RenderMarkdown]
+    extensions: [AshJsonApi.Resource, Kyozo.Workspaces.Extensions.RenderMarkdown]
 
   alias Kyozo.Workspaces.Notebook.Changes
 
@@ -61,20 +61,7 @@ defmodule Kyozo.Workspaces.Notebook do
     end
   end
 
-  graphql do
-    type :notebook
-
-    queries do
-      list :list_notebooks, :read
-      get :get_notebook, :read
-    end
-
-    mutations do
-      create :create_notebook, :create_from_document
-      update :update_notebook, :update_content
-      destroy :destroy_notebook, :destroy
-    end
-  end
+  # GraphQL configuration removed during GraphQL cleanup
 
   attributes do
     uuid_v7_primary_key :id

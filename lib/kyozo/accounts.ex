@@ -1,19 +1,7 @@
 defmodule Kyozo.Accounts do
-  use Ash.Domain, otp_app: :kyozo, extensions: [AshGraphql.Domain, AshJsonApi.Domain]
+  use Ash.Domain, otp_app: :kyozo, extensions: [AshJsonApi.Domain]
 
-  graphql do
-    queries do
-      get Kyozo.Accounts.User, :sign_in_user, :sign_in_with_password do
-        identity false
-        type_name :user_with_token
-      end
-    end
-
-    mutations do
-      create Kyozo.Accounts.User, :register_user, :register_with_password
-
-    end
-  end
+  # GraphQL configuration removed during GraphQL cleanup
 
   json_api do
     routes do

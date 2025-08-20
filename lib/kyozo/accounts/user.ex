@@ -1,11 +1,12 @@
 defmodule Kyozo.Accounts.User do
   @derive {Jason.Encoder, only: [:id, :name, :email, :current_team, :role, :confirmed_at]}
+  
   use Ash.Resource,
     otp_app: :kyozo,
     domain: Kyozo.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshGraphql.Resource, AshJsonApi.Resource, AshAuthentication, AshEvents.Events],
+    extensions: [AshJsonApi.Resource, AshAuthentication, AshEvents.Events],
     notifiers: [Kyozo.Accounts.User.Notifiers.CreatePersonalTeamNotification]
 
   authentication do
@@ -20,10 +21,12 @@ defmodule Kyozo.Accounts.User do
         confirm_on_update? true
         require_interaction? true
         confirmed_at_field :confirmed_at
+
         auto_confirm_actions [
           :reset_password_with_token,
           :seed_admin
         ]
+
         sender Kyozo.Accounts.User.Senders.SendNewUserConfirmationEmail
       end
     end
@@ -50,29 +53,36 @@ defmodule Kyozo.Accounts.User do
         end
       end
 
-      # google do
-      #   client_id Kyozo.Secrets
-      #   client_secret Kyozo.Secrets
-      #   redirect_uri Kyozo.Secrets
-      # end
+      oauth2 :google do
+        client_id Kyozo.Secrets
+        client_secret Kyozo.Secrets
+        redirect_uri Kyozo.Secrets
+        authorize_url "https://accounts.google.com/o/oauth2/v2/auth"
+        token_url "https://oauth2.googleapis.com/token"
+        user_url "https://www.googleapis.com/oauth2/v2/userinfo"
+        authorization_params scope: "openid email profile"
+        register_action_name :register_with_google
+        sign_in_action_name :sign_in_with_google
+      end
 
-      # apple do
-      # #   openid_configuration %{"authorization_endpoint" => "https://appleid.apple.com/auth/authorize", "issuer" => "https://appleid.apple.com", "jwks_uri" => "https://appleid.apple.com/auth/keys", "token_endpoint" => "https://appleid.apple.com/auth/token", "token_endpoint_auth_methods_supported" => ["client_secret_post"]}
-      # #   # openid_configuration_uri "https://appleid.apple.com/.well-known/openid-configuration"
-      #   client_id Kyozo.Secrets
-      #   team_id Kyozo.Secrets
-      #   private_key_path Kyozo.Secrets
-      #   redirect_uri Kyozo.Secrets
-      # #   # identity_resource Kyozo.Accounts.UserIdentity
-      # end
+      oauth2 :github do
+        client_id Kyozo.Secrets
+        client_secret Kyozo.Secrets
+        redirect_uri Kyozo.Secrets
+        authorize_url "https://github.com/login/oauth/authorize"
+        token_url "https://github.com/login/oauth/access_token"
+        user_url "https://api.github.com/user"
+        authorization_params scope: "user:email"
+        register_action_name :register_with_github
+        sign_in_action_name :sign_in_with_github
+      end
 
-      # magic_link do
-      #   identity_field :email
-      #   registration_enabled? true
-      #   require_interaction? true
-
-      #   sender(Kyozo.Accounts.User.Senders.SendMagicLinkEmail)
-      # end
+      magic_link :magic_link do
+        identity_field :email
+        registration_enabled? true
+        require_interaction? true
+        sender Kyozo.Accounts.User.Senders.SendMagicLinkEmail
+      end
 
       api_key :api_key do
         api_key_relationship :valid_api_keys
@@ -81,12 +91,11 @@ defmodule Kyozo.Accounts.User do
     end
   end
 
-  graphql do
-    type :user
-  end
+  # GraphQL configuration removed during GraphQL cleanup
 
   json_api do
     type "user"
+
     routes do
       base "/users"
       get :read
@@ -103,7 +112,7 @@ defmodule Kyozo.Accounts.User do
 
   events do
     # Specify your event log resource
-    event_log Kyozo.Events.Event
+    event_log(Kyozo.Events.Event)
 
     # Optionally ignore certain actions. This is mainly used for actions
     # that are kept around for supporting previous event versions, and
@@ -111,28 +120,25 @@ defmodule Kyozo.Accounts.User do
     # ignore_actions [:old_create_v1]
 
     # Optionally specify version numbers for actions
-    current_action_versions register_with_password: 4
+    current_action_versions(register_with_password: 4)
   end
-
 
   actions do
     defaults [:update]
 
     actions do
-
       read :read do
-        primary?(true)
+        primary? true
       end
 
       destroy :destroy do
-        primary?(true)
+        primary? true
       end
 
       read :current_user do
-        get?(true)
-        manual(Kyozo.CurrentUserRead)
+        get? true
+        manual Kyozo.CurrentUserRead
       end
-
 
       update :set_current_team do
         description "Set the current team for the user"
@@ -334,10 +340,135 @@ defmodule Kyozo.Accounts.User do
       # Generates an authentication token for the user
       change AshAuthentication.GenerateTokenChange
 
-      change set_context(%{strategy_name: :password}) # <- add this line
+      # <- add this line
+
+      change set_context(%{strategy_name: :password})
 
       # validates that the password matches the confirmation
       validate AshAuthentication.Strategy.Password.PasswordConfirmationValidation
+
+      metadata :token, :string do
+        description "A JWT that can be used to authenticate the user."
+        allow_nil? false
+      end
+    end
+
+    create :register_with_google do
+      description "Register a new user with Google OAuth2."
+      upsert? true
+      upsert_identity :email
+
+      argument :user_info, :map do
+        allow_nil? false
+      end
+
+      argument :oauth_tokens, :map do
+        allow_nil? false
+      end
+
+      change fn changeset, %{arguments: %{user_info: user_info}} ->
+        email = Map.get(user_info, "email") || Map.get(user_info, :email)
+        name = Map.get(user_info, "name") || Map.get(user_info, :name) || email
+
+        changeset
+        |> Ash.Changeset.change_attribute(:email, email)
+        |> Ash.Changeset.change_attribute(:name, name)
+        |> Ash.Changeset.change_attribute(:confirmed_at, DateTime.utc_now())
+      end
+
+      change AshAuthentication.GenerateTokenChange
+
+      metadata :token, :string do
+        description "A JWT that can be used to authenticate the user."
+        allow_nil? false
+      end
+    end
+
+    create :register_with_github do
+      description "Register a new user with GitHub OAuth2."
+      upsert? true
+      upsert_identity :email
+
+      argument :user_info, :map do
+        allow_nil? false
+      end
+
+      argument :oauth_tokens, :map do
+        allow_nil? false
+      end
+
+      change fn changeset, %{arguments: %{user_info: user_info}} ->
+        email = Map.get(user_info, "email") || Map.get(user_info, :email)
+
+        name =
+          Map.get(user_info, "name") || Map.get(user_info, :name) ||
+            Map.get(user_info, "login") || Map.get(user_info, :login) || email
+
+        changeset
+        |> Ash.Changeset.change_attribute(:email, email)
+        |> Ash.Changeset.change_attribute(:name, name)
+        |> Ash.Changeset.change_attribute(:confirmed_at, DateTime.utc_now())
+      end
+
+      change AshAuthentication.GenerateTokenChange
+
+      metadata :token, :string do
+        description "A JWT that can be used to authenticate the user."
+        allow_nil? false
+      end
+    end
+
+    read :sign_in_with_google do
+      description "Sign in an existing user with Google OAuth2."
+      get? true
+
+      argument :user_info, :map do
+        allow_nil? false
+      end
+
+      argument :oauth_tokens, :map do
+        allow_nil? false
+      end
+
+      argument :email, :string do
+        allow_nil? false
+      end
+
+      filter expr(email == ^arg(:email))
+
+      prepare fn query, %{arguments: %{user_info: user_info}} ->
+        email = Map.get(user_info, "email") || Map.get(user_info, :email)
+        Ash.Query.set_argument(query, :email, email)
+      end
+
+      metadata :token, :string do
+        description "A JWT that can be used to authenticate the user."
+        allow_nil? false
+      end
+    end
+
+    read :sign_in_with_github do
+      description "Sign in an existing user with GitHub OAuth2."
+      get? true
+
+      argument :user_info, :map do
+        allow_nil? false
+      end
+
+      argument :oauth_tokens, :map do
+        allow_nil? false
+      end
+
+      argument :email, :string do
+        allow_nil? false
+      end
+
+      filter expr(email == ^arg(:email))
+
+      prepare fn query, %{arguments: %{user_info: user_info}} ->
+        email = Map.get(user_info, "email") || Map.get(user_info, :email)
+        Ash.Query.set_argument(query, :email, email)
+      end
 
       metadata :token, :string do
         description "A JWT that can be used to authenticate the user."
@@ -403,12 +534,12 @@ defmodule Kyozo.Accounts.User do
       argument :search, :string, default: ""
 
       filter expr(
-                contains(
-                  string_downcase(name),
-                  string_downcase(^arg(:search))
-                ) and
-                  id != ^actor(:id)
-              )
+               contains(
+                 string_downcase(name),
+                 string_downcase(^arg(:search))
+               ) and
+                 id != ^actor(:id)
+             )
 
       prepare build(load: :membership_status)
       prepare build(limit: 5)
@@ -490,7 +621,6 @@ defmodule Kyozo.Accounts.User do
       authorize_if always()
     end
 
-
     policy action_type(:update) do
       description "Only an admin or the user who tweeted can edit their tweet"
       # first check this. If true, then this policy passes
@@ -503,9 +633,7 @@ defmodule Kyozo.Accounts.User do
     policy always() do
       forbid_if always()
     end
-
   end
-
 
   attributes do
     uuid_v7_primary_key :id
@@ -539,7 +667,6 @@ defmodule Kyozo.Accounts.User do
   end
 
   relationships do
-
     many_to_many :teams, Kyozo.Accounts.Team do
       through Kyozo.Accounts.UserTeam
       source_attribute_on_join_resource :user_id

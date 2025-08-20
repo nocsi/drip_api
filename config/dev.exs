@@ -82,7 +82,7 @@ config :kyozo, Kyozo.Mailer,
 config :kyozo, dev_routes: true, token_signing_secret: "HGcuS+aLVn83xvSiCblt3LCx11VPsWVA"
 
 # Do not include metadata nor timestamps in development logs
-config :logger, :default_formatter, format: "[$level] $message\n"
+config :logger, :console, format: "[$level] $message\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
@@ -96,6 +96,21 @@ config :phoenix_live_view,
   debug_heex_annotations: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+# OAuth2 Configuration for development
+config :kyozo,
+  google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+  google_redirect_uri:
+    System.get_env("GOOGLE_REDIRECT_URI") || "http://localhost:4000/auth/google/callback",
+  github_client_id: System.get_env("GITHUB_CLIENT_ID"),
+  github_client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
+  github_redirect_uri:
+    System.get_env("GITHUB_REDIRECT_URI") || "http://localhost:4000/auth/github/callback",
+  apple_client_id: System.get_env("APPLE_CLIENT_ID"),
+  apple_client_secret: System.get_env("APPLE_CLIENT_SECRET"),
+  apple_redirect_uri:
+    System.get_env("APPLE_REDIRECT_URI") || "http://localhost:4000/auth/apple/callback"
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
