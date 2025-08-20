@@ -1,23 +1,23 @@
 defmodule Kyozo.Workspaces.FileStorage do
   @derive {Jason.Encoder, only: [:id, :file_id, :storage_resource_id, :relationship_type, :media_type, :is_primary, :metadata, :created_at, :updated_at]}
-  
+
   @moduledoc """
   Document storage resource implementing the AbstractStorage pattern.
-  
+
   This resource manages storage for workspace files, providing document-specific
   storage capabilities with support for multiple formats, versions, and backends.
-  
+
   ## Supported MIME Types
-  
+
   - Text documents: text/plain, text/markdown, text/html
   - Office documents: application/pdf, application/msword, application/vnd.openxmlformats-officedocument.*
   - Rich text: application/rtf
   - Code files: text/javascript, application/json, text/css, etc.
-  
+
   ## Storage Backend Selection
-  
+
   - Small text files (<1MB): Git for version control
-  - Large documents (>1MB): S3 for scalability  
+  - Large documents (>1MB): S3 for scalability
   - Frequently accessed: Disk for performance
   - Temporary/cache: RAM for speed
   """
@@ -64,21 +64,7 @@ defmodule Kyozo.Workspaces.FileStorage do
     end
   end
 
-  # GraphQL disabled - internal intermediary resource
-  # graphql do
-  #   type :file_storage
-  #
-  #   queries do
-  #     get :get_file_storage, :read
-  #     list :list_file_storages, :list_file_storages
-  #   end
-  #
-  #   mutations do
-  #     create :create_file_storage, :create_file_storage
-  #     update :update_file_storage, :update_file_storage
-  #     destroy :destroy_file_storage, :destroy
-  #   end
-  # end
+
 
   # Implement AbstractStorage callbacks
   @impl true
@@ -86,30 +72,30 @@ defmodule Kyozo.Workspaces.FileStorage do
     [
       # Text documents
       "text/plain",
-      "text/markdown", 
+      "text/markdown",
       "text/html",
       "text/css",
       "text/javascript",
       "text/csv",
       "text/tab-separated-values",
-      
+
       # Structured data
       "application/json",
       "application/xml",
       "text/xml",
       "application/yaml",
       "text/yaml",
-      
+
       # Office documents
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel", 
+      "application/vnd.ms-excel",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "application/vnd.ms-powerpoint",
       "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       "application/rtf",
-      
+
       # Code files
       "text/x-python",
       "text/x-ruby",
@@ -125,7 +111,7 @@ defmodule Kyozo.Workspaces.FileStorage do
       "text/x-swift",
       "text/x-kotlin",
       "text/x-scala",
-      
+
       # Configuration files
       "application/toml",
       "text/x-ini",
@@ -134,24 +120,24 @@ defmodule Kyozo.Workspaces.FileStorage do
     ]
   end
 
-  @impl true 
+  @impl true
   def default_storage_backend, do: :git
 
   @impl true
   def validate_content(content, metadata) do
     mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
-    
+
     cond do
       mime_type not in supported_mime_types() ->
         {:error, "Unsupported MIME type: #{mime_type}"}
-        
+
       byte_size(content) > 100 * 1024 * 1024 ->
         {:error, "Document too large (max 100MB)"}
-        
+
       String.starts_with?(mime_type, "text/") and !String.valid?(content) ->
         {:error, "Invalid text encoding"}
-        
-      true -> 
+
+      true ->
         :ok
     end
   end
@@ -159,7 +145,7 @@ defmodule Kyozo.Workspaces.FileStorage do
   @impl true
   def transform_content(content, metadata) do
     mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
-    
+
     case mime_type do
       "text/markdown" ->
         # Extract metadata from markdown frontmatter
@@ -170,7 +156,7 @@ defmodule Kyozo.Workspaces.FileStorage do
           estimated_read_time: estimate_read_time(body)
         })
         {:ok, content, updated_metadata}
-        
+
       "text/plain" ->
         # Add basic text statistics
         updated_metadata = Map.merge(metadata, %{
@@ -179,7 +165,7 @@ defmodule Kyozo.Workspaces.FileStorage do
           character_count: String.length(content)
         })
         {:ok, content, updated_metadata}
-        
+
       "application/json" ->
         # Validate and prettify JSON
         case Jason.decode(content) do
@@ -190,26 +176,26 @@ defmodule Kyozo.Workspaces.FileStorage do
               json_keys: extract_json_keys(data)
             })
             {:ok, pretty_content, updated_metadata}
-            
+
           {:error, _} ->
             {:error, "Invalid JSON content"}
         end
-        
+
       _ ->
         # No transformation needed for other types
         {:ok, content, metadata}
     end
   end
 
-  @impl true  
+  @impl true
   def storage_options(backend, metadata) do
     mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
-    
+
     base_options = %{
       mime_type: mime_type,
       media_type: :document
     }
-    
+
     case backend do
       :git ->
         Map.merge(base_options, %{
@@ -217,19 +203,19 @@ defmodule Kyozo.Workspaces.FileStorage do
           branch: "main",
           enable_lfs: String.starts_with?(mime_type, "application/")
         })
-        
+
       :s3 ->
         Map.merge(base_options, %{
           storage_class: if(String.starts_with?(mime_type, "text/"), do: "STANDARD", else: "STANDARD_IA"),
           server_side_encryption: "AES256"
         })
-        
+
       :disk ->
         Map.merge(base_options, %{
           create_directory: true,
           sync: String.starts_with?(mime_type, "text/")
         })
-        
+
       _ ->
         base_options
     end
@@ -239,20 +225,20 @@ defmodule Kyozo.Workspaces.FileStorage do
   def select_storage_backend(content, metadata) do
     file_size = byte_size(content)
     mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
-    
+
     cond do
       # Large binary documents go to S3
       file_size > 10 * 1024 * 1024 and String.starts_with?(mime_type, "application/") ->
         :s3
-        
+
       # Small text files go to Git for version control
       file_size < 1024 * 1024 and String.starts_with?(mime_type, "text/") ->
         :git
-        
+
       # Medium-sized documents go to disk
       file_size < 50 * 1024 * 1024 ->
         :disk
-        
+
       # Very large files go to S3
       true ->
         :s3
@@ -265,14 +251,14 @@ defmodule Kyozo.Workspaces.FileStorage do
     create :create do
       accept [:storage_resource_id, :file_id, :relationship_type, :media_type, :is_primary, :metadata]
     end
-    
+
     # Define update action with require_atomic? false
     update :update do
       require_atomic? false
     end
     read :by_file do
       argument :file_id, :uuid, allow_nil?: false
-      
+
       prepare build(
         filter: [file_id: arg(:file_id)],
         load: [:storage_resource, :storage_info, :content_preview],
@@ -282,7 +268,7 @@ defmodule Kyozo.Workspaces.FileStorage do
 
     read :primary_for_file do
       argument :file_id, :uuid, allow_nil?: false
-      
+
       prepare build(
         filter: [file_id: arg(:file_id), is_primary: true],
         load: [:storage_resource, :storage_info]
@@ -319,7 +305,7 @@ defmodule Kyozo.Workspaces.FileStorage do
     action :convert_format, :struct do
       argument :target_format, :string, allow_nil?: false
       argument :conversion_options, :map, default: %{}
-      
+
       run {__MODULE__.Actions.ConvertFormat, []}
     end
 
@@ -330,7 +316,7 @@ defmodule Kyozo.Workspaces.FileStorage do
     action :search_content, {:array, :struct} do
       argument :query, :string, allow_nil?: false
       argument :search_options, :map, default: %{}
-      
+
       run {__MODULE__.Actions.SearchContent, []}
     end
 
@@ -338,7 +324,7 @@ defmodule Kyozo.Workspaces.FileStorage do
       argument :file_id, :uuid, allow_nil?: false
       argument :content, :string, allow_nil?: false
       argument :commit_message, :string, default: "Update file content"
-      
+
       run {__MODULE__.Actions.UpdateFileContent, []}
     end
   end
@@ -350,7 +336,7 @@ defmodule Kyozo.Workspaces.FileStorage do
       allow_nil? false
       public? true
     end
-    
+
     # Add user_id attribute for user relationship from base
     attribute :user_id, :uuid do
       allow_nil? true
@@ -373,7 +359,7 @@ defmodule Kyozo.Workspaces.FileStorage do
 
     storage_info()
     content_preview()
-    
+
     calculate :document_stats, :map do
       load [:metadata, :storage_resource]
 
@@ -381,7 +367,7 @@ defmodule Kyozo.Workspaces.FileStorage do
         Enum.map(file_storages, fn fs ->
           metadata = fs.metadata || %{}
           storage = fs.storage_resource
-          
+
           %{
             word_count: Map.get(metadata, "word_count", 0),
             line_count: Map.get(metadata, "line_count", 0),
@@ -401,7 +387,7 @@ defmodule Kyozo.Workspaces.FileStorage do
       calculation fn file_storages, _context ->
         Enum.map(file_storages, fn fs ->
           storage = fs.storage_resource
-          String.starts_with?(storage.mime_type, "text/") and 
+          String.starts_with?(storage.mime_type, "text/") and
           storage.storage_backend in [:git, :disk]
         end)
       end
@@ -414,7 +400,7 @@ defmodule Kyozo.Workspaces.FileStorage do
         Enum.map(file_storages, fn fs ->
           metadata = fs.metadata || %{}
           storage = fs.storage_resource
-          
+
           %{
             version: storage.version,
             is_versioned: storage.is_versioned,
@@ -490,13 +476,13 @@ defmodule Kyozo.Workspaces.FileStorage do
       def change(changeset, _opts, _context) do
         version_name = Ash.Changeset.get_argument(changeset, :version_name)
         commit_message = Ash.Changeset.get_argument(changeset, :commit_message)
-        
+
         metadata = %{
           version_name: version_name,
           commit_message: commit_message,
           created_at: DateTime.utc_now()
         }
-        
+
         Ash.Changeset.change_attribute(changeset, :metadata, metadata)
       end
     end
@@ -511,12 +497,12 @@ defmodule Kyozo.Workspaces.FileStorage do
         storage_backend = Ash.Changeset.get_argument(changeset, :storage_backend)
 
         if content && filename do
-          case Kyozo.Storage.store_content(content, filename, 
+          case Kyozo.Storage.store_content(content, filename,
                  backend: storage_backend || :hybrid,
                  storage_options: %{}) do
             {:ok, storage_resource} ->
               Ash.Changeset.change_attribute(changeset, :storage_resource_id, storage_resource.id)
-            
+
             {:error, reason} ->
               Ash.Changeset.add_error(changeset, "Failed to create storage resource: #{inspect(reason)}")
           end
@@ -536,7 +522,7 @@ defmodule Kyozo.Workspaces.FileStorage do
         file_id = input.arguments.file_id
         content = input.arguments.content
         commit_message = input.arguments.commit_message
-        
+
         # Find current primary storage for the file
         case Kyozo.Workspaces.FileStorage
              |> Ash.Query.filter(file_id == ^file_id and is_primary == true)
@@ -544,7 +530,7 @@ defmodule Kyozo.Workspaces.FileStorage do
              |> Ash.read_one() do
           {:ok, current_storage} when not is_nil(current_storage) ->
             # Create new version using the storage resource
-            case Kyozo.Storage.create_version(current_storage.storage_resource, content, 
+            case Kyozo.Storage.create_version(current_storage.storage_resource, content,
                    commit_message: commit_message) do
               {:ok, updated_resource} ->
                 # Update the file storage metadata
@@ -554,14 +540,14 @@ defmodule Kyozo.Workspaces.FileStorage do
                     commit_message: commit_message
                   })
                 })
-                
+
               {:error, reason} ->
                 {:error, reason}
             end
-            
+
           {:ok, nil} ->
             {:error, "No primary storage found for file"}
-            
+
           {:error, reason} ->
             {:error, reason}
         end
@@ -574,15 +560,15 @@ defmodule Kyozo.Workspaces.FileStorage do
       def run(file_storage, input, _context) do
         target_format = input.arguments.target_format
         conversion_options = input.arguments.conversion_options
-        
+
         # Get the current content
         case Kyozo.Storage.retrieve_content(file_storage.storage_resource) do
           {:ok, content} ->
             # Perform format conversion (placeholder - implement actual conversion)
             converted_content = convert_content(content, target_format, conversion_options)
-            
+
             # Store the converted content as a new format relationship
-            case Kyozo.Storage.store_content(converted_content, 
+            case Kyozo.Storage.store_content(converted_content,
                    "#{Path.rootname(file_storage.storage_resource.file_name)}.#{target_format}") do
               {:ok, new_storage_resource} ->
                 # Create a new FileStorage entry for the converted format
@@ -598,16 +584,16 @@ defmodule Kyozo.Workspaces.FileStorage do
                     conversion_options: conversion_options
                   }
                 })
-                
+
               {:error, reason} ->
                 {:error, reason}
             end
-            
+
           {:error, reason} ->
             {:error, reason}
         end
       end
-      
+
       defp convert_content(content, target_format, _options) do
         # Placeholder implementation - add actual format conversion logic
         content
@@ -623,12 +609,12 @@ defmodule Kyozo.Workspaces.FileStorage do
             mime_type = file_storage.storage_resource.mime_type
             extracted_text = extract_text_from_content(content, mime_type)
             {:ok, extracted_text}
-            
+
           {:error, reason} ->
             {:error, reason}
         end
       end
-      
+
       defp extract_text_from_content(content, mime_type) do
         case mime_type do
           "text/" <> _ -> content
@@ -644,7 +630,7 @@ defmodule Kyozo.Workspaces.FileStorage do
       def run(_file_storage, input, _context) do
         query = input.arguments.query
         search_options = input.arguments.search_options
-        
+
         # Implement content search across file storages
         # This is a placeholder implementation
         {:ok, []}

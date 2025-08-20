@@ -35,17 +35,6 @@ defmodule Kyozo.Workspaces.TopologyDetection do
   json_api do
     type "topology-detection"
 
-    routes do
-      base "/topology-detections"
-      get :read
-      index :read
-      post :create
-      delete :destroy
-
-      # Custom route for workspace analysis
-      post :analyze_workspace, route: "/workspaces/:workspace_id/analyze-topology"
-    end
-
     # JSON-LD context metadata temporarily disabled during GraphQL cleanup
     # TODO: Re-enable JSON-LD metadata when AshJsonApi meta function is available
   end
@@ -105,44 +94,37 @@ defmodule Kyozo.Workspaces.TopologyDetection do
 
       change set_attribute(:status, :analyzing)
       change set_attribute(:detection_timestamp, expr(now()))
-      change {Kyozo.Workspaces.TopologyDetection.Changes.SetTeamFromWorkspace, []}
-
-      after_action({Kyozo.Workspaces.TopologyDetection.Changes.StartAnalysis, []})
-
-      after_action(
-        {Kyozo.Workspaces.TopologyDetection.Changes.EmitDetectionEvent, event: :detection_started}
-      )
     end
 
-    action :analyze_workspace, :struct do
+    create :analyze_workspace do
+      accept [:folder_path]
       argument :workspace_id, :uuid, allow_nil?: false
       argument :folder_path, :string, default: "/"
       argument :max_depth, :integer, default: 5
       argument :auto_create_services, :boolean, default: false
       argument :detection_mode, :string, default: "comprehensive"
 
-      run {Kyozo.Workspaces.TopologyDetection.Actions.AnalyzeWorkspace, []}
+      change set_attribute(:workspace_id, arg(:workspace_id))
+      change set_attribute(:status, :analyzing)
+      change set_attribute(:detection_timestamp, expr(now()))
     end
 
-    action :complete_analysis, :struct do
+    update :complete_analysis do
+      accept [:detected_patterns, :service_graph, :recommended_services, :deployment_strategy]
       argument :detected_patterns, :map, allow_nil?: false
       argument :service_graph, :map, allow_nil?: false
       argument :recommended_services, {:array, :map}, default: []
       argument :deployment_strategy, :string, default: "compose_stack"
 
-      run {Kyozo.Workspaces.TopologyDetection.Actions.CompleteAnalysis, []}
+      change set_attribute(:status, :completed)
     end
 
-    action :retry_analysis, :struct do
-      run {Kyozo.Workspaces.TopologyDetection.Actions.RetryAnalysis, []}
+    update :retry_analysis do
+      accept []
+      change set_attribute(:status, :analyzing)
     end
 
     destroy :destroy_topology_detection do
-      change {Kyozo.Workspaces.TopologyDetection.Changes.CleanupAnalysisData, []}
-
-      after_action(
-        {Kyozo.Workspaces.TopologyDetection.Changes.EmitDetectionEvent, event: :detection_deleted}
-      )
     end
   end
 
@@ -191,20 +173,10 @@ defmodule Kyozo.Workspaces.TopologyDetection do
     prepare build(load: [:workspace, :team])
   end
 
-  changes do
-    change before_action({Kyozo.Workspaces.TopologyDetection.Changes.NormalizeFolderPath, []}),
-      on: [:create]
 
-    change after_action({Kyozo.Workspaces.TopologyDetection.Changes.UpdateWorkspaceStats, []}),
-      on: [:create, :update]
-  end
 
   validations do
     validate present([:folder_path, :workspace_id, :team_id, :detection_timestamp])
-
-    validate {Kyozo.Workspaces.TopologyDetection.Validations.ValidateFolderPath, []}
-    validate {Kyozo.Workspaces.TopologyDetection.Validations.ValidateServiceGraph, []}
-    validate {Kyozo.Workspaces.TopologyDetection.Validations.ValidateRecommendedServices, []}
   end
 
   multitenancy do

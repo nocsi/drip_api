@@ -4,7 +4,7 @@ defmodule Kyozo.Containers.ServiceInstance do
     domain: Kyozo.Containers,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource, AshGraphql.Resource]
+    extensions: [AshJsonApi.Resource]
 
   @moduledoc """
   ServiceInstance resource representing a containerized service deployed from a folder.
@@ -16,21 +16,6 @@ defmodule Kyozo.Containers.ServiceInstance do
 
   json_api do
     type "service-instance"
-
-    routes do
-      base "/service-instances"
-      get :read
-      index :read
-      post :create
-      patch :update
-      delete :destroy
-
-      post :deploy, route: "/:id/deploy"
-      post :start, route: "/:id/start"
-      post :stop, route: "/:id/stop"
-      post :scale, route: "/:id/scale"
-    end
-
     includes [:workspace, :team, :created_by, :deployment_events]
   end
 
@@ -89,28 +74,34 @@ defmodule Kyozo.Containers.ServiceInstance do
     end
 
     update :deploy do
+      accept []
       change set_attribute(:status, :deploying)
       change set_attribute(:deployed_at, &DateTime.utc_now/0)
       change {Kyozo.Containers.Changes.StartContainerDeployment, []}
     end
 
     update :start do
+      accept []
       change {Kyozo.Containers.Changes.StartContainer, []}
       change set_attribute(:status, :running)
     end
 
     update :stop do
+      accept []
       change {Kyozo.Containers.Changes.StopContainer, []}
       change set_attribute(:status, :stopped)
       change set_attribute(:stopped_at, &DateTime.utc_now/0)
     end
 
     update :scale do
+      accept []
       argument :replica_count, :integer, allow_nil?: false
 
       change {Kyozo.Containers.Changes.ScaleService, []}
       change set_attribute(:status, :scaling)
     end
+
+
 
     read :list_by_workspace do
       argument :workspace_id, :uuid, allow_nil?: false

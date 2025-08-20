@@ -198,13 +198,9 @@ defmodule Mix.Tasks.GenerateFromOpenapi do
       defmodule #{inspect(domain_module)} do
         use Ash.Domain,
           otp_app: :#{app},
-          extensions: [AshJsonApi.Domain, AshGraphql.Domain]
+          extensions: [AshJsonApi.Domain]
 
         json_api do
-          authorize? false
-        end
-
-        graphql do
           authorize? false
         end
 

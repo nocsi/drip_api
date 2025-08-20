@@ -1,6 +1,6 @@
 defmodule Kyozo.Accounts.User do
   @derive {Jason.Encoder, only: [:id, :name, :email, :current_team, :role, :confirmed_at]}
-  
+
   use Ash.Resource,
     otp_app: :kyozo,
     domain: Kyozo.Accounts,
@@ -57,6 +57,7 @@ defmodule Kyozo.Accounts.User do
         client_id Kyozo.Secrets
         client_secret Kyozo.Secrets
         redirect_uri Kyozo.Secrets
+        base_url Kyozo.Secrets
         authorize_url "https://accounts.google.com/o/oauth2/v2/auth"
         token_url "https://oauth2.googleapis.com/token"
         user_url "https://www.googleapis.com/oauth2/v2/userinfo"
@@ -69,6 +70,7 @@ defmodule Kyozo.Accounts.User do
         client_id Kyozo.Secrets
         client_secret Kyozo.Secrets
         redirect_uri Kyozo.Secrets
+        base_url Kyozo.Secrets
         authorize_url "https://github.com/login/oauth/authorize"
         token_url "https://github.com/login/oauth/access_token"
         user_url "https://api.github.com/user"
@@ -77,12 +79,12 @@ defmodule Kyozo.Accounts.User do
         sign_in_action_name :sign_in_with_github
       end
 
-      magic_link :magic_link do
-        identity_field :email
-        registration_enabled? true
-        require_interaction? true
-        sender Kyozo.Accounts.User.Senders.SendMagicLinkEmail
-      end
+      # magic_link :magic_link do
+      #   identity_field :email
+      #   registration_enabled? true
+      #   require_interaction? true
+      #   sender Kyozo.Accounts.User.Senders.SendMagicLinkEmail
+      # end
 
       api_key :api_key do
         api_key_relationship :valid_api_keys

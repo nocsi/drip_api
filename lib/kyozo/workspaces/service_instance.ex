@@ -55,9 +55,6 @@ defmodule Kyozo.Workspaces.ServiceInstance do
       post :start, route: "/:id/start"
       post :stop, route: "/:id/stop"
       post :scale, route: "/:id/scale"
-      get :logs, route: "/:id/logs"
-      get :metrics, route: "/:id/metrics"
-      get :health, route: "/:id/health"
     end
 
     # JSON-LD context metadata temporarily disabled during GraphQL cleanup
@@ -155,12 +152,7 @@ defmodule Kyozo.Workspaces.ServiceInstance do
       ]
 
       change set_attribute(:status, :deployable)
-      change {Kyozo.Workspaces.ServiceInstance.Changes.ValidateDeploymentConfig, []}
-      change {Kyozo.Workspaces.ServiceInstance.Changes.NormalizePortMappings, []}
 
-      after_action(
-        {Kyozo.Workspaces.ServiceInstance.Changes.EmitServiceEvent, event: :service_created}
-      )
     end
 
     update :update_service_instance do
@@ -174,14 +166,11 @@ defmodule Kyozo.Workspaces.ServiceInstance do
         :health_check_config
       ]
 
-      change {Kyozo.Workspaces.ServiceInstance.Changes.ValidateDeploymentConfig, []}
 
-      after_action(
-        {Kyozo.Workspaces.ServiceInstance.Changes.EmitServiceEvent, event: :service_updated}
-      )
     end
 
     action :deploy, :struct do
+      constraints instance_of: __MODULE__
       argument :environment, :string, default: "production"
       argument :build_args, :map, default: %{}
       argument :force_rebuild, :boolean, default: false
@@ -190,10 +179,12 @@ defmodule Kyozo.Workspaces.ServiceInstance do
     end
 
     action :start, :struct do
+      constraints instance_of: __MODULE__
       run {Kyozo.Workspaces.ServiceInstance.Actions.StartService, []}
     end
 
     action :stop, :struct do
+      constraints instance_of: __MODULE__
       argument :graceful, :boolean, default: true
       argument :timeout_seconds, :integer, default: 30
 
@@ -201,6 +192,7 @@ defmodule Kyozo.Workspaces.ServiceInstance do
     end
 
     action :scale, :struct do
+      constraints instance_of: __MODULE__
       argument :replica_count, :integer, allow_nil?: false
 
       run {Kyozo.Workspaces.ServiceInstance.Actions.ScaleService, []}
@@ -228,11 +220,7 @@ defmodule Kyozo.Workspaces.ServiceInstance do
     end
 
     destroy :destroy_service_instance do
-      change {Kyozo.Workspaces.ServiceInstance.Changes.StopServiceBeforeDestroy, []}
 
-      after_action(
-        {Kyozo.Workspaces.ServiceInstance.Changes.EmitServiceEvent, event: :service_destroyed}
-      )
     end
   end
 
@@ -290,14 +278,7 @@ defmodule Kyozo.Workspaces.ServiceInstance do
   end
 
   changes do
-    change before_action({Kyozo.Workspaces.ServiceInstance.Changes.SetTeamFromWorkspace, []}),
-      on: [:create]
 
-    change before_action({Kyozo.Workspaces.ServiceInstance.Changes.NormalizeConfigurations, []}),
-      on: [:create, :update]
-
-    change after_action({Kyozo.Workspaces.ServiceInstance.Changes.UpdateContainerMetadata, []}),
-      on: [:update]
   end
 
   validations do
@@ -307,10 +288,7 @@ defmodule Kyozo.Workspaces.ServiceInstance do
       message "Service name can only contain letters, numbers, hyphens, and underscores"
     end
 
-    validate {Kyozo.Workspaces.ServiceInstance.Validations.ValidatePortMappings, []}
-    validate {Kyozo.Workspaces.ServiceInstance.Validations.ValidateResourceLimits, []}
-    validate {Kyozo.Workspaces.ServiceInstance.Validations.ValidateScalingConfig, []}
-    validate {Kyozo.Workspaces.ServiceInstance.Validations.UniqueNamePerWorkspace, []}
+
   end
 
   multitenancy do
@@ -354,7 +332,7 @@ defmodule Kyozo.Workspaces.ServiceInstance do
                     :rails,
                     :laravel,
 
-                    # Database Services  
+                    # Database Services
                     :postgres,
                     :mysql,
                     "mongodb",
@@ -560,9 +538,7 @@ defmodule Kyozo.Workspaces.ServiceInstance do
       destination_attribute :service_instance_id
     end
 
-    has_many :health_checks, Kyozo.Workspaces.HealthCheck do
-      destination_attribute :service_instance_id
-    end
+
 
     has_many :dependent_services, Kyozo.Workspaces.ServiceDependency do
       destination_attribute :dependent_service_id
@@ -572,9 +548,7 @@ defmodule Kyozo.Workspaces.ServiceInstance do
       destination_attribute :required_service_id
     end
 
-    has_many :service_permissions, Kyozo.Workspaces.ServicePermission do
-      destination_attribute :service_instance_id
-    end
+
   end
 
   calculations do

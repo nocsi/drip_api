@@ -122,7 +122,6 @@ defmodule Kyozo.Containers.ServicePermission do
   validations do
     validate present([:user_id, :service_instance_id, :permission_type])
 
-    validate {Kyozo.Containers.Validations.ValidateUserInTeam, []}
   end
 
   attributes do

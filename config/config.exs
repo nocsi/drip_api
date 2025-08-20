@@ -31,7 +31,7 @@ config :kyozo, Oban,
   repo: Kyozo.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
 
-config :ash_graphql, authorize_update_destroy_with_error?: true
+
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},

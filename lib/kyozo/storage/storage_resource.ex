@@ -278,21 +278,6 @@ defmodule Kyozo.Storage.StorageResource do
   #   end
   # end
 
-  # GraphQL disabled - internal storage resource
-  # graphql do
-  #   type :storage_resource
-  #
-  #   queries do
-  #     get :get_storage_resource, :read
-  #     list :list_storage_resources, :list
-  #   end
-  #
-  #   mutations do
-  #     create :create_storage_resource, :create
-  #     update :update_storage_resource, :update
-  #     destroy :destroy_storage_resource, :destroy
-  #   end
-  # end
 
   # AshOban integration - jobs will be scheduled manually via AshOban.schedule/4
   # This provides proper actor persistence and authorization handling

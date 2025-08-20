@@ -1,28 +1,28 @@
 defmodule Kyozo.Workspaces.ImageStorage do
   @derive {Jason.Encoder, only: [:id, :file_id, :storage_resource_id, :relationship_type, :media_type, :is_primary, :metadata, :created_at, :updated_at]}
-  
+
   @moduledoc """
   Image storage resource implementing the AbstractStorage pattern.
-  
+
   This resource manages storage for image files, providing image-specific
   storage capabilities with support for thumbnails, format conversion,
   and metadata extraction.
-  
+
   ## Supported MIME Types
-  
+
   - Raster images: image/jpeg, image/png, image/gif, image/webp, image/bmp, image/tiff
   - Vector images: image/svg+xml
   - Raw formats: image/x-canon-cr2, image/x-adobe-dng, image/x-nikon-nef
-  
+
   ## Storage Backend Selection
-  
+
   - Small images (<5MB): Disk for quick access
   - Large images (>5MB): S3 for scalability
   - Thumbnails/cache: RAM for speed
   - Archive/backup: S3 with IA storage class
-  
+
   ## Automatic Processing
-  
+
   - Thumbnail generation for web display
   - EXIF metadata extraction
   - Format optimization (WebP conversion)
@@ -69,14 +69,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
     end
   end
 
-  # GraphQL disabled - internal intermediary resource
-  # graphql do
-  #   type :image_storage
-  #
-  #   queries do
-  #     get :get_image_storage, :read
-  #     list :list_image_storages, :list_image_storages
-  #   end
+
   #
   #   mutations do
   #     create :create_image_storage, :create_image_storage
@@ -92,7 +85,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
       allow_nil? false
       public? true
     end
-    
+
     # Add user_id attribute for user relationship from base
     attribute :user_id, :uuid do
       allow_nil? true
@@ -107,24 +100,24 @@ defmodule Kyozo.Workspaces.ImageStorage do
       # Common web formats
       "image/jpeg",
       "image/jpg",
-      "image/png", 
+      "image/png",
       "image/gif",
       "image/webp",
       "image/avif",
-      
+
       # Other raster formats
       "image/bmp",
       "image/tiff",
       "image/tif",
       "image/x-icon",
       "image/vnd.microsoft.icon",
-      
+
       # Vector formats
       "image/svg+xml",
-      
+
       # Raw camera formats
       "image/x-canon-cr2",
-      "image/x-canon-crw", 
+      "image/x-canon-crw",
       "image/x-adobe-dng",
       "image/x-nikon-nef",
       "image/x-nikon-nrw",
@@ -137,27 +130,27 @@ defmodule Kyozo.Workspaces.ImageStorage do
     ]
   end
 
-  @impl true 
+  @impl true
   def default_storage_backend, do: :s3
 
   @impl true
   def validate_content(content, metadata) do
     mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
-    
+
     cond do
       mime_type not in supported_mime_types() ->
         {:error, "Unsupported image MIME type: #{mime_type}"}
-        
+
       byte_size(content) > 500 * 1024 * 1024 ->
         {:error, "Image too large (max 500MB)"}
-        
+
       byte_size(content) < 100 ->
         {:error, "Image file too small, possibly corrupted"}
-        
+
       not valid_image_header?(content, mime_type) ->
         {:error, "Invalid image file header"}
-        
-      true -> 
+
+      true ->
         :ok
     end
   end
@@ -165,7 +158,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
   @impl true
   def transform_content(content, metadata) do
     mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
-    
+
     # Extract image metadata
     case extract_image_metadata(content, mime_type) do
       {:ok, image_metadata} ->
@@ -173,7 +166,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
           image_info: image_metadata,
           processed_at: DateTime.utc_now()
         })
-        
+
         # Optimize image if needed
         case optimize_image(content, mime_type, image_metadata) do
           {:ok, optimized_content} ->
@@ -182,23 +175,23 @@ defmodule Kyozo.Workspaces.ImageStorage do
             # Fall back to original content if optimization fails
             {:ok, content, updated_metadata}
         end
-        
+
       {:error, reason} ->
         {:error, "Failed to process image: #{reason}"}
     end
   end
 
-  @impl true  
+  @impl true
   def storage_options(backend, metadata) do
     mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
     image_info = Map.get(metadata, :image_info, %{})
     file_size = Map.get(image_info, :file_size, 0)
-    
+
     base_options = %{
       mime_type: mime_type,
       media_type: :image
     }
-    
+
     case backend do
       :s3 ->
         storage_class = cond do
@@ -206,7 +199,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
           Map.get(metadata, :relationship_type) == :backup -> "GLACIER"
           true -> "STANDARD"
         end
-        
+
         Map.merge(base_options, %{
           storage_class: storage_class,
           server_side_encryption: "AES256",
@@ -216,20 +209,20 @@ defmodule Kyozo.Workspaces.ImageStorage do
             format: mime_type
           }
         })
-        
+
       :disk ->
         Map.merge(base_options, %{
           create_directory: true,
           organize_by_date: true,
           path_template: "{year}/{month}/{day}/{filename}"
         })
-        
+
       :ram ->
         Map.merge(base_options, %{
           ttl: 3600,  # 1 hour for thumbnails
           compress: true
         })
-        
+
       _ ->
         base_options
     end
@@ -239,20 +232,20 @@ defmodule Kyozo.Workspaces.ImageStorage do
   def select_storage_backend(content, metadata) do
     file_size = byte_size(content)
     relationship_type = Map.get(metadata, :relationship_type, :primary)
-    
+
     cond do
       # Thumbnails and cache go to RAM
       relationship_type in [:thumbnail, :cache] ->
         :ram
-        
+
       # Large images go to S3
       file_size > 5 * 1024 * 1024 ->
         :s3
-        
+
       # Medium images go to disk for fast access
       file_size < 50 * 1024 * 1024 ->
         :disk
-        
+
       # Very large files go to S3
       true ->
         :s3
@@ -265,7 +258,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
     create :create do
       accept [:storage_resource_id, :file_id, :relationship_type, :media_type, :is_primary, :metadata]
     end
-    
+
     # Define update action with require_atomic? false
     update :update do
       require_atomic? false
@@ -286,7 +279,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
 
     action :generate_thumbnails, {:array, :struct} do
       argument :sizes, {:array, :string}, default: ["150x150", "300x300", "600x600"]
-      
+
       run {__MODULE__.Actions.GenerateThumbnails, []}
     end
 
@@ -294,7 +287,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
       argument :target_format, :string, allow_nil?: false
       argument :quality, :integer, default: 85
       argument :progressive, :boolean, default: false
-      
+
       run {__MODULE__.Actions.ConvertFormat, []}
     end
 
@@ -310,7 +303,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
       argument :max_width, :integer, default: 1920
       argument :max_height, :integer, default: 1080
       argument :quality, :integer, default: 80
-      
+
       run {__MODULE__.Actions.OptimizeForWeb, []}
     end
   end
@@ -344,7 +337,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
 
     storage_info()
     content_preview()
-    
+
     calculate :image_info, :map do
       load [:metadata, :storage_resource]
 
@@ -353,7 +346,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
           metadata = img.metadata || %{}
           image_info = Map.get(metadata, :image_info, %{})
           storage = img.storage_resource
-          
+
           %{
             width: Map.get(image_info, :width, 0),
             height: Map.get(image_info, :height, 0),
@@ -378,10 +371,10 @@ defmodule Kyozo.Workspaces.ImageStorage do
             size = Map.get(thumb.metadata || %{}, "size", "unknown")
             Map.put(acc, size, "/storage/#{thumb.storage_resource_id}/download")
           end)
-          
+
           %{
             small: Map.get(thumbnail_urls, "150x150"),
-            medium: Map.get(thumbnail_urls, "300x300"), 
+            medium: Map.get(thumbnail_urls, "300x300"),
             large: Map.get(thumbnail_urls, "600x600"),
             all: thumbnail_urls
           }
@@ -407,12 +400,12 @@ defmodule Kyozo.Workspaces.ImageStorage do
           storage = img.storage_resource
           metadata = img.metadata || %{}
           image_info = Map.get(metadata, :image_info, %{})
-          
+
           web_formats = ["image/webp", "image/avif", "image/jpeg"]
           is_web_format = storage.mime_type in web_formats
           is_reasonable_size = storage.file_size < 2 * 1024 * 1024  # < 2MB
           is_reasonable_dimensions = Map.get(image_info, :width, 0) <= 1920 and Map.get(image_info, :height, 0) <= 1080
-          
+
           is_web_format and is_reasonable_size and is_reasonable_dimensions
         end)
       end
@@ -441,7 +434,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
     # For now, return basic metadata
     {:ok, %{
       width: 0,
-      height: 0, 
+      height: 0,
       file_size: byte_size(content),
       format: mime_type,
       color_space: "sRGB",
@@ -483,7 +476,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
         # This would be implemented to generate thumbnails after the main image is stored
         # For now, just add metadata about pending thumbnail generation
         thumbnail_sizes = Ash.Changeset.get_argument(changeset, :thumbnail_sizes) || []
-        
+
         metadata = %{
           thumbnail_generation: %{
             status: "pending",
@@ -491,7 +484,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
             scheduled_at: DateTime.utc_now()
           }
         }
-        
+
         Ash.Changeset.change_attribute(changeset, :metadata, metadata)
       end
     end
@@ -504,7 +497,7 @@ defmodule Kyozo.Workspaces.ImageStorage do
 
       def run(image_storage, input, _context) do
         sizes = input.arguments.sizes
-        
+
         # This would integrate with an image processing library
         # For now, return a placeholder result
         {:ok, Enum.map(sizes, fn size ->

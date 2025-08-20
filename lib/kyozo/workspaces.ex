@@ -75,7 +75,51 @@ defmodule Kyozo.Workspaces do
       define :list_events
       define :list_workspace_events, args: [:workspace_id]
     end
-    resource Kyozo.Workspaces.DocumentBlobRef  end
+
+    resource Kyozo.Workspaces.TopologyDetection do
+      define :analyze_workspace_topology,
+        action: :analyze_workspace,
+        args: [:workspace_id, :folder_path, :max_depth, :auto_create_services, :detection_mode]
+
+      define :list_workspace_topology_detections, action: :read
+      define :list_workspace_detections, action: :list_by_workspace, args: [:workspace_id]
+      define :get_workspace_topology_detection, action: :read, get_by: :id
+      define :complete_analysis, action: :complete_analysis
+      define :retry_analysis, action: :retry_analysis
+      define :delete_workspace_topology_detection, action: :destroy
+    end
+
+    resource Kyozo.Workspaces.ServiceInstance do
+      define :list_service_instances
+      define :create_service_instance
+      define :get_service_instance, action: :read, get_by: :id
+      define :update_service_instance, action: :update
+      define :delete_service_instance, action: :destroy
+      define :deploy_service_instance, action: :deploy
+      define :start_service_instance, action: :start
+      define :stop_service_instance, action: :stop
+    end
+
+    resource Kyozo.Workspaces.DeploymentEvent do
+      define :list_deployment_events
+      define :get_deployment_event, action: :read, get_by: :id
+      define :create_deployment_event
+      define :create_deployment_started
+      define :create_deployment_completed
+      define :create_deployment_failed
+      define :create_service_scaled
+    end
+
+    resource Kyozo.Workspaces.ServiceDependency do
+      define :list_service_dependencies
+      define :get_service_dependency, action: :read, get_by: :id
+      define :create_service_dependency
+      define :update_service_dependency, action: :update
+      define :delete_service_dependency, action: :destroy
+    end
+
+    resource Kyozo.Workspaces.DocumentBlobRef
+  end
 
   @doc """
   Subscribe to workspace events for real-time updates.

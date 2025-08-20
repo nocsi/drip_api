@@ -27,8 +27,6 @@ defmodule Kyozo.Application do
       # {Kyozo.Worker, arg},
       # Start to serve requests, typically the last entry
       KyozoWeb.Endpoint,
-      {Absinthe.Subscription, KyozoWeb.Endpoint},
-      AshGraphql.Subscription.Batcher,
       {AshAuthentication.Supervisor, [otp_app: :kyozo]}
     ]
 

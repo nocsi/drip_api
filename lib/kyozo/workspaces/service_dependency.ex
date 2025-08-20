@@ -151,16 +151,7 @@ defmodule Kyozo.Workspaces.ServiceDependency do
         :required_service_id
       ]
 
-      change {Kyozo.Workspaces.ServiceDependency.Changes.SetWorkspaceAndTeam, []}
-      change {Kyozo.Workspaces.ServiceDependency.Changes.ValidateNoCyclicDependency, []}
-      change {Kyozo.Workspaces.ServiceDependency.Changes.SetDefaultStartupOrder, []}
 
-      after_action({Kyozo.Workspaces.ServiceDependency.Changes.UpdateDependencyGraph, []})
-
-      after_action(
-        {Kyozo.Workspaces.ServiceDependency.Changes.EmitDependencyEvent,
-         event: :dependency_created}
-      )
     end
 
     update :update_service_dependency do
@@ -175,14 +166,7 @@ defmodule Kyozo.Workspaces.ServiceDependency do
         :retry_count
       ]
 
-      change {Kyozo.Workspaces.ServiceDependency.Changes.ValidateNoCyclicDependency, []}
 
-      after_action({Kyozo.Workspaces.ServiceDependency.Changes.UpdateDependencyGraph, []})
-
-      after_action(
-        {Kyozo.Workspaces.ServiceDependency.Changes.EmitDependencyEvent,
-         event: :dependency_updated}
-      )
     end
 
     action :validate_dependency_graph, :map do
@@ -204,12 +188,6 @@ defmodule Kyozo.Workspaces.ServiceDependency do
     end
 
     destroy :destroy_service_dependency do
-      after_action({Kyozo.Workspaces.ServiceDependency.Changes.UpdateDependencyGraph, []})
-
-      after_action(
-        {Kyozo.Workspaces.ServiceDependency.Changes.EmitDependencyEvent,
-         event: :dependency_deleted}
-      )
     end
   end
 
@@ -252,15 +230,6 @@ defmodule Kyozo.Workspaces.ServiceDependency do
   end
 
   changes do
-    change before_action(
-             {Kyozo.Workspaces.ServiceDependency.Changes.NormalizeConnectionString, []}
-           ),
-           on: [:create, :update]
-
-    change after_action(
-             {Kyozo.Workspaces.ServiceDependency.Changes.UpdateServiceEnvironment, []}
-           ),
-           on: [:create, :update]
   end
 
   validations do
@@ -272,10 +241,7 @@ defmodule Kyozo.Workspaces.ServiceDependency do
                :team_id
              ])
 
-    validate {Kyozo.Workspaces.ServiceDependency.Validations.ValidateUniqueServicePair, []}
-    validate {Kyozo.Workspaces.ServiceDependency.Validations.ValidateNoSelfDependency, []}
-    validate {Kyozo.Workspaces.ServiceDependency.Validations.ValidateConnectionString, []}
-    validate {Kyozo.Workspaces.ServiceDependency.Validations.ValidateEnvironmentVariable, []}
+
   end
 
   multitenancy do

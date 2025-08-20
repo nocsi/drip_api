@@ -18,10 +18,10 @@ defmodule Kyozo.Containers do
         delete :destroy
 
         # Service lifecycle operations
-        post :deploy, route: "/:id/deploy"
-        post :start, route: "/:id/start"
-        post :stop, route: "/:id/stop"
-        post :scale, route: "/:id/scale"
+        patch :deploy, route: "/:id/deploy"
+        patch :start, route: "/:id/start"
+        patch :stop, route: "/:id/stop"
+        patch :scale, route: "/:id/scale"
       end
 
       # Topology detection routes

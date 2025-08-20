@@ -69,21 +69,7 @@ defmodule Kyozo.Workspaces.FileNotebook do
     end
   end
 
-  # GraphQL disabled - internal intermediary resource
-  # graphql do
-  #   type :file_notebook
-  #
-  #   queries do
-  #     get :get_file_notebook, :read
-  #     list :list_file_notebooks, :list
-  #   end
-  #
-  #   mutations do
-  #     create :create_file_notebook, :create
-  #     update :update_file_notebook, :update
-  #     destroy :destroy_file_notebook, :destroy
-  #   end
-  # end
+
 
   # Additional attributes for file notebook
   attributes do
@@ -92,7 +78,7 @@ defmodule Kyozo.Workspaces.FileNotebook do
       allow_nil? false
       public? true
     end
-    
+
     # Add user_id attribute for user relationship from base
     attribute :user_id, :uuid do
       allow_nil? true
@@ -331,7 +317,7 @@ defmodule Kyozo.Workspaces.FileNotebook do
     create :create do
       accept [:storage_resource_id, :file_id, :notebook_id, :relationship_type, :media_type, :is_primary, :metadata]
     end
-    
+
     # Define update action with require_atomic? false
     update :update do
       require_atomic? false

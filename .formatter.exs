@@ -3,8 +3,6 @@
     :ash_ai,
     :ash_authentication_phoenix,
     :ash_authentication,
-    :ash_graphql,
-    :absinthe,
     :ash_json_api,
     :ash_phoenix,
     :ash_postgres,
@@ -15,6 +13,6 @@
     :phoenix
   ],
   subdirectories: ["priv/*/migrations"],
-  plugins: [Absinthe.Formatter, Spark.Formatter, Phoenix.LiveView.HTMLFormatter],
+  plugins: [Spark.Formatter, Phoenix.LiveView.HTMLFormatter],
   inputs: ["*.{heex,ex,exs}", "{config,lib,test}/**/*.{heex,ex,exs}", "priv/*/seeds.exs"]
 ]
