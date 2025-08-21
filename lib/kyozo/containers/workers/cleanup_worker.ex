@@ -26,6 +26,14 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
     stopped_services: [days: 30]
   }
 
+  # Minimal retention safeguards to prevent accidental mass deletion
+  @min_retention_days %{
+    metrics: 1,
+    deployment_events: 7,
+    health_checks: 1,
+    stopped_services: 7
+  }
+
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"type" => "metrics"}}) do
     Logger.info("Starting metrics cleanup")
@@ -38,6 +46,7 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
     case Repo.delete_all(query) do
       {count, _} ->
         Logger.info("Cleaned up old metrics", deleted_count: count, cutoff_date: cutoff_date)
+        telemetry_cleanup(:metrics, %{deleted: count}, %{cutoff_date: cutoff_date, days: retention_period[:days]})
         :ok
 
       error ->
@@ -67,7 +76,7 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
           deleted_count: count,
           cutoff_date: cutoff_date
         )
-
+        telemetry_cleanup(:deployment_events, %{deleted: count}, %{cutoff_date: cutoff_date, days: retention_period[:days]})
         :ok
 
       error ->
@@ -92,6 +101,7 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
     case Repo.delete_all(query) do
       {count, _} ->
         Logger.info("Cleaned up health checks", deleted_count: count, cutoff_date: cutoff_date)
+        telemetry_cleanup(:health_checks, %{deleted: count}, %{cutoff_date: cutoff_date, days: retention_period[:days]})
         :ok
 
       error ->
@@ -145,6 +155,8 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
           cleaned: success_count
         )
 
+        telemetry_cleanup(:orphaned_containers, %{total: length(orphaned), cleaned: success_count}, %{})
+
         :ok
 
       {:error, error} ->
@@ -192,6 +204,8 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
       cleaned: success_count
     )
 
+    telemetry_cleanup(:stopped_services, %{total: length(stopped_services), cleaned: success_count}, %{cutoff_date: cutoff_date})
+
     :ok
   end
 
@@ -205,6 +219,8 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
           images_removed: cleanup_result.images_removed,
           space_freed: cleanup_result.space_freed_bytes
         )
+
+        telemetry_cleanup(:docker_images, %{images_removed: cleanup_result.images_removed, space_freed_bytes: cleanup_result.space_freed_bytes}, %{})
 
         :ok
 
@@ -251,14 +267,17 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
     ]
 
     Enum.each(tables_to_vacuum, fn table ->
+      started = System.monotonic_time()
       case Repo.query("VACUUM ANALYZE #{table}") do
         {:ok, _} ->
-          Logger.debug("Vacuumed table", table: table)
+          duration_ms = System.convert_time_unit(System.monotonic_time() - started, :native, :millisecond)
+          Logger.debug("Vacuumed table", table: table, duration_ms: duration_ms)
+          telemetry_cleanup(:vacuum, %{duration_ms: duration_ms}, %{table: table})
 
         {:error, error} ->
           Logger.warn("Failed to vacuum table", table: table, error: inspect(error))
-      end
-    end)
+        end
+      end)
 
     Logger.info("Database vacuum analyze completed")
     :ok
@@ -336,8 +355,23 @@ defmodule Kyozo.Containers.Workers.CleanupWorker do
   end
 
   defp get_retention_period(type) do
-    Application.get_env(:kyozo, :container_cleanup_retention, @default_retention_periods)[type] ||
+    config = Application.get_env(:kyozo, :container_cleanup_retention, @default_retention_periods)[type] ||
       @default_retention_periods[type]
+
+    days =
+      case config do
+        %{days: d} -> d
+        [days: d] -> d
+        _ -> 0
+      end
+
+    min_days = Map.get(@min_retention_days, type, 1)
+    effective_days = max(days, min_days)
+    [days: effective_days]
+  end
+
+  defp telemetry_cleanup(event, measurements, metadata) when is_atom(event) do
+    :telemetry.execute([:kyozo, :containers, :cleanup, event], measurements, metadata)
   end
 
   defp seconds_until_2am do

@@ -1,27 +1,27 @@
 <script>
   import { slide } from 'svelte/transition';
-  import { 
-    Play, 
-    Square, 
-    Rocket, 
-    BarChart3, 
-    FileText, 
-    Settings, 
-    ChevronRight, 
+  import {
+    Play,
+    Square,
+    Rocket,
+    BarChart3,
+    FileText,
+    Settings,
+    ChevronRight,
     ChevronDown,
     Cpu,
     HardDrive
   } from '@lucide/svelte';
-  
-  let { 
-    service, 
-    detailed = false, 
-    onDeploy = () => {}, 
-    onStart = () => {}, 
-    onStop = () => {}, 
-    onScale = () => {} 
+
+  let {
+    service,
+    detailed = false,
+    onDeploy = () => {},
+    onStart = () => {},
+    onStop = () => {},
+    onScale = () => {}
   } = $props();
-  
+
   let showDetails = $state(false);
   let showScaleDialog = $state(false);
   let newReplicaCount = $state(service.attributes.replicaCount || 1);
@@ -90,413 +90,224 @@
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
-    
+
     if (diffDays > 0) return `${diffDays}d ${diffHours % 24}h`;
     if (diffHours > 0) return `${diffHours}h ${diffMins % 60}m`;
     return `${diffMins}m`;
   }
 </script>
 
-<div class="service-card" class:detailed>
+<div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200 {detailed ? 'max-w-none' : ''}">
   <!-- Card Header -->
-  <div class="card-header">
+  <div class="flex items-start justify-between p-4 border-b border-gray-100 dark:border-gray-700">
     <div class="flex items-center gap-3">
-      <span class="service-icon">{serviceTypeIcon}</span>
+      <span class="text-2xl">{serviceTypeIcon}</span>
       <div>
-        <h3 class="service-name">{service.attributes.name}</h3>
-        <p class="service-type">{service.attributes.serviceType.replace('_', ' ')}</p>
+        <h3 class="font-semibold text-gray-900 dark:text-white">{service.attributes.name}</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 capitalize">{service.attributes.serviceType.replace('_', ' ')}</p>
       </div>
     </div>
-    
-    <div class="status-indicators">
-      <span class="status-badge badge-{statusColor}">
+
+    <div class="flex flex-col gap-1 items-end">
+      <span class="px-2 py-1 rounded text-xs font-medium {statusColor === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : statusColor === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' : statusColor === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' : statusColor === 'info' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}">
         {service.attributes.containerStatus}
       </span>
-      <span class="health-badge badge-{healthColor}">
+      <span class="px-2 py-1 rounded text-xs font-medium {healthColor === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : healthColor === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'}">
         {service.attributes.healthStatus}
       </span>
     </div>
   </div>
 
   <!-- Card Content -->
-  <div class="card-content">
+  <div class="p-4 space-y-3">
     <!-- Basic Info -->
-    <div class="info-row">
-      <span class="info-label">Image:</span>
-      <span class="info-value">
+    <div class="flex justify-between items-center">
+      <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Image:</span>
+      <span class="text-sm text-gray-900 dark:text-white">
         {service.attributes.imageName}:{service.attributes.imageTag}
       </span>
     </div>
-    
-    <div class="info-row">
-      <span class="info-label">Replicas:</span>
-      <span class="info-value">{service.attributes.replicaCount}</span>
+
+    <div class="flex justify-between items-center">
+      <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Replicas:</span>
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-900 dark:text-white">{service.attributes.replicaCount || 1}</span>
+        <button
+          class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          onclick={() => showScaleDialog = true}
+        >
+          <Settings class="w-3 h-3" />
+        </button>
+      </div>
     </div>
 
-    {#if service.attributes.deployedAt}
-      <div class="info-row">
-        <span class="info-label">Uptime:</span>
-        <span class="info-value">{formatUptime(service.attributes.deployedAt)}</span>
+    <div class="flex justify-between items-center">
+      <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Uptime:</span>
+      <span class="text-sm text-gray-900 dark:text-white">
+        {formatUptime(service.attributes.deployedAt)}
+      </span>
+    </div>
+
+    <!-- Resource Usage (if running) -->
+    {#if service.attributes.containerStatus === 'running'}
+      <div class="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <Cpu class="w-4 h-4 text-blue-600" />
+            <span class="text-sm font-medium text-gray-600 dark:text-gray-400">CPU</span>
+          </div>
+          <span class="text-sm text-gray-900 dark:text-white">
+            {service.attributes.cpuUsagePercent || 0}%
+          </span>
+        </div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div
+            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style="width: {Math.min(service.attributes.cpuUsagePercent || 0, 100)}%"
+          ></div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <HardDrive class="w-4 h-4 text-green-600" />
+            <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Memory</span>
+          </div>
+          <span class="text-sm text-gray-900 dark:text-white">
+            {service.attributes.memoryUsageMb || 0}MB
+          </span>
+        </div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div
+            class="bg-green-600 h-2 rounded-full transition-all duration-300"
+            style="width: {Math.min((service.attributes.memoryUsageMb || 0) / 10, 100)}%"
+          ></div>
+        </div>
       </div>
     {/if}
 
-    <!-- Resource Usage -->
-    {#if service.attributes.cpuUsagePercent || service.attributes.memoryUsageMb}
-      <div class="resource-usage">
-        {#if service.attributes.cpuUsagePercent}
-          <div class="usage-item">
-            <Cpu class="w-3 h-3 text-gray-500" />
-            <span class="usage-label">CPU:</span>
-            <div class="usage-bar">
-              <div 
-                class="usage-fill"
-                style="width: {Math.min(service.attributes.cpuUsagePercent, 100)}%"
-              ></div>
-            </div>
-            <span class="usage-value">{Math.round(service.attributes.cpuUsagePercent)}%</span>
-          </div>
-        {/if}
-
-        {#if service.attributes.memoryUsageMb}
-          <div class="usage-item">
-            <HardDrive class="w-3 h-3 text-gray-500" />
-            <span class="usage-label">Memory:</span>
-            <div class="usage-bar">
-              <div 
-                class="usage-fill"
-                style="width: {Math.min((service.attributes.memoryUsageMb / 1024) * 100, 100)}%"
-              ></div>
-            </div>
-            <span class="usage-value">{Math.round(service.attributes.memoryUsageMb)}MB</span>
-          </div>
-        {/if}
-      </div>
-    {/if}
-
-    <!-- Detailed Info (expandable) -->
+    <!-- Detailed Info Toggle -->
     {#if detailed}
-      <button 
-        class="details-toggle"
-        onclick={() => showDetails = !showDetails}
-      >
-        {#if showDetails}
-          <ChevronDown class="w-4 h-4" />
-        {:else}
-          <ChevronRight class="w-4 h-4" />
-        {/if}
-        Details
-      </button>
+      <div class="pt-3 border-t border-gray-100 dark:border-gray-700">
+        <button
+          class="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          onclick={() => showDetails = !showDetails}
+        >
+          {#if showDetails}
+            <ChevronDown class="w-4 h-4" />
+            Hide Details
+          {:else}
+            <ChevronRight class="w-4 h-4" />
+            Show Details
+          {/if}
+        </button>
+      </div>
 
       {#if showDetails}
-        <div class="detailed-info" transition:slide={{ duration: 200 }}>
-          <div class="info-section">
-            <h4>Container Info</h4>
-            <div class="info-grid">
-              <div class="info-row">
-                <span class="info-label">Container ID:</span>
-                <span class="info-value font-mono text-xs">
-                  {service.attributes.containerId?.slice(0, 12) || 'Not deployed'}
-                </span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Auto Restart:</span>
-                <span class="info-value">{service.attributes.autoRestart ? 'Yes' : 'No'}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Last Health Check:</span>
-                <span class="info-value text-xs">
-                  {formatDateTime(service.attributes.lastHealthCheckAt)}
-                </span>
-              </div>
+        <div class="space-y-3 pt-3" transition:slide={{ duration: 200 }}>
+          <div>
+            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Port Mappings</h4>
+            <div class="space-y-1">
+              {#each Object.entries(service.attributes.portMappings || {}) as [external, internal]}
+                <div class="text-xs text-gray-600 dark:text-gray-400">
+                  {external}:{internal}
+                </div>
+              {/each}
             </div>
           </div>
 
-          {#if Object.keys(service.attributes.portMappings || {}).length > 0}
-            <div class="info-section">
-              <h4>Port Mappings</h4>
-              <div class="port-mappings">
-                {#each Object.entries(service.attributes.portMappings) as [internal, external]}
-                  <span class="port-mapping">{external} → {internal}</span>
-                {/each}
-              </div>
+          <div>
+            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Environment Variables</h4>
+            <div class="space-y-1">
+              {#each Object.entries(service.attributes.environmentVariables || {}) as [key, value]}
+                <div class="text-xs text-gray-600 dark:text-gray-400">
+                  {key}={value}
+                </div>
+              {/each}
             </div>
-          {/if}
+          </div>
 
-          {#if Object.keys(service.attributes.environmentVariables || {}).length > 0}
-            <div class="info-section">
-              <h4>Environment Variables</h4>
-              <div class="env-vars">
-                {#each Object.entries(service.attributes.environmentVariables) as [key, value]}
-                  <div class="env-var">
-                    <span class="env-key">{key}:</span>
-                    <span class="env-value">{value}</span>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {/if}
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            Last deployed: {formatDateTime(service.attributes.deployedAt)}
+          </div>
         </div>
       {/if}
     {/if}
   </div>
 
-  <!-- Card Actions -->
-  <div class="card-actions">
-    {#if service.attributes.containerStatus === 'pending'}
-      <button class="btn btn-primary btn-sm" onclick={handleDeploy}>
-        <Rocket class="w-3 h-3 mr-1" />
-        Deploy
-      </button>
-    {:else if service.attributes.containerStatus === 'stopped'}
-      <button class="btn btn-success btn-sm" onclick={handleStart}>
-        <Play class="w-3 h-3 mr-1" />
+  <!-- Action Buttons -->
+  <div class="flex gap-2 p-4 border-t border-gray-100 dark:border-gray-700">
+    {#if service.attributes.containerStatus === 'stopped'}
+      <button
+        class="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors duration-200 inline-flex items-center justify-center"
+        onclick={handleStart}
+      >
+        <Play class="w-4 h-4 mr-2" />
         Start
       </button>
     {:else if service.attributes.containerStatus === 'running'}
-      <button class="btn btn-warning btn-sm" onclick={handleStop}>
-        <Square class="w-3 h-3 mr-1" />
+      <button
+        class="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors duration-200 inline-flex items-center justify-center"
+        onclick={handleStop}
+      >
+        <Square class="w-4 h-4 mr-2" />
         Stop
       </button>
-      <button class="btn btn-outline btn-sm" onclick={() => showScaleDialog = true}>
-        <BarChart3 class="w-3 h-3 mr-1" />
-        Scale
+    {:else}
+      <button
+        class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors duration-200 inline-flex items-center justify-center"
+        onclick={handleDeploy}
+      >
+
+        <Rocket class="w-4 h-4 mr-2" />
+        Deploy
       </button>
     {/if}
 
-    {#if detailed}
-      <button class="btn btn-outline btn-sm">
-        <FileText class="w-3 h-3 mr-1" />
-        Logs
-      </button>
-      <button class="btn btn-outline btn-sm">
-        <BarChart3 class="w-3 h-3 mr-1" />
-        Metrics
-      </button>
-    {/if}
+    <button 
+      class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+      onclick={() => showDetails = !showDetails}
+    >
+      <BarChart3 class="w-4 h-4" />
+    </button>
   </div>
 </div>
 
 <!-- Scale Dialog -->
 {#if showScaleDialog}
-  <div class="modal-overlay" onclick={() => showScaleDialog = false}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
-      <h3 class="modal-title">Scale Service</h3>
-      <p class="modal-text">Adjust the number of replicas for {service.attributes.name}</p>
-      
-      <div class="form-group">
-        <label for="replica-count">Replica Count:</label>
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={() => showScaleDialog = false}>
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4" onclick={(e) => e.stopPropagation()}>
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Scale Service</h3>
+      <p class="text-gray-600 dark:text-gray-300 mb-4">
+        Adjust the number of replicas for {service.attributes.name}
+      </p>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Replica Count
+        </label>
         <input 
-          id="replica-count"
           type="number" 
-          min="0" 
+          min="1" 
           max="10" 
           bind:value={newReplicaCount}
-          class="form-input"
+          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
         />
       </div>
 
-      <div class="modal-actions">
-        <button class="btn btn-outline" onclick={() => showScaleDialog = false}>
+      <div class="flex gap-3">
+        <button 
+          class="flex-1 px-4 py-2 rounded-md font-medium transition-colors duration-200 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" 
+          onclick={() => showScaleDialog = false}
+        >
           Cancel
         </button>
-        <button class="btn btn-primary" onclick={handleScale}>
-          Scale to {newReplicaCount}
+        <button 
+          class="flex-1 px-4 py-2 rounded-md font-medium transition-colors duration-200 bg-blue-600 text-white hover:bg-blue-700" 
+          onclick={handleScale}
+        >
+          Scale
         </button>
       </div>
     </div>
   </div>
 {/if}
-
-<style>
-  .service-card {
-    @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200;
-  }
-
-  .service-card.detailed {
-    @apply max-w-none;
-  }
-
-  .card-header {
-    @apply flex items-start justify-between p-4 border-b border-gray-100 dark:border-gray-700;
-  }
-
-  .service-icon {
-    @apply text-2xl;
-  }
-
-  .service-name {
-    @apply font-semibold text-gray-900 dark:text-white;
-  }
-
-  .service-type {
-    @apply text-sm text-gray-500 dark:text-gray-400 capitalize;
-  }
-
-  .status-indicators {
-    @apply flex flex-col gap-1 items-end;
-  }
-
-  .status-badge, .health-badge {
-    @apply px-2 py-1 rounded text-xs font-medium;
-  }
-
-  .badge-success {
-    @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
-  }
-
-  .badge-warning {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400;
-  }
-
-  .badge-error {
-    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400;
-  }
-
-  .badge-info {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400;
-  }
-
-  .badge-neutral {
-    @apply bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300;
-  }
-
-  .card-content {
-    @apply p-4 space-y-3;
-  }
-
-  .info-row {
-    @apply flex justify-between items-center;
-  }
-
-  .info-label {
-    @apply text-sm font-medium text-gray-600 dark:text-gray-400;
-  }
-
-  .info-value {
-    @apply text-sm text-gray-900 dark:text-white;
-  }
-
-  .resource-usage {
-    @apply space-y-2 mt-4;
-  }
-
-  .usage-item {
-    @apply flex items-center gap-2;
-  }
-
-  .usage-label {
-    @apply text-xs font-medium text-gray-600 dark:text-gray-400 w-12;
-  }
-
-  .usage-bar {
-    @apply flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden;
-  }
-
-  .usage-fill {
-    @apply h-full bg-blue-500 transition-all duration-300;
-  }
-
-  .usage-value {
-    @apply text-xs font-medium text-gray-600 dark:text-gray-400 w-12 text-right;
-  }
-
-  .details-toggle {
-    @apply text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center gap-1;
-  }
-
-  .detailed-info {
-    @apply mt-4 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4;
-  }
-
-  .info-section h4 {
-    @apply font-medium text-gray-900 dark:text-white mb-2;
-  }
-
-  .info-grid {
-    @apply space-y-2;
-  }
-
-  .port-mappings {
-    @apply flex flex-wrap gap-2;
-  }
-
-  .port-mapping {
-    @apply px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono;
-  }
-
-  .env-vars {
-    @apply space-y-1 max-h-32 overflow-y-auto;
-  }
-
-  .env-var {
-    @apply flex gap-2 text-sm;
-  }
-
-  .env-key {
-    @apply font-medium text-gray-600 dark:text-gray-400;
-  }
-
-  .env-value {
-    @apply text-gray-900 dark:text-white font-mono;
-  }
-
-  .card-actions {
-    @apply flex gap-2 p-4 border-t border-gray-100 dark:border-gray-700;
-  }
-
-  .btn {
-    @apply px-3 py-1.5 rounded-md font-medium transition-colors duration-200 text-sm inline-flex items-center;
-  }
-
-  .btn-sm {
-    @apply px-2 py-1 text-xs;
-  }
-
-  .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700;
-  }
-
-  .btn-success {
-    @apply bg-green-600 text-white hover:bg-green-700;
-  }
-
-  .btn-warning {
-    @apply bg-yellow-600 text-white hover:bg-yellow-700;
-  }
-
-  .btn-outline {
-    @apply border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700;
-  }
-
-  .modal-overlay {
-    @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
-  }
-
-  .modal {
-    @apply bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4;
-  }
-
-  .modal-title {
-    @apply text-lg font-semibold text-gray-900 dark:text-white mb-2;
-  }
-
-  .modal-text {
-    @apply text-gray-600 dark:text-gray-400 mb-4;
-  }
-
-  .form-group {
-    @apply mb-4;
-  }
-
-  .form-group label {
-    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
-  }
-
-  .form-input {
-    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white;
-  }
-
-  .modal-actions {
-    @apply flex gap-3 justify-end;
-  }
-</style>

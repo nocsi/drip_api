@@ -9,7 +9,7 @@ defmodule Kyozo.Repo.Migrations.New do
 
   def up do
     create table(:workspaces, primary_key: false) do
-      add :id, :uuid, null: false, default: fragment("uuid_generate_v7()"), primary_key: true
+      add :id, :uuid, null: false, default: fragment("uuid_generate_v4()"), primary_key: true
       add :name, :text, null: false
       add :description, :text
       add :status, :text, null: false, default: "active"
@@ -46,7 +46,7 @@ defmodule Kyozo.Repo.Migrations.New do
     create index(:workspaces, [:team_id, :name], unique: true)
 
     create table(:workspace_tasks, primary_key: false) do
-      add :id, :uuid, null: false, default: fragment("uuid_generate_v7()"), primary_key: true
+      add :id, :uuid, null: false, default: fragment("uuid_generate_v4()"), primary_key: true
 
       add :workspace_id,
           references(:workspaces,
@@ -537,7 +537,6 @@ defmodule Kyozo.Repo.Migrations.New do
 
     create index(:notebooks, [:workspace_id, :status])
 
-
     create table(:invitations, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("uuid_generate_v7()"), primary_key: true
 
@@ -612,7 +611,6 @@ defmodule Kyozo.Repo.Migrations.New do
                on_delete: :delete_all
              )
     end
-
 
     create index(:notebooks, [:workspace_id])
 

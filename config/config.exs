@@ -22,6 +22,12 @@ config :kyozo, Oban,
     storage_cleanup: 3,
     storage_versions: 2,
     storage_bulk: 4,
+    # Containers domain queues
+    container_deployment: 5,
+    topology_analysis: 3,
+    health_monitoring: 5,
+    metrics_collection: 5,
+    cleanup: 2,
     # AshOban scheduled action queues
     storage_resource_process_unprocessed: 3,
     storage_resource_daily_cleanup: 2,
@@ -29,9 +35,28 @@ config :kyozo, Oban,
     storage_resource_weekly_health_check: 1
   ],
   repo: Kyozo.Repo,
-  plugins: [{Oban.Plugins.Cron, []}]
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       # Health monitoring: batch check every 2 minutes
+       {"*/2 * * * *", Kyozo.Containers.Workers.ContainerHealthMonitor,
+        args: %{"batch_check" => true}},
 
+       # Metrics: batch collection every 5 minutes
+       {"*/5 * * * *", Kyozo.Containers.Workers.MetricsCollector,
+        args: %{"batch_collection" => true}},
 
+       # Metrics: daily cleanup at 1 AM UTC
+       {"0 1 * * *", Kyozo.Containers.Workers.MetricsCollector,
+        args: %{"cleanup_old_metrics" => true, "retention_days" => 30, "batch_size" => 1000}},
+
+       # Containers: daily full cleanup at 2 AM UTC
+       {"0 2 * * *", Kyozo.Containers.Workers.CleanupWorker, args: %{"type" => "full_cleanup"}},
+
+       # DB maintenance: weekly vacuum analyze on Sunday 3 AM UTC
+       {"0 3 * * 0", Kyozo.Containers.Workers.CleanupWorker, args: %{"type" => "vacuum_analyze"}}
+     ]}
+  ]
 
 config :mime,
   extensions: %{"json" => "application/vnd.api+json"},
@@ -54,6 +79,8 @@ config :ash,
   compatible_foreign_key_types: [
     {Ash.Type.String, Ash.Type.UUIDv7}
   ]
+
+config :ash_postgres, uuid_v7_function: "uuid_generate_v7()"
 
 config :spark,
   formatter: [
@@ -97,7 +124,7 @@ config :spark,
 config :kyozo,
   ecto_repos: [Kyozo.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Kyozo.Accounts, Kyozo.Workspaces, Kyozo.Projects, Kyozo.Storage]
+  ash_domains: [Kyozo.Accounts, Kyozo.Workspaces, Kyozo.Projects, Kyozo.Storage, Kyozo.Containers]
 
 # Configures the endpoint
 config :kyozo, KyozoWeb.Endpoint,
@@ -150,15 +177,19 @@ config :phoenix, :json_library, Jason
 
 # Blob storage configuration
 config :kyozo,
-  blob_storage_backend: :disk,  # :disk or :s3
+  # :disk or :s3
+  blob_storage_backend: :disk,
   blob_storage_root: Path.join([File.cwd!(), "priv", "storage", "blobs"])
 
 # S3 storage configuration
 config :kyozo, :s3_storage,
-  bucket: nil,  # Set in environment-specific config
+  # Set in environment-specific config
+  bucket: nil,
   region: "us-east-1",
-  access_key_id: nil,  # Will use AWS_ACCESS_KEY_ID env var if not set
-  secret_access_key: nil  # Will use AWS_SECRET_ACCESS_KEY env var if not set
+  # Will use AWS_ACCESS_KEY_ID env var if not set
+  access_key_id: nil,
+  # Will use AWS_SECRET_ACCESS_KEY env var if not set
+  secret_access_key: nil
 
 # ExAws configuration
 config :ex_aws,

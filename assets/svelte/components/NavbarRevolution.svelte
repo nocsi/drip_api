@@ -1,11 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-  import { Button } from '$lib/components/ui/button';
-  
+  import { Button } from '$lib/ui/button';
   let { isScrolled = false } = $props();
   let scrollY = $state(0);
   let mobileMenuOpen = $state(false);
-  
+
   const navItems = [
     { href: '#products', label: 'Platform' },
     { href: '#use-cases', label: 'Use Cases' },
@@ -13,20 +12,20 @@
     { href: '/openapi', label: 'API Docs' },
     { href: '/pricing', label: 'Pricing' }
   ];
-  
+
   onMount(() => {
     const handleScroll = () => {
       scrollY = window.scrollY;
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   });
-  
+
   function toggleMobileMenu() {
     mobileMenuOpen = !mobileMenuOpen;
   }
-  
+
   function closeMobileMenu() {
     mobileMenuOpen = false;
   }
@@ -37,7 +36,7 @@
 <nav class="fixed top-0 w-full z-50 transition-all duration-300 {scrollY > 50 ? 'bg-slate-950/95 backdrop-blur-md border-b border-slate-800/50' : 'bg-transparent'}">
   <div class="max-w-7xl mx-auto px-6">
     <div class="flex items-center justify-between h-20">
-      
+
       <!-- Logo -->
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center">
@@ -52,8 +51,8 @@
       <!-- Desktop Navigation -->
       <div class="hidden md:flex items-center space-x-8">
         {#each navItems as item}
-          <a 
-            href={item.href} 
+          <a
+            href={item.href}
             class="text-gray-300 hover:text-white transition-colors duration-200 font-medium"
           >
             {item.label}
@@ -63,20 +62,20 @@
 
       <!-- Desktop Actions -->
       <div class="hidden md:flex items-center space-x-4">
-        <a 
-          href="/auth/login" 
+        <a
+          href="/auth/login"
           class="text-gray-300 hover:text-white transition-colors duration-200 font-medium"
         >
           Sign In
         </a>
-        
+
         <Button class="bg-gradient-to-r from-teal-500 to-cyan-500 text-white px-6 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-teal-500/25 transition-all transform hover:scale-105">
           <a href="/auth/register">Start Free Trial</a>
         </Button>
       </div>
 
       <!-- Mobile Menu Button -->
-      <button 
+      <button
         class="md:hidden text-white p-2"
         onclick={toggleMobileMenu}
         aria-label="Toggle mobile menu"
@@ -101,7 +100,7 @@
     <div class="md:hidden bg-slate-950/98 backdrop-blur-md border-t border-slate-800/50">
       <div class="px-6 py-6 space-y-4">
         {#each navItems as item}
-          <a 
+          <a
             href={item.href}
             class="block text-gray-300 hover:text-white transition-colors duration-200 font-medium py-2"
             onclick={closeMobileMenu}
@@ -109,16 +108,16 @@
             {item.label}
           </a>
         {/each}
-        
+
         <div class="border-t border-slate-800/50 pt-4 space-y-4">
-          <a 
+          <a
             href="/auth/login"
             class="block text-gray-300 hover:text-white transition-colors duration-200 font-medium py-2"
             onclick={closeMobileMenu}
           >
             Sign In
           </a>
-          
+
           <Button class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white py-3 rounded-lg font-semibold">
             <a href="/auth/register" onclick={closeMobileMenu}>Start Free Trial</a>
           </Button>

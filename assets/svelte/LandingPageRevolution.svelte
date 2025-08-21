@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Badge } from '$lib/components/ui/badge';
-  import { Button } from '$lib/components/ui/button';
+  import { Badge } from '$lib/ui/badge';
+  import { Button } from '$lib/ui/button';
 
   interface Props {
     live?: any;
@@ -176,18 +176,18 @@
             🚀 Revolutionary: Folder as a Service
           </Badge>
         </div>
-        
+
         <h1 class="text-7xl font-bold mb-8 leading-tight">
           Directory Organization
           <span class="bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent block">
             IS Deployment Strategy
           </span>
         </h1>
-        
+
         <p class="text-2xl text-gray-300 mb-6 max-w-4xl mx-auto">
           Drop any project folder → Watch it become a <strong>production-ready service</strong> in 60 seconds
         </p>
-        
+
         <p class="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
           AI-powered service detection • Zero-configuration deployment • Enterprise-grade monitoring
         </p>
@@ -206,11 +206,11 @@
       <!-- Revolutionary Demo Section -->
       <div class="bg-gradient-to-r from-slate-900/50 to-slate-800/50 rounded-2xl border border-slate-700/50 backdrop-blur-sm p-8 mb-16">
         <h3 class="text-3xl font-bold text-center mb-12">The Revolution in Action</h3>
-        
+
         <!-- Step Indicators -->
         <div class="flex justify-center space-x-8 mb-12">
           {#each revolutionSteps as step, index}
-            <button 
+            <button
               class="flex flex-col items-center space-y-3 p-4 rounded-xl transition-all duration-300 {currentStep === index ? 'bg-teal-500/20 border border-teal-500/30' : 'bg-slate-800/30 hover:bg-slate-700/30'}"
               onclick={() => setActiveDemo(step.id)}
             >
@@ -308,11 +308,11 @@
                 <Badge class="bg-gradient-to-r from-orange-500 to-red-500 text-white border-none">NEW</Badge>
               {/if}
             </div>
-            
+
             <h4 class="text-2xl font-bold mb-2">{product.name}</h4>
             <p class="text-teal-400 font-medium mb-3">{product.tagline}</p>
             <p class="text-gray-300 mb-6">{product.description}</p>
-            
+
             <div class="space-y-2 mb-6">
               {#each product.features as feature}
                 <div class="flex items-center text-sm text-gray-400">
@@ -321,7 +321,7 @@
                 </div>
               {/each}
             </div>
-            
+
             <Badge class="px-3 py-2 bg-gradient-to-r {product.color} text-white text-sm rounded-lg border-none">
               {product.status}
             </Badge>
@@ -350,10 +350,10 @@
                 {useCase.status}
               </Badge>
             </div>
-            
+
             <h4 class="text-xl font-bold mb-2">{useCase.title}</h4>
             <p class="text-gray-400 font-mono text-sm mb-4">/{useCase.folder}/</p>
-            
+
             <div class="space-y-2 mb-6">
               {#each useCase.services as service}
                 <div class="flex items-center justify-between bg-slate-800/50 rounded px-3 py-2">
@@ -362,7 +362,7 @@
                 </div>
               {/each}
             </div>
-            
+
             <div class="flex justify-between items-center">
               <span class="text-sm text-gray-400">{useCase.metrics}</span>
               <span class="text-sm text-teal-400 font-medium">{useCase.confidence}% confidence</span>
@@ -428,7 +428,7 @@
               </div>
             </div>
           </div>
-          
+
           <div>
             <h4 class="text-3xl font-bold mb-6">With Kyozo</h4>
             <div class="space-y-4">
@@ -467,7 +467,7 @@
       <p class="text-xl text-gray-300 mb-8">
         Join thousands of developers who've discovered that infrastructure can be as simple as organizing files
       </p>
-      
+
       <div class="flex justify-center space-x-6 mb-12">
         <Button class="bg-gradient-to-r from-teal-500 to-cyan-500 text-white px-10 py-4 rounded-lg font-semibold hover:shadow-lg hover:shadow-teal-500/25 transition-all transform hover:scale-105 text-lg">
           <a href="/auth/register">Start Free Trial</a>
@@ -476,7 +476,7 @@
           <a href="/openapi">View Documentation</a>
         </Button>
       </div>
-      
+
       <p class="text-sm text-gray-400">
         No credit card required • Deploy unlimited projects • Enterprise support available
       </p>

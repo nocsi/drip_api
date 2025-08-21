@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
-  import { Badge } from '$lib/components/ui/badge';
-  import { Button } from '$lib/components/ui/button';
+  import { Badge } from '$lib/ui/badge';
+  import { Button } from '$lib/ui/button';
 
   // Navigation state
   let scrollY = $state(0);
@@ -78,7 +78,7 @@
     },
     {
       name: "Lang",
-      tagline: "Polyglot Runtime Engine", 
+      tagline: "Polyglot Runtime Engine",
       description: "Every language, unified execution environment",
       status: "Runtime Orchestrator",
       color: "from-green-500 to-emerald-500",
@@ -86,11 +86,11 @@
       features: ["Multi-language harmony", "Dependency resolution", "Runtime optimization", "Cross-language APIs"]
     },
     {
-      name: "Proc", 
+      name: "Proc",
       tagline: "Workflow Choreography",
       description: "Event-driven microservice orchestration",
       status: "Process Orchestrator",
-      color: "from-purple-500 to-pink-500", 
+      color: "from-purple-500 to-pink-500",
       icon: "⚡",
       features: ["Event streaming", "Workflow automation", "Process monitoring", "Fault tolerance"]
     }
@@ -135,12 +135,12 @@
       deployTime: "47s"
     },
     {
-      title: "ML Training Pipeline", 
+      title: "ML Training Pipeline",
       folder: "ai-model-trainer",
       services: ["data-ingestion", "model-training", "inference-api", "monitoring"],
       status: "Scaling",
       metrics: "2.1K predictions/sec • 12 models",
-      icon: "🤖", 
+      icon: "🤖",
       confidence: 89,
       deployTime: "52s"
     },
@@ -148,7 +148,7 @@
       title: "Social Media App",
       folder: "social-platform",
       services: ["react-web", "mobile-api", "websocket-service", "media-processor"],
-      status: "Healthy", 
+      status: "Healthy",
       metrics: "8.7K active users • 45ms latency",
       icon: "📱",
       confidence: 96,
@@ -208,7 +208,7 @@
 <nav class="fixed top-0 w-full z-50 transition-all duration-300 {scrollY > 50 ? 'bg-slate-950/95 backdrop-blur-md border-b border-slate-800/50' : 'bg-transparent'}">
   <div class="max-w-7xl mx-auto px-6">
     <div class="flex items-center justify-between h-20">
-      
+
       <!-- Logo -->
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center">
@@ -294,22 +294,22 @@
             🚀 REVOLUTIONARY: Folder as a Service
           </Badge>
         </div>
-        
+
         <h1 class="text-6xl md:text-8xl font-black mb-8 leading-tight">
           Directory Organization
           <span class="bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent block animate-pulse">
             IS Deployment Strategy
           </span>
         </h1>
-        
+
         <p class="text-xl md:text-3xl text-gray-200 mb-8 max-w-5xl mx-auto leading-relaxed">
           Drop any project folder → Watch it become a <strong class="text-teal-400">production-ready service</strong> in 60 seconds
         </p>
-        
+
         <p class="text-lg md:text-xl text-gray-400 mb-12 max-w-4xl mx-auto">
           <span class="text-teal-400">●</span> AI-powered service detection with 95% accuracy
           <span class="mx-4 text-gray-600">|</span>
-          <span class="text-cyan-400">●</span> Zero-configuration deployment  
+          <span class="text-cyan-400">●</span> Zero-configuration deployment
           <span class="mx-4 text-gray-600">|</span>
           <span class="text-purple-400">●</span> Enterprise-grade monitoring built-in
         </p>
@@ -351,11 +351,11 @@
           Watch how Kyozo transforms complex container orchestration into something as simple as organizing files
         </p>
       </div>
-        
+
       <!-- Step Indicators -->
       <div class="flex flex-wrap justify-center gap-4 mb-16">
         {#each revolutionSteps as step, index}
-          <button 
+          <button
             class="flex flex-col items-center space-y-3 p-6 rounded-2xl transition-all duration-500 min-w-[200px] {currentStep === index ? 'bg-gradient-to-r from-teal-500/30 to-cyan-500/30 border-2 border-teal-500/50 scale-105' : 'bg-slate-800/40 hover:bg-slate-700/40 border border-slate-700'}"
             onclick={() => setActiveDemo(index)}
           >
@@ -496,11 +496,11 @@
                 </Badge>
               {/if}
             </div>
-            
+
             <h4 class="text-2xl font-bold mb-3">{product.name}</h4>
             <p class="text-teal-400 font-semibold mb-4">{product.tagline}</p>
             <p class="text-gray-300 mb-6 leading-relaxed">{product.description}</p>
-            
+
             <div class="space-y-3 mb-8">
               {#each product.features as feature}
                 <div class="flex items-center text-sm text-gray-400">
@@ -509,7 +509,7 @@
                 </div>
               {/each}
             </div>
-            
+
             <Badge class="px-4 py-3 bg-gradient-to-r {product.color} text-white text-sm rounded-lg border-none font-semibold">
               {product.status}
             </Badge>
@@ -538,10 +538,10 @@
                 {useCase.status}
               </Badge>
             </div>
-            
+
             <h4 class="text-2xl font-bold mb-2">{useCase.title}</h4>
             <p class="text-teal-400 font-mono text-sm mb-6">📁 {useCase.folder}/</p>
-            
+
             <div class="space-y-3 mb-6">
               {#each useCase.services as service}
                 <div class="flex items-center justify-between bg-slate-800/50 rounded-lg px-4 py-3">
@@ -550,7 +550,7 @@
                 </div>
               {/each}
             </div>
-            
+
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
                 <span class="text-gray-400">Performance:</span>
@@ -630,7 +630,7 @@
               </div>
             </div>
           </div>
-          
+
           <div>
             <h4 class="text-3xl font-bold mb-8 text-teal-400">With Kyozo</h4>
             <div class="space-y-4">
@@ -673,7 +673,7 @@
       <p class="text-xl md:text-2xl text-gray-300 mb-12 leading-relaxed">
         Join thousands of developers who've discovered that <strong class="text-teal-400">infrastructure can be as simple as organizing files</strong>
       </p>
-      
+
       <div class="flex flex-col sm:flex-row justify-center gap-6 mb-16">
         <Button class="bg-gradient-to-r from-teal-500 to-cyan-500 text-white px-12 py-6 rounded-xl font-bold hover:shadow-2xl hover:shadow-teal-500/25 transition-all transform hover:scale-110 text-xl">
           <a href="/auth/register" class="flex items-center gap-3">
@@ -686,7 +686,7 @@
           </a>
         </Button>
       </div>
-      
+
       <div class="text-center">
         <p class="text-sm text-gray-400 mb-4">
           No credit card required • Deploy unlimited projects • Enterprise support available
@@ -706,7 +706,7 @@
     scroll-behavior: smooth;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
-  
+
   nav {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);

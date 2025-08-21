@@ -4,7 +4,7 @@ defmodule Kyozo.Containers.TopologyDetection do
     domain: Kyozo.Containers,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshOban]
 
   @moduledoc """
   TopologyDetection resource representing folder analysis results.
@@ -42,6 +42,19 @@ defmodule Kyozo.Containers.TopologyDetection do
     custom_indexes do
       index [:team_id, :workspace_id]
       index [:workspace_id, :folder_path, :detection_timestamp]
+    end
+  end
+
+  # AshOban trigger to analyze workspace topology in the background
+  oban do
+    triggers do
+      # Ensure triggers run for all tenants
+      list_tenants(fn -> Kyozo.Repo.all_tenants() end)
+
+      trigger :analyze do
+        action :analyze_folder
+        queue(:topology_analysis)
+      end
     end
   end
 

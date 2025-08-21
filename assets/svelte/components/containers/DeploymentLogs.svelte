@@ -1,10 +1,10 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { slide } from 'svelte/transition';
-  import { 
-    RefreshCw, 
-    Filter, 
-    Download, 
+  import {
+    RefreshCw,
+    Filter,
+    Download,
     Search,
     Clock,
     CheckCircle,
@@ -17,10 +17,10 @@
     EyeOff
   } from '@lucide/svelte';
 
-  let { 
-    events = [], 
-    services = [], 
-    onRefresh = () => {} 
+  let {
+    events = [],
+    services = [],
+    onRefresh = () => {}
   } = $props();
 
   let searchQuery = $state('');
@@ -39,7 +39,7 @@
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(event => 
+      filtered = filtered.filter(event =>
         event.attributes.message?.toLowerCase().includes(query) ||
         event.attributes.event_type?.toLowerCase().includes(query) ||
         event.attributes.service_name?.toLowerCase().includes(query)
@@ -48,27 +48,29 @@
 
     // Filter by service
     if (selectedService !== 'all') {
-      filtered = filtered.filter(event => 
-        event.attributes.service_instance_id === selectedService
+      filtered = filtered.filter(event =>
+        event.attributes.service_id === selectedService ||
+        event.attributes.service_name === selectedService
       );
     }
 
     // Filter by event type
     if (selectedEventType !== 'all') {
-      filtered = filtered.filter(event => 
+      filtered = filtered.filter(event =>
         event.attributes.event_type === selectedEventType
       );
     }
 
     // Filter by log level
     if (selectedLogLevel !== 'all') {
-      filtered = filtered.filter(event => 
+      filtered = filtered.filter(event =>
         event.attributes.level === selectedLogLevel
       );
     }
 
-    return filtered.sort((a, b) => 
-      new Date(b.attributes.timestamp) - new Date(a.attributes.timestamp)
+    return filtered.sort((a, b) =>
+      new Date(b.attributes.timestamp || b.attributes.created_at) -
+      new Date(a.attributes.timestamp || a.attributes.created_at)
     );
   });
 
@@ -156,8 +158,8 @@
       details: event.attributes.details
     }));
 
-    const blob = new Blob([JSON.stringify(logsData, null, 2)], { 
-      type: 'application/json' 
+    const blob = new Blob([JSON.stringify(logsData, null, 2)], {
+      type: 'application/json'
     });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -185,7 +187,7 @@
   function getEventColor(eventType, level) {
     if (level === 'error') return 'error';
     if (level === 'warning') return 'warning';
-    
+
     switch (eventType) {
       case 'deployment_completed':
       case 'container_started':
@@ -212,7 +214,7 @@
     const diff = new Date(endTime) - new Date(startTime);
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
-    
+
     if (minutes > 0) {
       return `${minutes}m ${seconds % 60}s`;
     }
@@ -220,9 +222,9 @@
   }
 </script>
 
-<div class="deployment-logs">
+<div class="space-y-6">
   <!-- Header -->
-  <div class="logs-header">
+  <div class="flex items-start justify-between">
     <div>
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
         Deployment Logs
@@ -232,27 +234,26 @@
       </p>
     </div>
 
-    <div class="header-actions">
-      <button 
-        class="btn btn-outline btn-sm"
+    <div class="flex gap-2">
+      <button
+        class="px-3 py-2 rounded-md font-medium transition-colors duration-200 inline-flex items-center text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 {autoRefresh ? 'bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/20 dark:border-blue-600 dark:text-blue-400' : ''}"
         onclick={toggleAutoRefresh}
-        class:active={autoRefresh}
       >
         {#if autoRefresh}
           <EyeOff class="w-4 h-4 mr-2" />
-          Stop Auto-Refresh
+          Auto Refresh On
         {:else}
           <Eye class="w-4 h-4 mr-2" />
-          Auto-Refresh
+          Auto Refresh Off
         {/if}
       </button>
 
-      <button class="btn btn-outline btn-sm" onclick={onRefresh}>
+      <button class="px-3 py-2 rounded-md font-medium transition-colors duration-200 inline-flex items-center text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" onclick={onRefresh}>
         <RefreshCw class="w-4 h-4 mr-2" />
         Refresh
       </button>
 
-      <button class="btn btn-outline btn-sm" onclick={exportLogs}>
+      <button class="px-3 py-2 rounded-md font-medium transition-colors duration-200 inline-flex items-center text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" onclick={exportLogs}>
         <Download class="w-4 h-4 mr-2" />
         Export
       </button>
@@ -260,96 +261,95 @@
   </div>
 
   <!-- Filters -->
-  <div class="filters-section">
-    <div class="search-bar">
-      <Search class="search-icon" />
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 space-y-4">
+    <div class="relative">
+      <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
       <input
         type="text"
         placeholder="Search logs..."
         bind:value={searchQuery}
-        class="search-input"
+        class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
       />
     </div>
 
-    <div class="filter-controls">
-      <select bind:value={selectedService} class="filter-select">
+    <div class="flex flex-wrap gap-3">
+      <select bind:value={selectedService} class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm">
         <option value="all">All Services</option>
         {#each services as service}
-          <option value={service.id}>{service.attributes.name}</option>
+          <option value
+={service.id}>{service.attributes.name}</option>
         {/each}
       </select>
 
-      <select bind:value={selectedEventType} class="filter-select">
+      <select bind:value={selectedEventType} class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm">
         <option value="all">All Event Types</option>
         {#each eventTypes as type}
           <option value={type}>{type.replace('_', ' ')}</option>
         {/each}
       </select>
 
-      <select bind:value={selectedLogLevel} class="filter-select">
+      <select bind:value={selectedLogLevel} class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm">
         <option value="all">All Log Levels</option>
         {#each logLevels as level}
-          <option value={level}>{level.toUpperCase()}</option>
+          <option value={level}>{level}</option>
         {/each}
       </select>
 
-      <button class="btn btn-outline btn-sm" onclick={clearFilters}>
+      <button class="px-3 py-2 rounded-md font-medium transition-colors duration-200 inline-flex items-center text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" onclick={clearFilters}>
         Clear Filters
       </button>
     </div>
   </div>
 
   <!-- Logs List -->
-  <div class="logs-list">
+  <div class="min-h-96">
     {#if filteredEvents.length === 0}
-      <div class="empty-state">
+      <div class="text-center py-12">
         <Terminal class="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <p class="text-gray-600 dark:text-gray-400">
-          {events.length === 0 
-            ? 'No deployment events yet. Deploy a service to see logs here.'
-            : 'No events match your current filters.'}
+          {events.length === 0 ? 'No deployment events yet.' : 'No events match the current filters.'}
         </p>
       </div>
     {:else}
-      <div class="events-container">
+      <div class="space-y-2">
         {#each filteredEvents as event (event.id)}
           {@const isExpanded = expandedEvents.has(event.id)}
           {@const EventIcon = getEventIcon(event.attributes.event_type)}
           {@const eventColor = getEventColor(event.attributes.event_type, event.attributes.level)}
-          
-          <div class="event-item" class:expanded={isExpanded}>
-            <div class="event-header" onclick={() => toggleEventExpansion(event.id)}>
-              <div class="event-main">
-                <div class="event-icon icon-{eventColor}">
+
+          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-sm transition-shadow duration-200 {isExpanded ? 'ring-1 ring-blue-200 dark:ring-blue-800' : ''}">
+            <div class="flex items-center justify-between p-4 cursor-pointer" onclick={() => toggleEventExpansion(event.id)}>
+              <div class="flex items-start gap-3 flex-1">
+                <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center {eventColor === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400' : eventColor === 'error' ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : eventColor === 'warning' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400' : eventColor === 'info' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}">
                   <EventIcon class="w-4 h-4" />
                 </div>
-                
-                <div class="event-info">
-                  <div class="event-title">
-                    <span class="event-type">
+
+                <div class="flex-1 space-y-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-medium text-gray-900 dark:text-white capitalize">
                       {event.attributes.event_type?.replace('_', ' ') || 'Unknown Event'}
                     </span>
                     {#if event.attributes.service_name}
-                      <span class="service-name">
+                      <span class="text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">
                         {event.attributes.service_name}
                       </span>
                     {/if}
-                    <span class="log-level level-{event.attributes.level}">
-                      {event.attributes.level?.toUpperCase() || 'INFO'}
+                    <span class="text-xs font-medium px-2 py-0.5 rounded {event.attributes.level === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' : event.attributes.level === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' : event.attributes.level === 'info' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}">
+                      {event.attributes.level || 'info'}
                     </span>
                   </div>
-                  
-                  <div class="event-message">
-                    {event.attributes.message || 'No message available'}
+
+                  <div class="text-sm text-gray-700 dark:text-gray-300">
+                    {event.attributes.message || 'No message'}
                   </div>
-                  
-                  <div class="event-timestamp">
-                    {formatTimestamp(event.attributes.timestamp)}
+
+                  <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                    {formatTimestamp(event.attributes.timestamp || event.attributes.created_at)}
                   </div>
                 </div>
               </div>
 
-              <div class="expand-button">
+              <div class="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                 {#if isExpanded}
                   <ChevronDown class="w-4 h-4" />
                 {:else}
@@ -359,19 +359,19 @@
             </div>
 
             {#if isExpanded && event.attributes.details}
-              <div class="event-details" transition:slide={{ duration: 200 }}>
-                <div class="details-content">
+              <div class="border-t border-gray-100 dark:border-gray-700 p-4" transition:slide={{ duration: 200 }}>
+                <div class="mb-4">
                   {#if typeof event.attributes.details === 'object'}
-                    <pre class="json-details">{JSON.stringify(event.attributes.details, null, 2)}</pre>
+                    <pre class="bg-gray-50 dark:bg-gray-700 rounded-md p-3 text-sm font-mono overflow-x-auto text-gray-800 dark:text-gray-200">{JSON.stringify(event.attributes.details, null, 2)}</pre>
                   {:else}
-                    <div class="text-details">{event.attributes.details}</div>
+                    <div class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{event.attributes.details}</div>
                   {/if}
                 </div>
-                
+
                 {#if event.attributes.duration}
-                  <div class="event-meta">
-                    <span class="meta-label">Duration:</span>
-                    <span class="meta-value">{event.attributes.duration}</span>
+                  <div class="flex gap-4 text-sm">
+                    <span class="font-medium text-gray-600 dark:text-gray-400">Duration:</span>
+                    <span class="text-gray-900 dark:text-white">{formatDuration(event.attributes.started_at, event.attributes.completed_at)}</span>
                   </div>
                 {/if}
               </div>
@@ -382,248 +382,27 @@
     {/if}
   </div>
 
-  <!-- Real-time Logs Toggle -->
+  <!-- Real-time Logs -->
   {#if showRealTimeLogs}
-    <div class="realtime-logs" transition:slide={{ duration: 300 }}>
-      <div class="realtime-header">
-        <h4>Real-time Container Logs</h4>
-        <button onclick={() => showRealTimeLogs = false}>×</button>
+    <div class="bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm border border-gray-700" transition:slide={{ duration: 300 }}>
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-700">
+        <h4 class="text-white font-medium">Real-time Container Logs</h4>
+        <button onclick={() => showRealTimeLogs = false} class="text-gray-400 hover:text-white text-lg">×</button>
       </div>
-      <div class="log-stream">
-        <div class="log-line">
-          <span class="log-timestamp">2024-01-15 10:30:45</span>
-          <span class="log-content">Starting application server...</span>
+      <div class="space-y-1 max-h-48 overflow-y-auto">
+        <div class="flex gap-3">
+          <span class="text-gray-500 flex-shrink-0">2024-01-15 10:30:45</span>
+          <span class="text-green-400">Application started successfully</span>
         </div>
-        <div class="log-line">
-          <span class="log-timestamp">2024-01-15 10:30:46</span>
-          <span class="log-content">Database connection established</span>
+        <div class="flex gap-3">
+          <span class="text-gray-500 flex-shrink-0">2024-01-15 10:30:46</span>
+          <span class="text-green-400">Database connection established</span>
         </div>
-        <div class="log-line">
-          <span class="log-timestamp">2024-01-15 10:30:47</span>
-          <span class="log-content">Server listening on port 3000</span>
+        <div class="flex gap-3">
+          <span class="text-gray-500 flex-shrink-0">2024-01-15 10:30:47</span>
+          <span class="text-green-400">Server listening on port 3000</span>
         </div>
       </div>
     </div>
   {/if}
 </div>
-
-<style>
-  .deployment-logs {
-    @apply space-y-6;
-  }
-
-  .logs-header {
-    @apply flex items-start justify-between;
-  }
-
-  .header-actions {
-    @apply flex gap-2;
-  }
-
-  .btn {
-    @apply px-3 py-2 rounded-md font-medium transition-colors duration-200 inline-flex items-center text-sm;
-  }
-
-  .btn-sm {
-    @apply px-2 py-1 text-xs;
-  }
-
-  .btn-outline {
-    @apply border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700;
-  }
-
-  .btn-outline.active {
-    @apply bg-blue-50 border-blue-300 text-blue-700 dark:bg-blue-900/20 dark:border-blue-600 dark:text-blue-400;
-  }
-
-  .filters-section {
-    @apply bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700;
-    @apply space-y-4;
-  }
-
-  .search-bar {
-    @apply relative;
-  }
-
-  .search-icon {
-    @apply absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400;
-  }
-
-  .search-input {
-    @apply w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md;
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white;
-  }
-
-  .filter-controls {
-    @apply flex flex-wrap gap-3;
-  }
-
-  .filter-select {
-    @apply px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md;
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white;
-    @apply text-sm;
-  }
-
-  .logs-list {
-    @apply min-h-96;
-  }
-
-  .empty-state {
-    @apply text-center py-12;
-  }
-
-  .events-container {
-    @apply space-y-2;
-  }
-
-  .event-item {
-    @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700;
-    @apply hover:shadow-sm transition-shadow duration-200;
-  }
-
-  .event-item.expanded {
-    @apply ring-1 ring-blue-200 dark:ring-blue-800;
-  }
-
-  .event-header {
-    @apply flex items-center justify-between p-4 cursor-pointer;
-  }
-
-  .event-main {
-    @apply flex items-start gap-3 flex-1;
-  }
-
-  .event-icon {
-    @apply flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center;
-  }
-
-  .icon-success {
-    @apply bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400;
-  }
-
-  .icon-error {
-    @apply bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400;
-  }
-
-  .icon-warning {
-    @apply bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400;
-  }
-
-  .icon-info {
-    @apply bg-blue-100 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400;
-  }
-
-  .icon-neutral {
-    @apply bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400;
-  }
-
-  .event-info {
-    @apply flex-1 space-y-1;
-  }
-
-  .event-title {
-    @apply flex items-center gap-2 flex-wrap;
-  }
-
-  .event-type {
-    @apply font-medium text-gray-900 dark:text-white capitalize;
-  }
-
-  .service-name {
-    @apply text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded;
-  }
-
-  .log-level {
-    @apply text-xs font-medium px-2 py-0.5 rounded;
-  }
-
-  .level-error {
-    @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400;
-  }
-
-  .level-warning {
-    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400;
-  }
-
-  .level-info {
-    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400;
-  }
-
-  .level-debug {
-    @apply bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300;
-  }
-
-  .event-message {
-    @apply text-sm text-gray-700 dark:text-gray-300;
-  }
-
-  .event-timestamp {
-    @apply text-xs text-gray-500 dark:text-gray-400 font-mono;
-  }
-
-  .expand-button {
-    @apply flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300;
-  }
-
-  .event-details {
-    @apply border-t border-gray-100 dark:border-gray-700 p-4;
-  }
-
-  .details-content {
-    @apply mb-4;
-  }
-
-  .json-details {
-    @apply bg-gray-50 dark:bg-gray-700 rounded-md p-3 text-sm font-mono overflow-x-auto;
-    @apply text-gray-800 dark:text-gray-200;
-  }
-
-  .text-details {
-    @apply text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap;
-  }
-
-  .event-meta {
-    @apply flex gap-4 text-sm;
-  }
-
-  .meta-label {
-    @apply font-medium text-gray-600 dark:text-gray-400;
-  }
-
-  .meta-value {
-    @apply text-gray-900 dark:text-white;
-  }
-
-  .realtime-logs {
-    @apply bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm;
-    @apply border border-gray-700;
-  }
-
-  .realtime-header {
-    @apply flex justify-between items-center mb-3 pb-2 border-b border-gray-700;
-  }
-
-  .realtime-header h4 {
-    @apply text-white font-medium;
-  }
-
-  .realtime-header button {
-    @apply text-gray-400 hover:text-white text-lg;
-  }
-
-  .log-stream {
-    @apply space-y-1 max-h-48 overflow-y-auto;
-  }
-
-  .log-line {
-    @apply flex gap-3;
-  }
-
-  .log-timestamp {
-    @apply text-gray-500 flex-shrink-0;
-  }
-
-  .log-content {
-    @apply text-green-400;
-  }
-</style>

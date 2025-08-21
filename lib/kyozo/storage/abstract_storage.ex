@@ -2,49 +2,49 @@ defmodule Kyozo.Storage.AbstractStorage do
   @moduledoc """
   Abstract storage resource base that provides common storage functionality
   across different media types and use cases.
-  
+
   This module defines the base behavior and attributes for all storage-backed
   resources in Kyozo, implementing the Entrepôt pattern with media type
   awareness and flexible storage backend support.
-  
+
   ## Usage
-  
+
   Resources that need storage backing should use this module and implement
   the required callbacks:
-  
+
       defmodule MyApp.MediaResource do
         use Kyozo.Storage.AbstractStorage,
           media_type: :document,
           storage_backends: [:disk, :s3, :git]
-          
+
         # Implement required callbacks
         @impl true
         def supported_mime_types, do: ["text/plain", "text/markdown"]
-        
-        @impl true  
+
+        @impl true
         def default_storage_backend, do: :git
-        
+
         @impl true
         def validate_content(content, metadata), do: :ok
       end
-  
+
   ## Media Types
-  
+
   - `:document` - Text documents, PDFs, presentations
-  - `:image` - Photos, graphics, icons  
+  - `:image` - Photos, graphics, icons
   - `:video` - Video files, animations
   - `:audio` - Music, podcasts, voice recordings
   - `:data` - Structured data, databases, logs
   - `:code` - Source code, scripts, configurations
   - `:archive` - Compressed files, packages
   - `:generic` - Any other file type
-  
+
   ## Storage Backends
-  
+
   Different media types optimize for different storage backends:
-  
+
   - `:disk` - Fast local access, good for frequently accessed files
-  - `:s3` - Scalable cloud storage, good for large media files  
+  - `:s3` - Scalable cloud storage, good for large media files
   - `:git` - Version controlled, excellent for text documents/code
   - `:hybrid` - Intelligent routing based on content type and size
   - `:ram` - Ultra-fast temporary storage
@@ -78,7 +78,8 @@ defmodule Kyozo.Storage.AbstractStorage do
   Transforms content before storage (optional).
   For example, compressing images or extracting metadata.
   """
-  @callback transform_content(content(), metadata()) :: {:ok, content(), metadata()} | {:error, String.t()}
+  @callback transform_content(content(), metadata()) ::
+              {:ok, content(), metadata()} | {:error, String.t()}
 
   @doc """
   Returns storage-specific options for the given backend.
@@ -96,13 +97,13 @@ defmodule Kyozo.Storage.AbstractStorage do
     media_type = Keyword.get(opts, :media_type, :generic)
     storage_backends = Keyword.get(opts, :storage_backends, [:disk, :s3, :hybrid])
     domain = Keyword.get(opts, :domain, Kyozo.Storage)
-    
+
     quote do
       @behaviour Kyozo.Storage.AbstractStorage
-      
+
       @media_type unquote(media_type)
       @storage_backends unquote(storage_backends)
-      
+
       use Ash.Resource,
         otp_app: :kyozo,
         domain: unquote(domain),
@@ -115,20 +116,20 @@ defmodule Kyozo.Storage.AbstractStorage do
 
       # Import common storage functionality
       import Kyozo.Storage.AbstractStorage.CommonActions
-      import Kyozo.Storage.AbstractStorage.CommonPolicies  
+      import Kyozo.Storage.AbstractStorage.CommonPolicies
       import Kyozo.Storage.AbstractStorage.CommonCalculations
       import Kyozo.Storage.AbstractStorage.CommonValidations
 
       # Default implementations that can be overridden
       def transform_content(content, metadata), do: {:ok, content, metadata}
-      
+
       def storage_options(_backend, _metadata), do: %{}
-      
+
       def select_storage_backend(content, metadata) do
         # Simple heuristic: large files go to S3, text to git, others to disk
         file_size = byte_size(content)
         mime_type = Map.get(metadata, :mime_type, "application/octet-stream")
-        
+
         cond do
           file_size > 100 * 1024 * 1024 and :s3 in @storage_backends -> :s3
           String.starts_with?(mime_type, "text/") and :git in @storage_backends -> :git
@@ -137,17 +138,17 @@ defmodule Kyozo.Storage.AbstractStorage do
         end
       end
 
-      defoverridable [transform_content: 2, storage_options: 2, select_storage_backend: 2]
+      defoverridable transform_content: 2, storage_options: 2, select_storage_backend: 2
 
       # Standard storage resource attributes
       unquote(Kyozo.Storage.AbstractStorage.base_attributes())
-      
-      # Standard storage resource relationships  
+
+      # Standard storage resource relationships
       unquote(Kyozo.Storage.AbstractStorage.base_relationships())
-      
+
       # Standard storage actions
       unquote(Kyozo.Storage.AbstractStorage.base_actions())
-      
+
       # Standard storage policies
       unquote(Kyozo.Storage.AbstractStorage.base_policies())
     end
@@ -156,6 +157,7 @@ defmodule Kyozo.Storage.AbstractStorage do
   def base_attributes do
     quote do
       attributes do
+        # uuid_primary_key :id
         uuid_v7_primary_key :id
 
         attribute :storage_resource_id, :uuid do
@@ -165,18 +167,39 @@ defmodule Kyozo.Storage.AbstractStorage do
         end
 
         attribute :relationship_type, :atom do
-          allow_nil? false  
+          allow_nil? false
           public? true
           default :primary
-          constraints one_of: [:primary, :version, :format, :backup, :cache, :attachment, :thumbnail]
+
+          constraints one_of: [
+                        :primary,
+                        :version,
+                        :format,
+                        :backup,
+                        :cache,
+                        :attachment,
+                        :thumbnail
+                      ]
+
           description "Type of relationship to the parent resource"
         end
 
         attribute :media_type, :atom do
           allow_nil? false
-          public? true  
+          public? true
           default @media_type
-          constraints one_of: [:document, :image, :video, :audio, :data, :code, :archive, :generic]
+
+          constraints one_of: [
+                        :document,
+                        :image,
+                        :video,
+                        :audio,
+                        :data,
+                        :code,
+                        :archive,
+                        :generic
+                      ]
+
           description "Media type category"
         end
 
@@ -240,7 +263,7 @@ defmodule Kyozo.Storage.AbstractStorage do
           destination_attribute :id
         end
 
-        # User relationship (inherited from StorageResource) 
+        # User relationship (inherited from StorageResource)
         belongs_to :user, Kyozo.Accounts.User do
           allow_nil? true
           define_attribute? false
@@ -254,30 +277,38 @@ defmodule Kyozo.Storage.AbstractStorage do
   def base_actions do
     quote do
       actions do
-        default_accept [:relationship_type, :metadata, :priority, :processing_status, :processing_error, :expires_at]
+        default_accept [
+          :relationship_type,
+          :metadata,
+          :priority,
+          :processing_status,
+          :processing_error,
+          :expires_at
+        ]
+
         defaults [:read, :destroy]
 
         read :list_by_media_type do
           prepare build(
-            filter: [media_type: @media_type],
-            load: [:storage_resource, :storage_info, :content_preview]
-          )
+                    filter: [media_type: @media_type],
+                    load: [:storage_resource, :storage_info, :content_preview]
+                  )
         end
 
         read :by_relationship_type do
           argument :relationship_type, :atom, allow_nil?: false
-          
+
           prepare build(
-            filter: [relationship_type: arg(:relationship_type)],
-            load: [:storage_resource, :storage_info]
-          )
+                    filter: [relationship_type: arg(:relationship_type)],
+                    load: [:storage_resource, :storage_info]
+                  )
         end
 
         read :primary_storage do
           prepare build(
-            filter: [is_primary: true],
-            load: [:storage_resource, :storage_info]
-          )
+                    filter: [is_primary: true],
+                    load: [:storage_resource, :storage_info]
+                  )
         end
 
         create :create_from_content do
@@ -288,7 +319,10 @@ defmodule Kyozo.Storage.AbstractStorage do
           argument :processing_options, :map, default: %{}
 
           change {Kyozo.Storage.AbstractStorage.Changes.ProcessContent, media_type: @media_type}
-          change {Kyozo.Storage.AbstractStorage.Changes.CreateStorageResource, backends: @storage_backends}
+
+          change {Kyozo.Storage.AbstractStorage.Changes.CreateStorageResource,
+                  backends: @storage_backends}
+
           change {Kyozo.Storage.AbstractStorage.Changes.SetupRelationship, []}
         end
 
@@ -298,7 +332,10 @@ defmodule Kyozo.Storage.AbstractStorage do
           argument :processing_options, :map, default: %{}
 
           change {Kyozo.Storage.AbstractStorage.Changes.ProcessUpload, media_type: @media_type}
-          change {Kyozo.Storage.AbstractStorage.Changes.CreateStorageResource, backends: @storage_backends}  
+
+          change {Kyozo.Storage.AbstractStorage.Changes.CreateStorageResource,
+                  backends: @storage_backends}
+
           change {Kyozo.Storage.AbstractStorage.Changes.SetupRelationship, []}
         end
 
@@ -306,7 +343,8 @@ defmodule Kyozo.Storage.AbstractStorage do
           argument :locator, :map, allow_nil?: false
           argument :relationship_type, :atom, default: :primary
 
-          change {Kyozo.Storage.AbstractStorage.Changes.CreateFromLocator, media_type: @media_type}
+          change {Kyozo.Storage.AbstractStorage.Changes.CreateFromLocator,
+                  media_type: @media_type}
         end
 
         update :update_metadata do
@@ -316,9 +354,9 @@ defmodule Kyozo.Storage.AbstractStorage do
 
         update :set_as_primary do
           accept []
-          
+
           change set_attribute(:is_primary, true)
-          change set_attribute(:relationship_type, :primary)  
+          change set_attribute(:relationship_type, :primary)
           change {Kyozo.Storage.AbstractStorage.Changes.ClearOtherPrimary, []}
         end
 
@@ -329,13 +367,13 @@ defmodule Kyozo.Storage.AbstractStorage do
         action :duplicate_to_backend, :struct do
           argument :target_backend, :atom, allow_nil?: false
           argument :relationship_type, :atom, default: :backup
-          
+
           run {Kyozo.Storage.AbstractStorage.Actions.DuplicateToBackend, media_type: @media_type}
         end
 
         action :process_content, :struct do
           argument :processing_options, :map, default: %{}
-          
+
           run {Kyozo.Storage.AbstractStorage.Actions.ProcessContent, media_type: @media_type}
         end
 
@@ -364,7 +402,7 @@ defmodule Kyozo.Storage.AbstractStorage do
         end
 
         policy action_type(:destroy) do
-          authorize_if relates_to_actor_via([:storage_resource, :user]) 
+          authorize_if relates_to_actor_via([:storage_resource, :user])
           authorize_if actor_attribute_equals(:role, "admin")
         end
 
@@ -385,6 +423,7 @@ defmodule Kyozo.Storage.AbstractStorage do
           calculation fn entries, _context ->
             Enum.map(entries, fn entry ->
               storage = entry.storage_resource
+
               %{
                 backend: storage.storage_backend,
                 file_size: storage.file_size,
@@ -412,7 +451,7 @@ defmodule Kyozo.Storage.AbstractStorage do
             Enum.map(entries, fn entry ->
               storage = entry.storage_resource
               metadata = entry.metadata || %{}
-              
+
               %{
                 filename: storage.file_name,
                 size_human: format_file_size(storage.file_size),
@@ -429,14 +468,17 @@ defmodule Kyozo.Storage.AbstractStorage do
     end
 
     defp format_file_size(size) when size < 1024, do: "#{size} B"
-    defp format_file_size(size) when size < 1024 * 1024, do: "#{Float.round(size / 1024, 1)} KB"  
-    defp format_file_size(size) when size < 1024 * 1024 * 1024, do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+    defp format_file_size(size) when size < 1024 * 1024, do: "#{Float.round(size / 1024, 1)} KB"
+
+    defp format_file_size(size) when size < 1024 * 1024 * 1024,
+      do: "#{Float.round(size / (1024 * 1024), 1)} MB"
+
     defp format_file_size(size), do: "#{Float.round(size / (1024 * 1024 * 1024), 1)} GB"
 
     defp categorize_media_type(mime_type) do
       cond do
         String.starts_with?(mime_type, "image/") -> "image"
-        String.starts_with?(mime_type, "video/") -> "video" 
+        String.starts_with?(mime_type, "video/") -> "video"
         String.starts_with?(mime_type, "audio/") -> "audio"
         String.starts_with?(mime_type, "text/") -> "document"
         mime_type in ~w[application/pdf application/msword] -> "document"
@@ -463,7 +505,7 @@ defmodule Kyozo.Storage.AbstractStorage do
               storage = loaded_entry.storage_resource
               locator = StorageResource.to_locator(storage)
               provider = StorageResource.get_storage_provider(storage.storage_backend)
-              
+
               case provider.read(locator.id) do
                 {:ok, content} ->
                   # Update access tracking
@@ -471,18 +513,19 @@ defmodule Kyozo.Storage.AbstractStorage do
                     access_count: storage.access_count + 1,
                     last_accessed_at: DateTime.utc_now()
                   })
-                  
-                  {:ok, %{
-                    content: content,
-                    metadata: Map.merge(storage.metadata || %{}, loaded_entry.metadata || %{}),
-                    mime_type: storage.mime_type,
-                    filename: storage.file_name
-                  }}
-                  
+
+                  {:ok,
+                   %{
+                     content: content,
+                     metadata: Map.merge(storage.metadata || %{}, loaded_entry.metadata || %{}),
+                     mime_type: storage.mime_type,
+                     filename: storage.file_name
+                   }}
+
                 {:error, reason} ->
                   {:error, "Failed to read content: #{reason}"}
               end
-              
+
             {:error, reason} ->
               {:error, reason}
           end
@@ -496,17 +539,19 @@ defmodule Kyozo.Storage.AbstractStorage do
     # Policies are defined in base_policies/0 above
   end
 
-  # Common validations for all storage resources  
+  # Common validations for all storage resources
   defmodule CommonValidations do
     def validate_media_type do
       quote do
-        validate {Kyozo.Storage.AbstractStorage.Validations.ValidateMediaType, media_type: @media_type}
+        validate {Kyozo.Storage.AbstractStorage.Validations.ValidateMediaType,
+                  media_type: @media_type}
       end
     end
 
     def validate_storage_backend do
-      quote do  
-        validate {Kyozo.Storage.AbstractStorage.Validations.ValidateStorageBackend, backends: @storage_backends}
+      quote do
+        validate {Kyozo.Storage.AbstractStorage.Validations.ValidateStorageBackend,
+                  backends: @storage_backends}
       end
     end
   end
@@ -521,7 +566,7 @@ defmodule Kyozo.Storage.AbstractStorage do
         content = Ash.Changeset.get_argument(changeset, :content)
         filename = Ash.Changeset.get_argument(changeset, :filename)
         mime_type = Ash.Changeset.get_argument(changeset, :mime_type) || guess_mime_type(filename)
-        
+
         metadata = %{
           original_filename: filename,
           mime_type: mime_type,
@@ -530,6 +575,7 @@ defmodule Kyozo.Storage.AbstractStorage do
 
         # Validate content using the callback
         resource = changeset.resource
+
         case resource.validate_content(content, metadata) do
           :ok ->
             # Transform content if needed
@@ -553,7 +599,7 @@ defmodule Kyozo.Storage.AbstractStorage do
       defp guess_mime_type(filename) do
         case Path.extname(filename) do
           ".txt" -> "text/plain"
-          ".md" -> "text/markdown" 
+          ".md" -> "text/markdown"
           ".html" -> "text/html"
           ".json" -> "application/json"
           ".pdf" -> "application/pdf"
@@ -573,14 +619,16 @@ defmodule Kyozo.Storage.AbstractStorage do
         backends = Keyword.get(opts, :backends, [:disk])
         processed_content = Ash.Changeset.get_context(changeset, :processed_content)
         processed_metadata = Ash.Changeset.get_context(changeset, :processed_metadata)
-        
+
         if processed_content do
           # Select storage backend
           resource = changeset.resource
-          storage_backend = case Ash.Changeset.get_argument(changeset, :storage_backend) do
-            nil -> resource.select_storage_backend(processed_content, processed_metadata)
-            backend -> backend
-          end
+
+          storage_backend =
+            case Ash.Changeset.get_argument(changeset, :storage_backend) do
+              nil -> resource.select_storage_backend(processed_content, processed_metadata)
+              backend -> backend
+            end
 
           # Create upload structure
           upload = %Upload{
@@ -590,16 +638,23 @@ defmodule Kyozo.Storage.AbstractStorage do
           }
 
           # Create storage resource
-          case Ash.create(StorageResource, %{
-            file_upload: upload,
-            storage_backend: storage_backend,
-            storage_options: resource.storage_options(storage_backend, processed_metadata)
-          }, action: :create_storage_entry) do
+          case Ash.create(
+                 StorageResource,
+                 %{
+                   file_upload: upload,
+                   storage_backend: storage_backend,
+                   storage_options: resource.storage_options(storage_backend, processed_metadata)
+                 },
+                 action: :create_storage_entry
+               ) do
             {:ok, storage_resource} ->
               Ash.Changeset.change_attribute(changeset, :storage_resource_id, storage_resource.id)
 
             {:error, reason} ->
-              Ash.Changeset.add_error(changeset, field: :storage_resource_id, message: "Failed to create storage: #{inspect(reason)}")
+              Ash.Changeset.add_error(changeset,
+                field: :storage_resource_id,
+                message: "Failed to create storage: #{inspect(reason)}"
+              )
           end
         else
           changeset
@@ -623,10 +678,13 @@ defmodule Kyozo.Storage.AbstractStorage do
       def change(changeset, opts, _context) do
         media_type = Keyword.get(opts, :media_type, :generic)
         upload = Ash.Changeset.get_argument(changeset, :upload)
-        
+
         if upload do
           changeset
-          |> Ash.Changeset.change_attribute(:mime_type, upload.content_type || "application/octet-stream")
+          |> Ash.Changeset.change_attribute(
+            :mime_type,
+            upload.content_type || "application/octet-stream"
+          )
           |> Ash.Changeset.change_attribute(:metadata, %{
             "original_filename" => upload.filename,
             "upload_path" => upload.path
@@ -643,12 +701,14 @@ defmodule Kyozo.Storage.AbstractStorage do
       def change(changeset, opts, _context) do
         media_type = Keyword.get(opts, :media_type, :generic)
         locator = Ash.Changeset.get_argument(changeset, :locator)
-        
+
         if locator do
           changeset
           |> Ash.Changeset.change_attribute(:storage_resource_id, locator.storage_resource_id)
-          |> Ash.Changeset.change_attribute(:relationship_type, 
-              Ash.Changeset.get_argument(changeset, :relationship_type) || :primary)
+          |> Ash.Changeset.change_attribute(
+            :relationship_type,
+            Ash.Changeset.get_argument(changeset, :relationship_type) || :primary
+          )
         else
           changeset
         end
@@ -682,7 +742,7 @@ defmodule Kyozo.Storage.AbstractStorage do
       def run(storage_entry, input, _context) do
         target_backend = input.arguments.target_backend
         relationship_type = input.arguments.relationship_type || :backup
-        
+
         # This would need to implement the actual duplication logic
         # For now, return the original entry
         {:ok, storage_entry}
@@ -692,7 +752,7 @@ defmodule Kyozo.Storage.AbstractStorage do
     defmodule ProcessContent do
       def run(storage_entry, input, _context) do
         processing_options = input.arguments.processing_options || %{}
-        
+
         # This would need to implement the actual processing logic
         # For now, return the original entry
         {:ok, storage_entry}
@@ -719,7 +779,9 @@ defmodule Kyozo.Storage.AbstractStorage do
         if actual_media_type == expected_media_type do
           :ok
         else
-          {:error, field: :media_type, message: "Expected media type #{expected_media_type}, got #{actual_media_type}"}
+          {:error,
+           field: :media_type,
+           message: "Expected media type #{expected_media_type}, got #{actual_media_type}"}
         end
       end
     end
@@ -729,9 +791,12 @@ defmodule Kyozo.Storage.AbstractStorage do
 
       def validate(changeset, opts, _context) do
         allowed_backends = Keyword.get(opts, :backends, [])
-        
+
         case Ash.Changeset.get_attribute(changeset, :storage_resource_id) do
-          nil -> :ok  # Will be validated elsewhere
+          # Will be validated elsewhere
+          nil ->
+            :ok
+
           storage_id ->
             # Load storage resource and check backend
             case Ash.get(StorageResource, storage_id) do
@@ -739,8 +804,12 @@ defmodule Kyozo.Storage.AbstractStorage do
                 if storage.storage_backend in allowed_backends do
                   :ok
                 else
-                  {:error, field: :storage_resource_id, message: "Storage backend #{storage.storage_backend} not allowed for this media type"}
+                  {:error,
+                   field: :storage_resource_id,
+                   message:
+                     "Storage backend #{storage.storage_backend} not allowed for this media type"}
                 end
+
               {:error, _} ->
                 {:error, field: :storage_resource_id, message: "Invalid storage resource"}
             end

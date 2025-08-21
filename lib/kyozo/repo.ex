@@ -5,7 +5,12 @@ defmodule Kyozo.Repo do
   @impl true
   def installed_extensions do
     # Add extensions here, and the migration generator will install them.
-    ["ash-functions", "pg_trgm", "citext"]
+    ["ash-functions", "pg_trgm", "uuid-ossp", "pgcrypto", "citext"]
+  end
+
+  @impl true
+  def uuid_v7_function do
+    "ash_uuidv7_generate()"
   end
 
   # Don't open unnecessary transactions

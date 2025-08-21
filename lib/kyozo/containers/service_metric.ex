@@ -4,7 +4,7 @@ defmodule Kyozo.Containers.ServiceMetric do
     domain: Kyozo.Containers,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshOban]
 
   @moduledoc """
   ServiceMetric resource representing performance metrics for service instances.
@@ -36,6 +36,30 @@ defmodule Kyozo.Containers.ServiceMetric do
 
     custom_indexes do
       index [:service_instance_id, :metric_type, :recorded_at]
+    end
+  end
+
+  # AshOban triggers for metrics collection and maintenance
+  oban do
+    triggers do
+      # Ensure triggers run for all tenants
+      list_tenants(fn -> Kyozo.Repo.all_tenants() end)
+
+      trigger :collect_single do
+        action :create
+        queue(:metrics_collection)
+        worker_module_name(Kyozo.Containers.Workers.MetricsCollector)
+      end
+
+      trigger :batch_collection do
+        action :create
+        queue(:metrics_collection)
+      end
+
+      trigger :cleanup do
+        action :create
+        queue(:cleanup)
+      end
     end
   end
 
@@ -126,6 +150,10 @@ defmodule Kyozo.Containers.ServiceMetric do
     validate {Kyozo.Containers.Validations.ValidateMetricUnit, []}
   end
 
+  multitenancy do
+    strategy :context
+  end
+
   attributes do
     uuid_v7_primary_key :id
 
@@ -171,14 +199,11 @@ defmodule Kyozo.Containers.ServiceMetric do
   end
 
   aggregates do
-    avg :average_value, [:service_instance, :metrics], 
-      field: :value
+    avg :average_value, [:service_instance, :metrics], field: :value
 
-    max :max_value, [:service_instance, :metrics],
-      field: :value
+    max :max_value, [:service_instance, :metrics], field: :value
 
-    min :min_value, [:service_instance, :metrics], 
-      field: :value
+    min :min_value, [:service_instance, :metrics], field: :value
 
     first :latest_value, [:service_instance, :metrics],
       field: :value,

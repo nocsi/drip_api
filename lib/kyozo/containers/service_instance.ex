@@ -4,7 +4,7 @@ defmodule Kyozo.Containers.ServiceInstance do
     domain: Kyozo.Containers,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshOban]
 
   @moduledoc """
   ServiceInstance resource representing a containerized service deployed from a folder.
@@ -34,6 +34,40 @@ defmodule Kyozo.Containers.ServiceInstance do
       index [:team_id, :workspace_id, :status]
       index [:team_id, :service_type]
       index [:workspace_id, :folder_path], unique: true
+    end
+  end
+
+  # AshOban triggers to run container lifecycle jobs with actor context
+  oban do
+    triggers do
+      # Ensure triggers run for all tenants
+      list_tenants(fn -> Kyozo.Repo.all_tenants() end)
+
+      trigger :deploy do
+        action :deploy
+        queue(:container_deployment)
+        worker_module_name(Kyozo.Containers.Workers.ContainerDeploymentWorker)
+      end
+
+      trigger :stop do
+        action :stop
+        queue(:container_deployment)
+      end
+
+      trigger :restart do
+        action :start
+        queue(:container_deployment)
+      end
+
+      trigger :scale do
+        action :scale
+        queue(:container_deployment)
+      end
+
+      trigger :health_check do
+        action :update
+        queue(:health_monitoring)
+      end
     end
   end
 
@@ -101,8 +135,6 @@ defmodule Kyozo.Containers.ServiceInstance do
       change set_attribute(:status, :scaling)
     end
 
-
-
     read :list_by_workspace do
       argument :workspace_id, :uuid, allow_nil?: false
       filter expr(workspace_id == ^arg(:workspace_id))
@@ -140,8 +172,19 @@ defmodule Kyozo.Containers.ServiceInstance do
     validate {Kyozo.Containers.Validations.ValidateResourceLimits, []}
   end
 
+  multitenancy do
+    strategy :attribute
+    attribute :team_id
+  end
+
   attributes do
     uuid_v7_primary_key :id
+
+    attribute :team_id, :uuid do
+      allow_nil? false
+      public? true
+      description "Team that owns this service instance"
+    end
 
     attribute :name, :string do
       allow_nil? false
@@ -293,6 +336,7 @@ defmodule Kyozo.Containers.ServiceInstance do
     belongs_to :team, Kyozo.Accounts.Team do
       allow_nil? false
       public? true
+      attribute_writable? false
     end
 
     belongs_to :created_by, Kyozo.Accounts.User do

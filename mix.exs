@@ -49,7 +49,7 @@ defmodule Kyozo.MixProject do
       {:ash_events, "~> 0.4.3"},
       {:ash_ai, "~> 0.2"},
       {:sourceror, "~> 1.8"},
-      {:ash, "~> 3.0"},
+      {:ash, "~> 3.5"},
       {:rustler, "~> 0.31"},
       {:phoenix, "~> 1.8.0-rc.1", override: true},
       {:phoenix_ecto, "~> 4.5"},
@@ -88,7 +88,8 @@ defmodule Kyozo.MixProject do
       {:sweet_xml, "~> 0.7"},
       {:gen_smtp, "~> 1.3"},
       {:mail, ">= 0.0.0"},
-      {:yaml_elixir, "~> 2.11"}
+      {:yaml_elixir, "~> 2.11"},
+      {:tidewave, "~> 0.4", only: :dev}
     ]
   end
 
@@ -103,9 +104,8 @@ defmodule Kyozo.MixProject do
       setup: ["deps.get", "ash.setup", "assets.setup", "run priv/repo/seeds.exs"],
       "ecto.setup": ["ecto.create", "ecto.migrate"],
       seed: [
-        "run priv/repo/seeds/01-artists.exs",
-        "run priv/repo/seeds/02-albums.exs",
-        "run priv/repo/seeds/08-tracks.exs"
+        "run priv/repo/migrations/containers/run_container_migrations.exs",
+        "run priv/repo/seeds/02-albums.exs"
       ],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ash.setup --quiet", "test"],
@@ -120,6 +120,10 @@ defmodule Kyozo.MixProject do
         "ash_postgres.generate_migrations",
         "ash_postgres.migrate",
         "ash_postgres.migrate --tenants"
+      ],
+      # Convenience alias to run only the container migrations bundle
+      "containers.migrate": [
+        "run priv/repo/migrations/containers/run_container_migrations.exs"
       ]
     ]
   end

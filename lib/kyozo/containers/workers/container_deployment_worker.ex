@@ -20,24 +20,30 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
   alias Kyozo.Containers.{ServiceInstance, DeploymentEvent}
 
   # Deployment timeouts
-  @default_deployment_timeout 300_000  # 5 minutes
-  @image_build_timeout 600_000         # 10 minutes
-  @health_check_timeout 120_000        # 2 minutes
-  @rollback_timeout 180_000            # 3 minutes
+  # 5 minutes
+  @default_deployment_timeout 300_000
+  # 10 minutes
+  @image_build_timeout 600_000
+  # 2 minutes
+  @health_check_timeout 120_000
+  # 3 minutes
+  @rollback_timeout 180_000
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"action" => "deploy", "service_instance_id" => service_id} = args}) do
+  def perform(
+        %Oban.Job{args: %{"action" => "deploy", "service_instance_id" => service_id} = args} = job
+      ) do
+    tenant = job_tenant(job)
     Logger.info("Starting container deployment", service_instance_id: service_id)
 
-    with {:ok, service} <- get_service_instance(service_id),
-         {:ok, workspace} <- get_workspace(service.workspace_id),
-         {:ok, updated_service} <- mark_deploying(service),
+    with {:ok, service} <- get_service_instance(service_id, tenant),
+         {:ok, workspace} <- get_workspace(service.workspace_id, tenant),
+         {:ok, updated_service} <- mark_deploying(service, tenant),
          {:ok, deployment_config} <- prepare_deployment_config(updated_service, workspace, args),
          {:ok, image_info} <- build_or_pull_image(deployment_config),
          {:ok, container_info} <- deploy_container(deployment_config, image_info),
-         {:ok, final_service} <- finalize_deployment(updated_service, container_info),
+         {:ok, final_service} <- finalize_deployment(updated_service, container_info, tenant),
          :ok <- verify_deployment_health(final_service) do
-
       Logger.info("Container deployment completed successfully",
         service_instance_id: service_id,
         container_id: container_info.container_id,
@@ -45,11 +51,16 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       )
 
       # Record successful deployment
-      record_deployment_event(final_service, "deployment_completed", %{
-        container_id: container_info.container_id,
-        image: image_info.image_name,
-        deployment_duration_ms: calculate_deployment_duration(updated_service)
-      })
+      record_deployment_event(
+        final_service,
+        "deployment_completed",
+        %{
+          container_id: container_info.container_id,
+          image: image_info.image_name,
+          deployment_duration_ms: calculate_deployment_duration(updated_service)
+        },
+        tenant
+      )
 
       # Schedule health monitoring
       schedule_health_monitoring(final_service)
@@ -63,31 +74,43 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
         )
 
         # Attempt rollback if service was previously running
-        attempt_rollback(service_id, reason)
+        attempt_rollback(service_id, reason, tenant)
 
         # Record failed deployment
-        record_deployment_event(service_id, "deployment_failed", %{
-          error: to_string(reason),
-          rollback_attempted: true
-        })
+        record_deployment_event(
+          service_id,
+          "deployment_failed",
+          %{
+            error: to_string(reason),
+            rollback_attempted: true
+          },
+          tenant
+        )
 
         error
     end
   end
 
-  def perform(%Oban.Job{args: %{"action" => "stop", "service_instance_id" => service_id} = args}) do
+  def perform(
+        %Oban.Job{args: %{"action" => "stop", "service_instance_id" => service_id} = args} = job
+      ) do
+    tenant = job_tenant(job)
     Logger.info("Stopping container", service_instance_id: service_id)
 
-    with {:ok, service} <- get_service_instance(service_id),
-         {:ok, updated_service} <- mark_stopping(service),
+    with {:ok, service} <- get_service_instance(service_id, tenant),
+         {:ok, updated_service} <- mark_stopping(service, tenant),
          :ok <- stop_container(updated_service),
-         {:ok, final_service} <- mark_stopped(updated_service) do
-
+         {:ok, final_service} <- mark_stopped(updated_service, tenant) do
       Logger.info("Container stopped successfully", service_instance_id: service_id)
 
-      record_deployment_event(final_service, "container_stopped", %{
-        stopped_gracefully: args["graceful"] != false
-      })
+      record_deployment_event(
+        final_service,
+        "container_stopped",
+        %{
+          stopped_gracefully: args["graceful"] != false
+        },
+        tenant
+      )
 
       {:ok, final_service}
     else
@@ -97,18 +120,37 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
     end
   end
 
-  def perform(%Oban.Job{args: %{"action" => "restart", "service_instance_id" => service_id} = args}) do
+  def perform(
+        %Oban.Job{args: %{"action" => "restart", "service_instance_id" => service_id} = args} =
+          job
+      ) do
+    tenant = job_tenant(job)
     Logger.info("Restarting container", service_instance_id: service_id)
 
-    with {:ok, service} <- get_service_instance(service_id),
-         {:ok, _} <- perform(%Oban.Job{args: %{"action" => "stop", "service_instance_id" => service_id}}),
-         {:ok, final_service} <- perform(%Oban.Job{args: Map.merge(args, %{"action" => "deploy", "service_instance_id" => service_id})}) do
-
+    with {:ok, service} <- get_service_instance(service_id, tenant),
+         {:ok, _} <-
+           perform(%Oban.Job{
+             args: %{"action" => "stop", "service_instance_id" => service_id, "tenant" => tenant}
+           }),
+         {:ok, final_service} <-
+           perform(%Oban.Job{
+             args:
+               Map.merge(args, %{
+                 "action" => "deploy",
+                 "service_instance_id" => service_id,
+                 "tenant" => tenant
+               })
+           }) do
       Logger.info("Container restarted successfully", service_instance_id: service_id)
 
-      record_deployment_event(final_service, "container_restarted", %{
-        restart_reason: args["reason"] || "manual"
-      })
+      record_deployment_event(
+        final_service,
+        "container_restarted",
+        %{
+          restart_reason: args["reason"] || "manual"
+        },
+        tenant
+      )
 
       {:ok, final_service}
     else
@@ -118,23 +160,41 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
     end
   end
 
-  def perform(%Oban.Job{args: %{"action" => "scale", "service_instance_id" => service_id, "replica_count" => replica_count} = args}) do
-    Logger.info("Scaling container", service_instance_id: service_id, replica_count: replica_count)
+  def perform(
+        %Oban.Job{
+          args:
+            %{
+              "action" => "scale",
+              "service_instance_id" => service_id,
+              "replica_count" => replica_count
+            } = args
+        } = job
+      ) do
+    tenant = job_tenant(job)
 
-    with {:ok, service} <- get_service_instance(service_id),
-         {:ok, updated_service} <- mark_scaling(service),
+    Logger.info("Scaling container",
+      service_instance_id: service_id,
+      replica_count: replica_count
+    )
+
+    with {:ok, service} <- get_service_instance(service_id, tenant),
+         {:ok, updated_service} <- mark_scaling(service, tenant),
          :ok <- scale_container(updated_service, replica_count),
-         {:ok, final_service} <- update_replica_count(updated_service, replica_count) do
-
+         {:ok, final_service} <- update_replica_count(updated_service, replica_count, tenant) do
       Logger.info("Container scaled successfully",
         service_instance_id: service_id,
         new_replica_count: replica_count
       )
 
-      record_deployment_event(final_service, "container_scaled", %{
-        previous_replica_count: service.replica_count,
-        new_replica_count: replica_count
-      })
+      record_deployment_event(
+        final_service,
+        "container_scaled",
+        %{
+          previous_replica_count: service.replica_count,
+          new_replica_count: replica_count
+        },
+        tenant
+      )
 
       {:ok, final_service}
     else
@@ -153,8 +213,6 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
   Enqueue a container deployment job.
   """
   def enqueue_deploy(service_instance_id, opts \\ []) do
-    priority = Keyword.get(opts, :priority, 1)
-
     args = %{
       "action" => "deploy",
       "service_instance_id" => service_instance_id,
@@ -164,17 +222,13 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.ServiceInstance, :deploy, args, opts)
   end
 
   @doc """
   Enqueue a container stop job.
   """
   def enqueue_stop(service_instance_id, opts \\ []) do
-    priority = Keyword.get(opts, :priority, 2)
-
     args = %{
       "action" => "stop",
       "service_instance_id" => service_instance_id,
@@ -183,17 +237,13 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.ServiceInstance, :stop, args, opts)
   end
 
   @doc """
   Enqueue a container restart job.
   """
   def enqueue_restart(service_instance_id, opts \\ []) do
-    priority = Keyword.get(opts, :priority, 1)
-
     args = %{
       "action" => "restart",
       "service_instance_id" => service_instance_id,
@@ -201,17 +251,13 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.ServiceInstance, :restart, args, opts)
   end
 
   @doc """
   Enqueue a container scaling job.
   """
   def enqueue_scale(service_instance_id, replica_count, opts \\ []) do
-    priority = Keyword.get(opts, :priority, 2)
-
     args = %{
       "action" => "scale",
       "service_instance_id" => service_instance_id,
@@ -220,81 +266,88 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.ServiceInstance, :scale, args, opts)
   end
 
   # Private Functions
 
-  defp get_service_instance(service_id) do
-    case Containers.get_service_instance(service_id) do
+  defp job_tenant(%Oban.Job{args: args, meta: meta}),
+    do: args["tenant"] || (meta && meta["tenant"])
+
+  defp get_service_instance(service_id, tenant) do
+    case Containers.get_service_instance(service_id, tenant: tenant) do
       nil -> {:error, :service_not_found}
       service -> {:ok, service}
     end
   end
 
-  defp get_workspace(workspace_id) do
-    case Workspaces.get_workspace(workspace_id) do
+  defp get_workspace(workspace_id, tenant) do
+    case Workspaces.get_workspace(workspace_id, tenant: tenant) do
       nil -> {:error, :workspace_not_found}
       workspace -> {:ok, workspace}
     end
   end
 
-  defp mark_deploying(service) do
+  defp mark_deploying(service, tenant) do
     updates = %{
       container_status: "deploying",
       health_status: "unknown",
       deployment_started_at: DateTime.utc_now(),
-      deployment_metadata: Map.merge(service.deployment_metadata || %{}, %{
-        "deployment_stage" => "starting",
-        "worker_pid" => inspect(self())
-      })
+      deployment_metadata:
+        Map.merge(service.deployment_metadata || %{}, %{
+          "deployment_stage" => "starting",
+          "worker_pid" => inspect(self())
+        })
     }
 
-    case Containers.update_service_instance(service, updates) do
+    case Containers.update_service_instance(service, updates, tenant: tenant) do
       {:ok, updated_service} ->
-        record_deployment_event(updated_service, "deployment_started", %{})
+        record_deployment_event(updated_service, "deployment_started", %{}, tenant)
         {:ok, updated_service}
-      error -> error
+
+      error ->
+        error
     end
   end
 
-  defp mark_stopping(service) do
+  defp mark_stopping(service, tenant) do
     updates = %{
       container_status: "stopping",
-      deployment_metadata: Map.merge(service.deployment_metadata || %{}, %{
-        "deployment_stage" => "stopping"
-      })
+      deployment_metadata:
+        Map.merge(service.deployment_metadata || %{}, %{
+          "deployment_stage" => "stopping"
+        })
     }
 
-    Containers.update_service_instance(service, updates)
+    Containers.update_service_instance(service, updates, tenant: tenant)
   end
 
-  defp mark_stopped(service) do
+  defp mark_stopped(service, tenant) do
     updates = %{
       container_status: "stopped",
       health_status: "unknown",
       container_id: nil,
       deployed_at: nil,
-      deployment_metadata: Map.merge(service.deployment_metadata || %{}, %{
-        "deployment_stage" => "stopped",
-        "stopped_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-      })
+      deployment_metadata:
+        Map.merge(service.deployment_metadata || %{}, %{
+          "deployment_stage" => "stopped",
+          "stopped_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+        })
     }
 
-    Containers.update_service_instance(service, updates)
+    Containers.update_service_instance(service, updates, tenant: tenant)
   end
 
-  defp mark_scaling(service) do
+  defp mark_scaling(service, tenant) do
     updates = %{
       container_status: "scaling",
-      deployment_metadata: Map.merge(service.deployment_metadata || %{}, %{
-        "deployment_stage" => "scaling"
-      })
+      deployment_metadata:
+        Map.merge(service.deployment_metadata || %{}, %{
+          "deployment_stage" => "scaling"
+        })
     }
 
-    Containers.update_service_instance(service, updates)
+    Containers.update_service_instance(service, updates, tenant: tenant)
   end
 
   defp prepare_deployment_config(service, workspace, args) do
@@ -310,7 +363,7 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       networks: ["kyozo-network"],
       volumes: prepare_volumes(service, workspace),
       labels: generate_container_labels(service),
-      restart_policy: service.auto_restart && "unless-stopped" || "no",
+      restart_policy: (service.auto_restart && "unless-stopped") || "no",
       dockerfile_path: determine_dockerfile_path(service, workspace),
       build_context: determine_build_context(service, workspace),
       deployment_strategy: args["deployment_strategy"] || "rolling",
@@ -363,6 +416,7 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
         image: config.image_name,
         error: Exception.message(error)
       )
+
       {:error, :docker_build_error}
   end
 
@@ -417,24 +471,27 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
         container_name: config.container_name,
         error: Exception.message(error)
       )
+
       {:error, :docker_deployment_error}
   end
 
-  defp finalize_deployment(service, container_info) do
+  defp finalize_deployment(service, container_info, tenant) do
     updates = %{
       container_status: "running",
-      health_status: "unknown",  # Will be updated by health checks
+      # Will be updated by health checks
+      health_status: "unknown",
       container_id: container_info.container_id,
       deployed_at: DateTime.utc_now(),
-      restart_count: (service.restart_count || 0),
-      deployment_metadata: Map.merge(service.deployment_metadata || %{}, %{
-        "deployment_stage" => "completed",
-        "container_created_at" => DateTime.to_iso8601(container_info.created_at),
-        "deployment_completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-      })
+      restart_count: service.restart_count || 0,
+      deployment_metadata:
+        Map.merge(service.deployment_metadata || %{}, %{
+          "deployment_stage" => "completed",
+          "container_created_at" => DateTime.to_iso8601(container_info.created_at),
+          "deployment_completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+        })
     }
 
-    Containers.update_service_instance(service, updates)
+    Containers.update_service_instance(service, updates, tenant: tenant)
   end
 
   defp verify_deployment_health(service) do
@@ -447,7 +504,10 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       # Simulate health check (90% success rate for new deployments)
       if :rand.uniform(100) <= 90 do
         # Update health status
-        Containers.update_service_instance(service, %{health_status: "healthy"})
+        Containers.update_service_instance(service, %{health_status: "healthy"},
+          tenant: service.team_id
+        )
+
         :ok
       else
         Logger.warn("Health check failed for newly deployed service", service_id: service.id)
@@ -483,6 +543,7 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
         service_id: service.id,
         error: Exception.message(error)
       )
+
       {:error, :docker_stop_error}
   end
 
@@ -511,49 +572,53 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
         service_id: service.id,
         error: Exception.message(error)
       )
+
       {:error, :docker_scale_error}
   end
 
-  defp update_replica_count(service, replica_count) do
+  defp update_replica_count(service, replica_count, tenant) do
     updates = %{
       replica_count: replica_count,
       container_status: "running",
-      deployment_metadata: Map.merge(service.deployment_metadata || %{}, %{
-        "last_scaled_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-      })
+      deployment_metadata:
+        Map.merge(service.deployment_metadata || %{}, %{
+          "last_scaled_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+        })
     }
 
-    Containers.update_service_instance(service, updates)
+    Containers.update_service_instance(service, updates, tenant: tenant)
   end
 
-  defp attempt_rollback(service_id, reason) do
+  defp attempt_rollback(service_id, reason, tenant) do
     Logger.warn("Attempting deployment rollback", service_id: service_id, reason: reason)
 
-    case get_service_instance(service_id) do
+    case get_service_instance(service_id, tenant) do
       {:ok, service} ->
         # Mark as failed and set appropriate status
         updates = %{
           container_status: "failed",
           health_status: "unhealthy",
-          deployment_metadata: Map.merge(service.deployment_metadata || %{}, %{
-            "deployment_stage" => "rollback_attempted",
-            "rollback_reason" => to_string(reason),
-            "rollback_attempted_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-          })
+          deployment_metadata:
+            Map.merge(service.deployment_metadata || %{}, %{
+              "deployment_stage" => "rollback_attempted",
+              "rollback_reason" => to_string(reason),
+              "rollback_attempted_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+            })
         }
 
-        Containers.update_service_instance(service, updates)
+        Containers.update_service_instance(service, updates, tenant: tenant)
 
       _ ->
         Logger.error("Could not find service for rollback", service_id: service_id)
     end
   end
 
-  defp record_deployment_event(service_or_id, event_type, details) do
-    service_id = case service_or_id do
-      %{id: id} -> id
-      id when is_binary(id) -> id
-    end
+  defp record_deployment_event(service_or_id, event_type, details, tenant) do
+    service_id =
+      case service_or_id do
+        %{id: id} -> id
+        id when is_binary(id) -> id
+      end
 
     attrs = %{
       service_instance_id: service_id,
@@ -562,16 +627,18 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       timestamp: DateTime.utc_now()
     }
 
-    case Containers.create_deployment_event(attrs) do
+    case Containers.create_deployment_event(attrs, tenant: tenant) do
       {:ok, event} ->
         # Also publish as a real-time event
         Events.publish_event("deployment_event", Map.from_struct(event))
         {:ok, event}
+
       error ->
         Logger.error("Failed to record deployment event",
           service_id: service_id,
           event_type: event_type
         )
+
         error
     end
   end
@@ -580,7 +647,8 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
     # Schedule the first health check in 30 seconds
     Kyozo.Containers.Workers.ContainerHealthMonitor.enqueue_single_check(
       service.id,
-      priority: 1
+      priority: 1,
+      tenant: service.team_id
     )
   end
 

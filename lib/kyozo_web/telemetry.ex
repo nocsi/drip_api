@@ -8,6 +8,9 @@ defmodule KyozoWeb.Telemetry do
 
   @impl true
   def init(_arg) do
+    # Attach custom telemetry handlers (idempotent)
+    Kyozo.TelemetryHandlers.ContainersCleanup.attach()
+
     children = [
       # Telemetry poller will execute the given period measurements
       # every 10_000ms. Learn more here: https://hexdocs.pm/telemetry_metrics
@@ -78,7 +81,26 @@ defmodule KyozoWeb.Telemetry do
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+
+      # Containers Cleanup Metrics (from CleanupWorker telemetry)
+      sum("kyozo.containers.cleanup.metrics.deleted"),
+      sum("kyozo.containers.cleanup.deployment_events.deleted"),
+      sum("kyozo.containers.cleanup.health_checks.deleted"),
+
+      sum("kyozo.containers.cleanup.orphaned_containers.cleaned"),
+      last_value("kyozo.containers.cleanup.orphaned_containers.total"),
+
+      sum("kyozo.containers.cleanup.stopped_services.cleaned"),
+      last_value("kyozo.containers.cleanup.stopped_services.total"),
+
+      sum("kyozo.containers.cleanup.docker_images.images_removed"),
+      sum("kyozo.containers.cleanup.docker_images.space_freed_bytes", unit: :byte),
+
+      summary("kyozo.containers.cleanup.vacuum.duration_ms",
+        tags: [:table],
+        unit: :millisecond
+      )
     ]
   end
 

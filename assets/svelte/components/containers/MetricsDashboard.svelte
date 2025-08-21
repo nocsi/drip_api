@@ -1,11 +1,10 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { writable } from 'svelte/store';
-  import { 
-    Activity, 
-    Cpu, 
-    HardDrive, 
-    Network, 
+  import {
+    Activity,
+    Cpu,
+    HardDrive,
+    Network,
     Zap,
     TrendingUp,
     TrendingDown,
@@ -19,14 +18,14 @@
     Settings
   } from '@lucide/svelte';
 
-  let { 
-    services = [], 
+  let {
+    services = [],
     workspaceId,
     autoRefresh = true,
     refreshInterval = 30000 // 30 seconds
   } = $props();
 
-  let metricsData = writable({});
+  let metricsData = $state({});
   let selectedTimeRange = $state('1h');
   let selectedService = $state('all');
   let isLoading = $state(false);
@@ -57,7 +56,7 @@
   const generateMockMetrics = () => {
     const now = Date.now();
     const points = 50;
-    const interval = selectedTimeRange === '5m' ? 6000 : 
+    const interval = selectedTimeRange === '5m' ? 6000 :
                     selectedTimeRange === '15m' ? 18000 :
                     selectedTimeRange === '1h' ? 72000 :
                     selectedTimeRange === '6h' ? 432000 :
@@ -100,18 +99,15 @@
   };
 
   const currentMetrics = $derived(() => {
-    const data = $metricsData;
-    return data.summary || {};
+    return metricsData.summary || {};
   });
 
   const serviceMetrics = $derived(() => {
-    const data = $metricsData;
-    return data.services || [];
+    return metricsData.services || [];
   });
 
   const timeSeriesData = $derived(() => {
-    const data = $metricsData;
-    return data.timeseries || {};
+    return metricsData.timeseries || {};
   });
 
   onMount(async () => {
@@ -143,18 +139,18 @@
 
   async function loadMetrics() {
     if (isLoading) return;
-    
+
     isLoading = true;
     error = null;
-    
+
     try {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const mockData = generateMockMetrics();
-      metricsData.set(mockData);
+      metricsData = mockData;
       lastUpdated = new Date();
-      
+
     } catch (err) {
       console.error('Failed to load metrics:', err);
       error = 'Failed to load metrics data';
@@ -175,19 +171,19 @@
 
   function formatValue(value, unit) {
     if (typeof value !== 'number') return '0';
-    
+
     if (unit === 'MB' && value > 1024) {
       return `${(value / 1024).toFixed(1)} GB`;
     }
-    
+
     if (value > 1000000) {
       return `${(value / 1000000).toFixed(1)}M`;
     }
-    
+
     if (value > 1000) {
       return `${(value / 1000).toFixed(1)}K`;
     }
-    
+
     return Math.round(value).toString();
   }
 
@@ -204,9 +200,9 @@
   }
 </script>
 
-<div class="metrics-dashboard">
+<div class="space-y-6">
   <!-- Header -->
-  <div class="dashboard-header">
+  <div class="flex items-start justify-between">
     <div>
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
         Metrics Dashboard
@@ -215,12 +211,12 @@
         Real-time monitoring and performance metrics
       </p>
     </div>
-    
-    <div class="header-controls">
-      <select 
+
+    <div class="flex gap-3 items-center">
+      <select
         bind:value={selectedService}
         onchange={(e) => handleServiceChange(e.target.value)}
-        class="control-select"
+        class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
       >
         <option value="all">All Services</option>
         {#each services as service}
@@ -228,22 +224,22 @@
         {/each}
       </select>
 
-      <select 
+      <select
         bind:value={selectedTimeRange}
         onchange={(e) => handleTimeRangeChange(e.target.value)}
-        class="control-select"
+        class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
       >
         {#each timeRanges as range}
           <option value={range.value}>{range.label}</option>
         {/each}
       </select>
 
-      <button 
-        class="btn btn-outline btn-sm"
+      <button
+        class="px-4 py-2 rounded-md font-medium transition-colors duration-200 inline-flex items-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
         onclick={loadMetrics}
         disabled={isLoading}
       >
-        <RefreshCw class="w-4 h-4 mr-2" class:animate-spin={isLoading} />
+        <RefreshCw class="w-4 h-4 mr-2 {isLoading ? 'animate-spin' : ''}" />
         Refresh
       </button>
     </div>
@@ -251,7 +247,7 @@
 
   <!-- Last Updated -->
   {#if lastUpdated}
-    <div class="last-updated">
+    <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
       <Clock class="w-4 h-4 text-gray-400" />
       <span class="text-sm text-gray-600 dark:text-gray-400">
         Last updated: {lastUpdated.toLocaleTimeString()}
@@ -261,148 +257,145 @@
 
   <!-- Error Display -->
   {#if error}
-    <div class="alert alert-error">
+    <div class="p-4 rounded-md border bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 flex items-center gap-3">
       <AlertTriangle class="w-4 h-4" />
       <span>{error}</span>
     </div>
   {/if}
 
-  <!-- Summary Metrics -->
-  <div class="metrics-summary">
-    <div class="metric-card">
-      <div class="metric-header">
+  <!-- Metrics Summary -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+      <div class="flex items-center gap-3 mb-3">
         <Cpu class="w-5 h-5 text-blue-600" />
-        <span class="metric-title">Total CPU</span>
+        <span class="font-medium text-gray-900 dark:text-white">CPU Usage</span>
       </div>
-      <div class="metric-value">
+      <div class="text-2xl font-bold text-gray-900 dark:text-white">
         {formatValue(currentMetrics.total_cpu_usage, '%')}%
       </div>
-      <div class="metric-bar">
-        <div 
-          class="metric-fill {getUsageColor(currentMetrics.total_cpu_usage)}"
+      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-3">
+        <div
+          class="h-2 rounded-full transition-all duration-300 {getUsageColor(currentMetrics.total_cpu_usage)}"
           style="width: {Math.min(currentMetrics.total_cpu_usage || 0, 100)}%"
         ></div>
       </div>
     </div>
 
-    <div class="metric-card">
-      <div class="metric-header">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+      <div class="flex items-center gap-3 mb-3">
         <HardDrive class="w-5 h-5 text-green-600" />
-        <span class="metric-title">Total Memory</span>
+        <span class="font-medium text-gray-900 dark:text-white">Memory</span>
       </div>
-      <div class="metric-value">
+      <div class="text-2xl font-bold text-gray-900 dark:text-white">
         {formatValue(currentMetrics.total_memory_usage, 'MB')} MB
       </div>
-      <div class="metric-bar">
-        <div 
-          class="metric-fill {getUsageColor((currentMetrics.total_memory_usage / 4096) * 100)}"
-          style="width: {Math.min((currentMetrics.total_memory_usage / 4096) * 100 || 0, 100)}%"
+      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-3">
+        <div
+          class="h-2 rounded-full transition-all duration-300 {getUsageColor((currentMetrics.total_memory_usage || 0) / 20)}"
+          style="width: {Math.min((currentMetrics.total_memory_usage || 0) / 20, 100)}%"
         ></div>
       </div>
     </div>
 
-    <div class="metric-card">
-      <div class="metric-header">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+      <div class="flex items-center gap-3 mb-3">
         <Network class="w-5 h-5 text-purple-600" />
-        <span class="metric-title">Network I/O</span>
+        <span class="font-medium text-gray-900 dark:text-white">Network</span>
       </div>
-      <div class="metric-value">
-        ↓{formatValue(currentMetrics.total_network_in, 'MB/s')} 
+      <div class="text-2xl font-bold text-gray-900 dark:text-white text-sm">
+        ↓{formatValue(currentMetrics.total_network_in, 'MB/s')}<br>
         ↑{formatValue(currentMetrics.total_network_out, 'MB/s')}
       </div>
       <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-        MB/s
+        In/Out MB/s
       </div>
     </div>
 
-    <div class="metric-card">
-      <div class="metric-header">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+      <div class="flex items-center gap-3 mb-3">
         <Activity class="w-5 h-5 text-orange-600" />
-        <span class="metric-title">Requests</span>
+        <span class="font-medium text-gray-900 dark:text-white">Requests</span>
       </div>
-      <div class="metric-value">
+      <div class="text-2xl font-bold text-gray-900 dark:text-white">
         {formatValue(currentMetrics.total_requests, 'req/s')}
       </div>
       <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-        req/sec
+        Requests per second
       </div>
     </div>
   </div>
 
-  <!-- Service Health Overview -->
-  <div class="health-overview">
-    <h4 class="section-title">Service Health</h4>
-    <div class="health-grid">
-      <div class="health-stat">
+  <!-- Health Overview -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+    <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Health Overview</h4>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="flex items-center gap-3">
         <CheckCircle class="w-5 h-5 text-green-600" />
         <div>
-          <div class="health-value">{currentMetrics.healthy_services || 0}</div>
-          <div class="health-label">Healthy</div>
+          <div class="text-2xl font-bold text-green-600">{currentMetrics.healthy_services || 0}</div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">Healthy Services</div>
         </div>
       </div>
-      <div class="health-stat">
+      <div class="flex items-center gap-3">
         <AlertTriangle class="w-5 h-5 text-yellow-600" />
         <div>
-          <div class="health-value">
+          <div class="text-2xl font-bold text-yellow-600">
             {(currentMetrics.active_services || 0) - (currentMetrics.healthy_services || 0)}
           </div>
-          <div class="health-label">Issues</div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">Warning</div>
         </div>
       </div>
-      <div class="health-stat">
+      <div class="flex items-center gap-3">
         <Activity class="w-5 h-5 text-blue-600" />
         <div>
-          <div class="health-value">{currentMetrics.active_services || 0}</div>
-          <div class="health-label">Total</div>
+          <div class="text-2xl font-bold text-gray-900 dark:text-white">{currentMetrics.active_services || 0}</div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">Total Services</div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Time Series Charts -->
-  <div class="charts-section">
-    <h4 class="section-title">Performance Trends</h4>
-    <div class="charts-grid">
+  <!-- Charts Section -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+    <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Time Series Metrics</h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       {#each metricTypes.slice(0, 4) as metric}
         {@const data = timeSeriesData[metric.key] || []}
-        <div class="chart-card">
-          <div class="chart-header">
+        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+          <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-2">
-              <svelte:component this={metric.icon} class="w-4 h-4 text-gray-600" />
-              <span class="chart-title">{metric.label}</span>
+              <svelte:component this={metric.icon} class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <span class="font-medium text-gray-900 dark:text-white">{metric.label}</span>
             </div>
-            <span class="chart-unit">{metric.unit}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">{metric.unit}</span>
           </div>
-          
-          <!-- Simple SVG Chart -->
-          <div class="chart-container">
+
+          <div class="relative h-32">
             {#if data.length > 0}
-              <svg class="chart-svg" viewBox="0 0 400 100">
+              <svg class="w-full h-full" viewBox="0 0 400 100">
                 <polyline
                   fill="none"
-                  stroke="rgb(59, 130, 246)"
+                  stroke="currentColor"
                   stroke-width="2"
-                  points={data.map((point, i) => 
-                    `${(i / (data.length - 1)) * 400},${100 - (point.value / 100) * 80}`
-                  ).join(' ')}
+                  class="text-blue-600"
+                  points={data.slice(-20).map((point, i) => `${(i / 19) * 400},${100 - (point.value / 100) * 80}`).join(' ')}
                 />
                 {#each data.slice(-5) as point, i}
                   <circle
                     cx={((data.length - 5 + i) / (data.length - 1)) * 400}
                     cy={100 - (point.value / 100) * 80}
-                    r="2"
-                    fill="rgb(59, 130, 246)"
+                    r="3"
+                    class="fill-blue-600"
                   />
                 {/each}
               </svg>
-              <div class="chart-current-value">
-                {formatValue(data[data.length - 1]?.value || 0, metric.unit)}
-                {metric.unit}
+              <div class="absolute top-2 right-2 text-sm font-medium text-gray-900 dark:text-white">
+                {formatValue(data[data.length - 1]?.value, metric.unit)}{metric.unit}
               </div>
             {:else}
-              <div class="chart-no-data">
+              <div class="flex items-center justify-center h-full text-gray-400">
                 <BarChart3 class="w-8 h-8 text-gray-400" />
-                <span class="text-sm text-gray-500">No data available</span>
+                <span class="text-sm text-gray-500 ml-2">No data</span>
               </div>
             {/if}
           </div>
@@ -411,232 +404,55 @@
     </div>
   </div>
 
-  <!-- Per-Service Breakdown -->
-  <div class="services-section">
-    <h4 class="section-title">Service Breakdown</h4>
-    <div class="services-table">
-      <div class="table-header">
-        <div class="table-cell">Service</div>
-        <div class="table-cell">CPU</div>
-        <div class="table-cell">Memory</div>
-        <div class="table-cell">Network</div>
-        <div class="table-cell">Requests</div>
-        <div class="table-cell">Health</div>
-      </div>
-      
-      {#each serviceMetrics as service}
-        <div class="table-row">
-          <div class="table-cell">
-            <div class="service-cell">
-              <span class="service-name">{service.name}</span>
-            </div>
-          </div>
-          <div class="table-cell">
-            <span class="metric-value-sm">{Math.round(service.cpu_usage)}%</span>
-            <div class="mini-bar">
-              <div 
-                class="mini-fill {getUsageColor(service.cpu_usage)}"
-                style="width: {Math.min(service.cpu_usage, 100)}%"
-              ></div>
-            </div>
-          </div>
-          <div class="table-cell">
-            <span class="metric-value-sm">{Math.round(service.memory_usage)} MB</span>
-          </div>
-          <div class="table-cell">
-            <span class="metric-value-sm text-xs">
-              ↓{Math.round(service.network_in)} ↑{Math.round(service.network_out)}
-            </span>
-          </div>
-          <div class="table-cell">
-            <span class="metric-value-sm">{Math.round(service.requests_per_sec)}</span>
-          </div>
-          <div class="table-cell">
-            <span class="health-score {getHealthColor(service.health_score)}">
-              {Math.round(service.health_score)}%
-            </span>
-          </div>
+  <!-- Services Table -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <h4 class="text-lg font-semibold text-gray-900 dark:text-white p-6 pb-4">Service Breakdown</h4>
+    <div class="overflow-x-auto">
+      <div class="min-w-full">
+        <div class="grid grid-cols-6 gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-400">
+          <div>Service</div>
+          <div>CPU</div>
+          <div>Memory</div>
+          <div>Network</div>
+          <div>Requests</div>
+          <div>Health</div>
         </div>
-      {/each}
+
+        {#each serviceMetrics as service}
+          <div class="grid grid-cols-6 gap-4 px-6 py-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div class="flex items-center">
+              <div class="font-medium text-gray-900 dark:text-white">
+                <span class="text-sm">{service.name}</span>
+              </div>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{Math.round(service.cpu_usage)}%</span>
+              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-1">
+                <div
+                  class="h-1 rounded-full {getUsageColor(service.cpu_usage)}"
+                  style="width: {Math.min(service.cpu_usage, 100)}%"
+                ></div>
+              </div>
+            </div>
+            <div>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{Math.round(service.memory_usage)}MB</span>
+            </div>
+            <div>
+              <span class="text-sm font-medium text-gray-900 dark:text-white text-xs">
+                ↓{Math.round(service.network_in)}<br>↑{Math.round(service.network_out)}
+              </span>
+            </div>
+            <div>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{Math.round(service.requests_per_sec)}</span>
+            </div>
+            <div>
+              <span class="text-sm font-medium {getHealthColor(service.health_score)}">
+                {Math.round(service.health_score)}%
+              </span>
+            </div>
+          </div>
+        {/each}
+      </div>
     </div>
   </div>
 </div>
-
-<style>
-  .metrics-dashboard {
-    @apply space-y-6;
-  }
-
-  .dashboard-header {
-    @apply flex items-start justify-between;
-  }
-
-  .header-controls {
-    @apply flex gap-3;
-  }
-
-  .control-select {
-    @apply px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm;
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white;
-  }
-
-  .btn {
-    @apply px-3 py-2 rounded-md font-medium transition-colors duration-200 inline-flex items-center text-sm;
-  }
-
-  .btn-sm {
-    @apply px-2 py-1 text-xs;
-  }
-
-  .btn-outline {
-    @apply border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700;
-  }
-
-  .last-updated {
-    @apply flex items-center gap-2;
-  }
-
-  .alert {
-    @apply p-4 rounded-md border flex items-center gap-2;
-  }
-
-  .alert-error {
-    @apply bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400;
-  }
-
-  .metrics-summary {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
-  }
-
-  .metric-card {
-    @apply bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700;
-  }
-
-  .metric-header {
-    @apply flex items-center gap-2 mb-2;
-  }
-
-  .metric-title {
-    @apply text-sm font-medium text-gray-600 dark:text-gray-400;
-  }
-
-  .metric-value {
-    @apply text-2xl font-bold text-gray-900 dark:text-white mb-2;
-  }
-
-  .metric-bar {
-    @apply w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden;
-  }
-
-  .metric-fill {
-    @apply h-full transition-all duration-300;
-  }
-
-  .health-overview {
-    @apply bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700;
-  }
-
-  .section-title {
-    @apply text-lg font-semibold text-gray-900 dark:text-white mb-4;
-  }
-
-  .health-grid {
-    @apply grid grid-cols-3 gap-4;
-  }
-
-  .health-stat {
-    @apply flex items-center gap-3;
-  }
-
-  .health-value {
-    @apply text-xl font-bold text-gray-900 dark:text-white;
-  }
-
-  .health-label {
-    @apply text-sm text-gray-600 dark:text-gray-400;
-  }
-
-  .charts-section {
-    @apply space-y-4;
-  }
-
-  .charts-grid {
-    @apply grid grid-cols-1 md:grid-cols-2 gap-4;
-  }
-
-  .chart-card {
-    @apply bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700;
-  }
-
-  .chart-header {
-    @apply flex items-center justify-between mb-3;
-  }
-
-  .chart-title {
-    @apply text-sm font-medium text-gray-600 dark:text-gray-400;
-  }
-
-  .chart-unit {
-    @apply text-xs text-gray-500 dark:text-gray-500;
-  }
-
-  .chart-container {
-    @apply relative h-24;
-  }
-
-  .chart-svg {
-    @apply w-full h-full;
-  }
-
-  .chart-current-value {
-    @apply absolute top-1 right-1 text-sm font-medium text-blue-600 dark:text-blue-400;
-  }
-
-  .chart-no-data {
-    @apply flex flex-col items-center justify-center h-full text-gray-400;
-  }
-
-  .services-section {
-    @apply bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700;
-  }
-
-  .services-table {
-    @apply space-y-2;
-  }
-
-  .table-header {
-    @apply grid grid-cols-6 gap-4 pb-2 border-b border-gray-200 dark:border-gray-700;
-  }
-
-  .table-row {
-    @apply grid grid-cols-6 gap-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded;
-  }
-
-  .table-cell {
-    @apply text-sm;
-  }
-
-  .service-cell {
-    @apply flex items-center gap-2;
-  }
-
-  .service-name {
-    @apply font-medium text-gray-900 dark:text-white;
-  }
-
-  .metric-value-sm {
-    @apply text-sm font-medium text-gray-900 dark:text-white;
-  }
-
-  .mini-bar {
-    @apply w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mt-1;
-  }
-
-  .mini-fill {
-    @apply h-full transition-all duration-300;
-  }
-
-  .health-score {
-    @apply text-sm font-medium;
-  }
-</style>

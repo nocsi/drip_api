@@ -120,3 +120,45 @@ if config_env() == :prod do
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 end
+
+# Dynamic Oban Cron configuration (all environments)
+health_cron = System.get_env("CONTAINERS_HEALTH_CRON") || "*/2 * * * *"
+metrics_cron = System.get_env("CONTAINERS_METRICS_CRON") || "*/5 * * * *"
+metrics_cleanup_cron = System.get_env("CONTAINERS_METRICS_CLEANUP_CRON") || "0 1 * * *"
+cleanup_cron = System.get_env("CONTAINERS_CLEANUP_CRON") || "0 2 * * *"
+vacuum_cron = System.get_env("CONTAINERS_VACUUM_CRON") || "0 3 * * 0"
+
+metrics_retention_days =
+  System.get_env("CONTAINERS_METRICS_RETENTION_DAYS")
+  |> case do
+    nil -> 30
+    val -> String.to_integer(val)
+  end
+
+metrics_cleanup_batch =
+  System.get_env("CONTAINERS_METRICS_CLEANUP_BATCH_SIZE")
+  |> case do
+    nil -> 1000
+    val -> String.to_integer(val)
+  end
+
+config :kyozo, Oban,
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       {health_cron, Kyozo.Containers.Workers.ContainerHealthMonitor,
+        args: %{"batch_check" => true}},
+       {metrics_cron, Kyozo.Containers.Workers.MetricsCollector,
+        args: %{"batch_collection" => true}},
+       {metrics_cleanup_cron, Kyozo.Containers.Workers.MetricsCollector,
+        args: %{
+          "cleanup_old_metrics" => true,
+          "retention_days" => metrics_retention_days,
+          "batch_size" => metrics_cleanup_batch
+        }},
+       {cleanup_cron, Kyozo.Containers.Workers.CleanupWorker,
+        args: %{"type" => "full_cleanup"}},
+       {vacuum_cron, Kyozo.Containers.Workers.CleanupWorker,
+        args: %{"type" => "vacuum_analyze"}}
+     ]}
+  ]

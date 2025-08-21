@@ -244,8 +244,6 @@ export default defineConfig(({ command, mode }) => {
         compilerOptions: {
           css: 'external',
           dev: isDev,
-          // Enable optimizations in production
-          generate: isProd ? 'dom' : 'dom',
           hydratable: true
         },
         configFile: path.resolve(rootDir, 'svelte.config.js'),
@@ -253,12 +251,7 @@ export default defineConfig(({ command, mode }) => {
           typescript: true,
           // Add PostCSS processing
           // postcss: true
-        })],
-        // Hot reload options for development
-        hot: isDev ? {
-          preserveLocalState: true,
-          noPreserveStateKey: ['@hmr:reset', '@!hmr']
-        } : false
+        })]
       }),
       viteStaticCopy({
         targets: getBuildTargets(),

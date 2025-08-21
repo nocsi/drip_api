@@ -4,7 +4,7 @@ defmodule Kyozo.Containers.HealthCheck do
     domain: Kyozo.Containers,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshOban]
 
   @moduledoc """
   HealthCheck resource representing health monitoring results for service instances.
@@ -37,6 +37,25 @@ defmodule Kyozo.Containers.HealthCheck do
     custom_indexes do
       index [:service_instance_id, :checked_at]
       index [:service_instance_id, :status]
+    end
+  end
+
+  # AshOban triggers for health monitoring
+  oban do
+    triggers do
+      # Ensure triggers run for all tenants
+      list_tenants(fn -> Kyozo.Repo.all_tenants() end)
+
+      trigger :single_check do
+        action :create
+        queue(:health_monitoring)
+        worker_module_name(Kyozo.Containers.Workers.ContainerHealthMonitor)
+      end
+
+      trigger :batch_check do
+        action :create
+        queue(:health_monitoring)
+      end
     end
   end
 
@@ -165,10 +184,8 @@ defmodule Kyozo.Containers.HealthCheck do
   aggregates do
     count :total_checks, [:service_instance, :health_checks]
 
-    count :healthy_checks, [:service_instance, :health_checks],
-      filter: [status: :healthy]
+    count :healthy_checks, [:service_instance, :health_checks], filter: [status: :healthy]
 
-    count :unhealthy_checks, [:service_instance, :health_checks],
-      filter: [status: :unhealthy]
+    count :unhealthy_checks, [:service_instance, :health_checks], filter: [status: :unhealthy]
   end
 end

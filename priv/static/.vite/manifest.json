@@ -235,11 +235,11 @@
     "file": "assets/KaTeX_Typewriter-Regular.woff2",
     "src": "../../elim/node_modules/katex/dist/fonts/KaTeX_Typewriter-Regular.woff2"
   },
-  "_WorkspacesApp-Dee4VrAh.js": {
-    "file": "assets/WorkspacesApp-Dee4VrAh.js",
+  "_WorkspacesApp-BR9RE1d5.js": {
+    "file": "assets/WorkspacesApp-BR9RE1d5.js",
     "name": "WorkspacesApp",
     "imports": [
-      "_svelte-a5d9Wcoc.js"
+      "_svelte-Bg7et72j.js"
     ],
     "css": [
       "assets/WorkspacesApp.css"
@@ -249,16 +249,16 @@
     "file": "assets/WorkspacesApp.css",
     "src": "_WorkspacesApp.css"
   },
-  "_svelte-a5d9Wcoc.js": {
-    "file": "assets/svelte-a5d9Wcoc.js",
+  "_svelte-Bg7et72j.js": {
+    "file": "assets/svelte-Bg7et72j.js",
     "name": "svelte"
   },
-  "_switch-q1C1FGGg.js": {
-    "file": "assets/switch-q1C1FGGg.js",
+  "_switch-DN0tZnTr.js": {
+    "file": "assets/switch-DN0tZnTr.js",
     "name": "switch",
     "imports": [
-      "_svelte-a5d9Wcoc.js",
-      "_WorkspacesApp-Dee4VrAh.js"
+      "_svelte-Bg7et72j.js",
+      "_WorkspacesApp-BR9RE1d5.js"
     ],
     "css": [
       "assets/switch.css"
@@ -334,15 +334,15 @@
     "name": "vendor"
   },
   "js/app.ts": {
-    "file": "assets/app-B_aqVZOy.js",
+    "file": "assets/app-CPGTmSmV.js",
     "name": "app",
     "src": "js/app.ts",
     "isEntry": true,
     "imports": [
-      "_switch-q1C1FGGg.js",
-      "_WorkspacesApp-Dee4VrAh.js",
+      "_switch-DN0tZnTr.js",
+      "_WorkspacesApp-BR9RE1d5.js",
       "_vendor-DckBBQJs.js",
-      "_svelte-a5d9Wcoc.js",
+      "_svelte-Bg7et72j.js",
       "js/hooks/svelte_hooks.js",
       "js/hooks/useRegisterServiceWorker.ts"
     ],
@@ -357,13 +357,13 @@
     "isEntry": true
   },
   "js/hooks/svelte_hooks.js": {
-    "file": "assets/svelte_hooks-GSJDTWWq.js",
+    "file": "assets/svelte_hooks-BDZiznaF.js",
     "name": "svelte_hooks",
     "src": "js/hooks/svelte_hooks.js",
     "isEntry": true,
     "imports": [
-      "_WorkspacesApp-Dee4VrAh.js",
-      "_svelte-a5d9Wcoc.js"
+      "_WorkspacesApp-BR9RE1d5.js",
+      "_svelte-Bg7et72j.js"
     ]
   },
   "js/hooks/tiptap_commands.js": {
@@ -385,14 +385,14 @@
     "isEntry": true
   },
   "js/server.ts": {
-    "file": "assets/server-DF54a_RY.js",
+    "file": "assets/server-CG1TcDIF.js",
     "name": "server",
     "src": "js/server.ts",
     "isEntry": true,
     "imports": [
-      "_switch-q1C1FGGg.js",
-      "_WorkspacesApp-Dee4VrAh.js",
-      "_svelte-a5d9Wcoc.js"
+      "_switch-DN0tZnTr.js",
+      "_WorkspacesApp-BR9RE1d5.js",
+      "_svelte-Bg7et72j.js"
     ]
   },
   "js/trackSort.ts": {

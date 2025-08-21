@@ -26,14 +26,17 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
   # failures before opening
   @circuit_breaker_threshold 5
 
+  defp job_tenant(%Oban.Job{args: args, meta: meta}), do: (args["tenant"] || (meta && meta["tenant"]))
+
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"service_instance_id" => service_id} = args}) do
+  def perform(%Oban.Job{args: %{"service_instance_id" => service_id} = args} = job) do
+    tenant = job_tenant(job)
     Logger.debug("Starting health check for service", service_instance_id: service_id)
 
-    with {:ok, service} <- get_service_instance(service_id),
+    with {:ok, service} <- get_service_instance(service_id, tenant),
          {:ok, health_status} <- check_service_health(service, args),
-         {:ok, updated_service} <- update_service_health(service, health_status),
-         {:ok, _health_record} <- record_health_check(updated_service, health_status) do
+         {:ok, updated_service} <- update_service_health(service, health_status, tenant),
+         {:ok, _health_record} <- record_health_check(updated_service, health_status, tenant) do
       Logger.debug("Health check completed",
         service_instance_id: service_id,
         status: health_status.status
@@ -53,22 +56,32 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
         )
 
         # Record failed health check
-        record_failed_health_check(service_id, reason)
+        record_failed_health_check(service_id, reason, tenant)
         error
     end
   end
 
-  def perform(%Oban.Job{args: %{"batch_check" => true} = args}) do
+  def perform(%Oban.Job{args: %{"batch_check" => true} = args} = job) do
+    tenant = job_tenant(job)
     Logger.info("Starting batch health check")
 
     limit = args["limit"] || 50
 
-    with {:ok, services} <- get_active_services(limit),
-         :ok <- process_batch_health_checks(services, args) do
-      Logger.info("Batch health check completed", services_checked: length(services))
-      {:ok, %{services_checked: length(services)}}
+    # If no tenant provided, fan out per-tenant batch checks
+    if is_nil(tenant) do
+      tenants = Kyozo.Repo.all_tenants()
+      Enum.each(tenants, fn t ->
+        AshOban.schedule(Kyozo.Containers.HealthCheck, :batch_check, Map.put(args, "tenant", t), tenant: t)
+      end)
+      {:ok, %{enqueued_tenants: length(tenants)}}
     else
-      error -> error
+      with {:ok, services} <- get_active_services(limit, tenant),
+         :ok <- process_batch_health_checks(services, args, tenant) do
+        Logger.info("Batch health check completed", services_checked: length(services))
+        {:ok, %{services_checked: length(services)}}
+      else
+        error -> error
+      end
     end
   end
 
@@ -81,8 +94,6 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
   Enqueue a health check for a specific service instance.
   """
   def enqueue_single_check(service_instance_id, opts \\ []) do
-    priority = Keyword.get(opts, :priority, 0)
-
     args = %{
       "service_instance_id" => service_instance_id,
       "check_type" => Keyword.get(opts, :check_type, "standard"),
@@ -90,18 +101,13 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.HealthCheck, :single_check, args, opts)
   end
 
   @doc """
   Enqueue a batch health check for all active services.
   """
   def enqueue_batch_check(opts \\ []) do
-    # Lower priority for batch jobs
-    priority = Keyword.get(opts, :priority, 5)
-
     args = %{
       "batch_check" => true,
       "limit" => Keyword.get(opts, :limit, 100),
@@ -110,9 +116,7 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.HealthCheck, :batch_check, args, opts)
   end
 
   @doc """
@@ -133,21 +137,22 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
 
   # Private Functions
 
-  defp get_service_instance(service_id) do
-    case Containers.get_service_instance(service_id) do
+  defp get_service_instance(service_id, tenant) do
+    case Containers.get_service_instance(service_id, tenant: tenant) do
       nil -> {:error, :service_not_found}
       service -> {:ok, service}
     end
   end
 
-  defp get_active_services(limit) do
+  defp get_active_services(limit, tenant) do
     # Get services that are running or deploying
     services =
       Containers.list_service_instances(
         filters: %{
           container_status: ["running", "deploying", "starting"]
         },
-        limit: limit
+        limit: limit,
+        tenant: tenant
       )
 
     {:ok, services}
@@ -341,7 +346,7 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
     end
   end
 
-  defp update_service_health(service, health_status) do
+  defp update_service_health(service, health_status, tenant) do
     updates = %{
       health_status: health_status.status,
       last_health_check_at: health_status.checked_at,
@@ -349,7 +354,7 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
       memory_usage_mb: health_status.memory_usage_mb
     }
 
-    case Containers.update_service_instance(service, updates) do
+    case Containers.update_service_instance(service, updates, tenant: tenant) do
       {:ok, updated_service} ->
         # Successful operation
         reset_circuit_breaker()
@@ -360,7 +365,7 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
     end
   end
 
-  defp record_health_check(service, health_status) do
+  defp record_health_check(service, health_status, tenant) do
     attrs = %{
       service_instance_id: service.id,
       status: health_status.status,
@@ -377,10 +382,10 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
       checked_at: health_status.checked_at
     }
 
-    Containers.create_health_check(attrs)
+    Containers.create_health_check(attrs, tenant: tenant)
   end
 
-  defp record_failed_health_check(service_id, reason) do
+  defp record_failed_health_check(service_id, reason, tenant) do
     attrs = %{
       service_instance_id: service_id,
       status: "failed",
@@ -392,10 +397,10 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
       }
     }
 
-    Containers.create_health_check(attrs)
+    Containers.create_health_check(attrs, tenant: tenant)
   end
 
-  defp process_batch_health_checks(services, args) do
+  defp process_batch_health_checks(services, args, tenant) do
     # Process in smaller batches to avoid overwhelming the system
     batch_size = 10
 
@@ -406,15 +411,15 @@ defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
       Enum.each(batch, fn service ->
         case check_service_health(service, args) do
           {:ok, health_status} ->
-            update_service_health(service, health_status)
-            record_health_check(service, health_status)
+            update_service_health(service, health_status, tenant)
+            record_health_check(service, health_status, tenant)
 
             if health_status.status != "healthy" do
               maybe_trigger_alert(service, health_status)
             end
 
           {:error, reason} ->
-            record_failed_health_check(service.id, reason)
+            record_failed_health_check(service.id, reason, tenant)
         end
 
         # Small delay between checks

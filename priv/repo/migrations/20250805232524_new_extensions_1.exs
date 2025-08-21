@@ -141,6 +141,33 @@ defmodule Kyozo.Repo.Migrations.NewExtensions1 do
 
     execute("CREATE EXTENSION IF NOT EXISTS \"pg_trgm\"")
     execute("CREATE EXTENSION IF NOT EXISTS \"citext\"")
+    execute("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
+    # Only attempt to install ash-uuid if the server actually has it available
+    execute("""
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM pg_available_extensions WHERE name = 'ash-uuid'
+      ) THEN
+        EXECUTE 'CREATE EXTENSION IF NOT EXISTS "ash-uuid"';
+      ELSE
+        RAISE NOTICE 'Extension ash-uuid not available on this server; skipping';
+      END IF;
+    END
+    $$;
+    """)
+
+    # Create ash schema and the uuidv7.generate function that Ash expects
+    execute("CREATE SCHEMA IF NOT EXISTS ash")
+
+    execute("""
+    CREATE OR REPLACE FUNCTION ash_uuidv7_generate()
+    RETURNS UUID
+    AS 'SELECT uuid_generate_v7()'
+    LANGUAGE SQL
+    SET search_path = ''
+    VOLATILE;
+    """)
   end
 
   def down do

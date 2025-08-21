@@ -29,6 +29,10 @@ defmodule KyozoWeb.Endpoint do
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
+  if Code.ensure_loaded?(Tidewave) do
+    plug Tidewave
+  end
+
   if code_reloading? do
     plug AshAi.Mcp.Dev,
       # For many tools, you will need to set the `protocol_version_statement` to the older version.

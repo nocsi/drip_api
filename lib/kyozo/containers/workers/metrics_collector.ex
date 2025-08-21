@@ -24,13 +24,16 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
   @high_frequency_interval 10_000      # 10 seconds for critical services
   @batch_size 20                       # Process metrics in batches
 
+  defp job_tenant(%Oban.Job{args: args, meta: meta}), do: (args["tenant"] || (meta && meta["tenant"]))
+
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"service_instance_id" => service_id} = args}) do
+  def perform(%Oban.Job{args: %{"service_instance_id" => service_id} = args} = job) do
+    tenant = job_tenant(job)
     Logger.debug("Collecting metrics for service", service_instance_id: service_id)
 
-    with {:ok, service} <- get_service_instance(service_id),
+    with {:ok, service} <- get_service_instance(service_id, tenant),
          {:ok, metrics} <- collect_service_metrics(service, args),
-         {:ok, _metric_record} <- store_metrics(service, metrics),
+         {:ok, _metric_record} <- store_metrics(service, metrics, tenant),
          :ok <- check_metric_thresholds(service, metrics) do
 
       Logger.debug("Metrics collected successfully",
@@ -50,43 +53,61 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
     end
   end
 
-  def perform(%Oban.Job{args: %{"batch_collection" => true} = args}) do
+  def perform(%Oban.Job{args: %{"batch_collection" => true} = args} = job) do
+    tenant = job_tenant(job)
     Logger.info("Starting batch metrics collection")
 
     limit = args["limit"] || @batch_size
     collection_type = args["collection_type"] || "standard"
 
-    with {:ok, services} <- get_services_for_metrics_collection(limit, collection_type),
-         :ok <- process_batch_metrics_collection(services, args),
-         {:ok, aggregated} <- aggregate_system_metrics(services) do
-
-      Logger.info("Batch metrics collection completed",
-        services_processed: length(services),
-        system_cpu_avg: aggregated.avg_cpu_usage,
-        system_memory_total: aggregated.total_memory_usage
-      )
-
-      {:ok, %{services_processed: length(services), aggregated_metrics: aggregated}}
+    if is_nil(tenant) do
+      tenants = Kyozo.Repo.all_tenants()
+      Enum.each(tenants, fn t ->
+        AshOban.schedule(Kyozo.Containers.ServiceMetric, :batch_collection, Map.put(args, "tenant", t), tenant: t)
+      end)
+      {:ok, %{enqueued_tenants: length(tenants)}}
     else
-      error -> error
+      with {:ok, services} <- get_services_for_metrics_collection(limit, collection_type, tenant),
+           :ok <- process_batch_metrics_collection(services, args, tenant),
+           {:ok, aggregated} <- aggregate_system_metrics(services) do
+
+        Logger.info("Batch metrics collection completed",
+          services_processed: length(services),
+          system_cpu_avg: aggregated.avg_cpu_usage,
+          system_memory_total: aggregated.total_memory_usage
+        )
+
+        {:ok, %{services_processed: length(services), aggregated_metrics: aggregated}}
+      else
+        error -> error
+      end
     end
   end
 
-  def perform(%Oban.Job{args: %{"cleanup_old_metrics" => true} = args}) do
+  def perform(%Oban.Job{args: %{"cleanup_old_metrics" => true} = args} = job) do
+    tenant = job_tenant(job)
     Logger.info("Starting metrics cleanup")
 
     retention_days = args["retention_days"] || 30
     batch_size = args["batch_size"] || 1000
 
-    with {:ok, cleanup_result} <- cleanup_old_metrics(retention_days, batch_size) do
-      Logger.info("Metrics cleanup completed",
-        records_deleted: cleanup_result.deleted_count,
-        retention_days: retention_days
-      )
-
-      {:ok, cleanup_result}
+    if is_nil(tenant) do
+      tenants = Kyozo.Repo.all_tenants()
+      Enum.each(tenants, fn t ->
+        AshOban.schedule(Kyozo.Containers.ServiceMetric, :cleanup, Map.put(args, "tenant", t), tenant: t)
+      end)
+      {:ok, %{enqueued_tenants: length(tenants)}}
     else
-      error -> error
+      with {:ok, cleanup_result} <- cleanup_old_metrics(retention_days, batch_size, tenant) do
+        Logger.info("Metrics cleanup completed",
+          records_deleted: cleanup_result.deleted_count,
+          retention_days: retention_days
+        )
+
+        {:ok, cleanup_result}
+      else
+        error -> error
+      end
     end
   end
 
@@ -99,7 +120,6 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
   Enqueue metrics collection for a specific service instance.
   """
   def enqueue_service_metrics(service_instance_id, opts \\ []) do
-    priority = Keyword.get(opts, :priority, 3)
     collection_type = Keyword.get(opts, :collection_type, "standard")
 
     args = %{
@@ -109,16 +129,13 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.ServiceMetric, :collect_single, args, opts)
   end
 
   @doc """
   Enqueue batch metrics collection for all active services.
   """
   def enqueue_batch_collection(opts \\ []) do
-    priority = Keyword.get(opts, :priority, 5)
     collection_type = Keyword.get(opts, :collection_type, "standard")
 
     args = %{
@@ -129,17 +146,13 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.ServiceMetric, :batch_collection, args, opts)
   end
 
   @doc """
   Schedule periodic metrics cleanup.
   """
   def enqueue_metrics_cleanup(opts \\ []) do
-    priority = Keyword.get(opts, :priority, 8)
-
     args = %{
       "cleanup_old_metrics" => true,
       "retention_days" => Keyword.get(opts, :retention_days, 30),
@@ -147,21 +160,19 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.ServiceMetric, :cleanup, args, opts)
   end
 
   # Private Functions
 
-  defp get_service_instance(service_id) do
-    case Containers.get_service_instance(service_id) do
+  defp get_service_instance(service_id, tenant) do
+    case Containers.get_service_instance(service_id, tenant: tenant) do
       nil -> {:error, :service_not_found}
       service -> {:ok, service}
     end
   end
 
-  defp get_services_for_metrics_collection(limit, collection_type) do
+  defp get_services_for_metrics_collection(limit, collection_type, tenant) do
     filters = case collection_type do
       "high_frequency" ->
         %{container_status: ["running"], service_type: ["web_app", "api_service"]}
@@ -171,7 +182,7 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
         %{container_status: ["running"]}
     end
 
-    services = Containers.list_service_instances(filters: filters, limit: limit)
+    services = Containers.list_service_instances(filters: filters, limit: limit, tenant: tenant)
     {:ok, services}
   end
 
@@ -358,7 +369,7 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
     Float.round(overall_score, 2)
   end
 
-  defp store_metrics(service, metrics) do
+  defp store_metrics(service, metrics, tenant) do
     attrs = %{
       service_instance_id: service.id,
       workspace_id: service.workspace_id,
@@ -379,7 +390,7 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
       metadata: metrics.collection_metadata
     }
 
-    Containers.create_service_metric(attrs)
+    Containers.create_service_metric(attrs, tenant: tenant)
   end
 
   defp check_metric_thresholds(service, metrics) do
@@ -436,7 +447,7 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
     }
   end
 
-  defp process_batch_metrics_collection(services, args) do
+  defp process_batch_metrics_collection(services, args, tenant) do
     # Process in smaller chunks to avoid overwhelming the system
     chunk_size = 5
 
@@ -447,9 +458,9 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
       chunk
       |> Enum.map(fn service ->
         Task.async(fn ->
-          case collect_service_metrics(service, args) do
-            {:ok, metrics} ->
-              store_metrics(service, metrics)
+        case collect_service_metrics(service, args) do
+          {:ok, metrics} ->
+            store_metrics(service, metrics, tenant)
               check_metric_thresholds(service, metrics)
               {:ok, service.id}
 
@@ -496,10 +507,10 @@ defmodule Kyozo.Containers.Workers.MetricsCollector do
     {:ok, aggregated}
   end
 
-  defp cleanup_old_metrics(retention_days, batch_size) do
+  defp cleanup_old_metrics(retention_days, batch_size, tenant) do
     cutoff_date = DateTime.utc_now() |> DateTime.add(-retention_days, :day)
 
-    deleted_count = Containers.delete_old_service_metrics(cutoff_date, batch_size)
+    deleted_count = Containers.delete_old_service_metrics(cutoff_date, batch_size, tenant: tenant)
 
     {:ok, %{deleted_count: deleted_count, cutoff_date: cutoff_date}}
   end

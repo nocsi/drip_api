@@ -4,6 +4,7 @@ defmodule KyozoWeb.AshJsonApiRouter do
       Kyozo.Accounts,
       # Kyozo.Test,
       # Kyozo.Debug,
-      Kyozo.Workspaces
+      Kyozo.Workspaces,
+      Kyozo.Containers
     ]
 end

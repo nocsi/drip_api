@@ -19,12 +19,17 @@ defmodule Kyozo.Containers.Workers.TopologyAnalysisWorker do
   alias Kyozo.{Containers, Workspaces, AI}
   alias Kyozo.Containers.TopologyDetection
 
+  defp job_tenant(%Oban.Job{args: args, meta: meta}) do
+    args["tenant"] || (meta && meta["tenant"])
+  end
+
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"topology_detection_id" => topology_id} = args}) do
+  def perform(%Oban.Job{args: %{"topology_detection_id" => topology_id} = args} = job) do
+    tenant = job_tenant(job)
     Logger.info("Starting topology analysis", topology_id: topology_id)
 
-    with {:ok, detection} <- get_topology_detection(topology_id),
-         {:ok, workspace} <- get_workspace(detection.workspace_id),
+    with {:ok, detection} <- get_topology_detection(topology_id, tenant),
+         {:ok, workspace} <- get_workspace(detection.workspace_id, tenant),
          {:ok, updated_detection} <- mark_analyzing(detection),
          {:ok, analysis_result} <- analyze_workspace_topology(workspace, args),
          {:ok, final_detection} <- complete_analysis(updated_detection, analysis_result) do
@@ -44,15 +49,16 @@ defmodule Kyozo.Containers.Workers.TopologyAnalysisWorker do
           reason: reason
         )
 
-        mark_failed(topology_id, reason)
+        mark_failed(topology_id, reason, tenant)
         error
     end
   end
 
-  def perform(%Oban.Job{args: %{"workspace_id" => workspace_id} = args}) do
+  def perform(%Oban.Job{args: %{"workspace_id" => workspace_id} = args} = job) do
+    tenant = job_tenant(job)
     Logger.info("Starting new topology analysis for workspace", workspace_id: workspace_id)
 
-    with {:ok, detection} <- create_topology_detection(workspace_id, args),
+    with {:ok, detection} <- create_topology_detection(workspace_id, args, tenant),
          {:ok, _result} <-
            perform(%Oban.Job{args: Map.put(args, "topology_detection_id", detection.id)}) do
       {:ok, detection}
@@ -70,7 +76,6 @@ defmodule Kyozo.Containers.Workers.TopologyAnalysisWorker do
   Enqueue a topology analysis job for a workspace.
   """
   def enqueue(workspace_id, opts \\ []) do
-    priority = Keyword.get(opts, :priority, 0)
     analysis_depth = Keyword.get(opts, :analysis_depth, "standard")
 
     args = %{
@@ -80,28 +85,26 @@ defmodule Kyozo.Containers.Workers.TopologyAnalysisWorker do
       "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    %{args: args}
-    |> new(priority: priority)
-    |> Oban.insert()
+    AshOban.schedule(Kyozo.Containers.TopologyDetection, :analyze, args, opts)
   end
 
   # Private Functions
 
-  defp get_topology_detection(topology_id) do
-    case Containers.get_topology_detection(topology_id) do
+  defp get_topology_detection(topology_id, tenant) do
+    case Containers.get_topology_detection(topology_id, tenant: tenant) do
       nil -> {:error, :not_found}
       detection -> {:ok, detection}
     end
   end
 
-  defp get_workspace(workspace_id) do
-    case Workspaces.get_workspace(workspace_id) do
+  defp get_workspace(workspace_id, tenant) do
+    case Workspaces.get_workspace(workspace_id, tenant: tenant) do
       nil -> {:error, :workspace_not_found}
       workspace -> {:ok, workspace}
     end
   end
 
-  defp create_topology_detection(workspace_id, args) do
+  defp create_topology_detection(workspace_id, args, tenant) do
     attrs = %{
       workspace_id: workspace_id,
       analysis_depth: args["analysis_depth"] || "standard",
@@ -117,7 +120,7 @@ defmodule Kyozo.Containers.Workers.TopologyAnalysisWorker do
       }
     }
 
-    Containers.create_topology_detection(attrs)
+    Containers.create_topology_detection(attrs, tenant: tenant)
   end
 
   defp mark_analyzing(detection) do
@@ -465,8 +468,8 @@ defmodule Kyozo.Containers.Workers.TopologyAnalysisWorker do
     Containers.update_topology_detection(detection, updates)
   end
 
-  defp mark_failed(topology_id, reason) do
-    case get_topology_detection(topology_id) do
+  defp mark_failed(topology_id, reason, tenant) do
+    case get_topology_detection(topology_id, tenant) do
       {:ok, detection} ->
         updates = %{
           status: "failed",

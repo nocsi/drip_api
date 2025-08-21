@@ -4,7 +4,7 @@ defmodule Kyozo.Containers.DeploymentEvent do
     domain: Kyozo.Containers,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshJsonApi.Resource]
+    extensions: [AshJsonApi.Resource, AshEvents.Events]
 
   @moduledoc """
   DeploymentEvent resource representing audit trail of container operations.
@@ -41,6 +41,15 @@ defmodule Kyozo.Containers.DeploymentEvent do
     end
   end
 
+  # Emit AshEvents to the central event log when actions run
+  events do
+    # Use the shared event log resource
+    event_log(Kyozo.Events.Event)
+
+    # Track versions for actions that produce events (optional, defaults to 1)
+    current_action_versions(create: 1, read: 1)
+  end
+
   actions do
     defaults [:read]
 
@@ -59,6 +68,7 @@ defmodule Kyozo.Containers.DeploymentEvent do
 
       change relate_actor(:triggered_by)
       change set_attribute(:occurred_at, &DateTime.utc_now/0)
+      change {Kyozo.Containers.Changes.SetTeamFromServiceInstance, []}
     end
 
     read :for_service_instance do
@@ -100,8 +110,19 @@ defmodule Kyozo.Containers.DeploymentEvent do
     validate {Kyozo.Containers.Validations.ValidateEventData, []}
   end
 
+  multitenancy do
+    strategy :attribute
+    attribute :team_id
+  end
+
   attributes do
     uuid_v7_primary_key :id
+
+    attribute :team_id, :uuid do
+      allow_nil? false
+      public? true
+      description "Team that owns this deployment event"
+    end
 
     attribute :event_type, :atom do
       constraints one_of: [
@@ -157,6 +178,12 @@ defmodule Kyozo.Containers.DeploymentEvent do
 
     belongs_to :triggered_by, Kyozo.Accounts.User do
       public? true
+    end
+
+    belongs_to :team, Kyozo.Accounts.Team do
+      allow_nil? false
+      public? true
+      attribute_writable? false
     end
   end
 
