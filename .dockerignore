@@ -1,0 +1,129 @@
+# Git and version control
+.git/
+.gitignore
+.github/
+
+# Development files
+.claude/
+.elixir-tools/
+*.md
+CLAUDE.md
+*.log
+erl_crash.dump
+
+# Build artifacts
+_build/
+deps/
+doc/
+.mix/
+
+# Assets build artifacts
+assets/node_modules/
+assets/dist/
+assets/.svelte-kit/
+priv/static/assets/
+priv/static/cache_manifest.json
+
+# Development and test files
+.formatter.exs
+.credo.exs
+.dialyzer_ignore.exs
+test/
+examples/
+livebooks/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+phoenix.log
+server.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Coverage reports
+cover/
+coverage/
+.nyc_output/
+
+# Docker related
+Dockerfile.dev
+docker-compose*.yml
+.dockerignore
+
+# Package manager lock files (except the ones we need)
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Documentation
+docs/
+specifications/
+page.html
+
+# Native compilation artifacts
+native/target/
+native/**/target/
+*.so
+*.dll
+
+# Elixir specific
+.elixir_ls/
+.lexical/
+
+# Build tools
+scripts/
+.tool-versions
+.igniter.exs
+
+# MCP and AI tools
+.mcp.json
+MANUAL_MCP_SETUP.md
+MCP_CONNECTION_GUIDE.md
+
+# Analysis and performance files
+*ANALYSIS.md
+*GUIDE.md
+*REPORT.md
+*PROGRESS.md
+*EVALUATION.md
+PERFORMANCE_BOOST_AVAILABLE.md
+PHASE_1_COMPLETE.md
+
+# Workspace files
+pnpm-workspace.yaml
+livebook.livemd
+
+# Development containers
+Dockerfile.dev

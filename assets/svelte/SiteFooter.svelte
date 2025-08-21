@@ -40,10 +40,14 @@
         </p>
         <div class="flex space-x-4">
           <Button variant="ghost" size="icon" class="text-gray-400 hover:text-white">
-            <Github class="h-5 w-5" />
+            <a href="https://github.com/nocsi">
+              <Github class="h-5 w-5" />
+            </a>
           </Button>
           <Button variant="ghost" size="icon" class="text-gray-400 hover:text-white">
-            <Twitter class="h-5 w-5" />
+            <a href="https://x.com/nocsi_">
+              <Twitter class="h-5 w-5" />
+            </a>
           </Button>
         </div>
       </div>
@@ -53,8 +57,8 @@
         <h3 class="text-white font-semibold mb-4">Product</h3>
         <ul class="space-y-3 text-gray-300">
           <li><a href="/#features" class="hover:text-white transition-colors">Features</a></li>
-          <li><a href="/#services" class="hover:text-white transition-colors">Services</a></li>
           <li><a href="/#architecture" class="hover:text-white transition-colors">Architecture</a></li>
+          <li><a href="/#services" class="hover:text-white transition-colors">Services</a></li>
           <li><a href="/editor" class="hover:text-white transition-colors">Editor</a></li>
         </ul>
       </div>
@@ -65,7 +69,6 @@
         <ul class="space-y-3 text-gray-300">
           <li><a href="#about" class="hover:text-white transition-colors">About</a></li>
           <li><a href="#blog" class="hover:text-white transition-colors">Blog</a></li>
-          <li><a href="#careers" class="hover:text-white transition-colors">Careers</a></li>
           <li><a href="#contact" class="hover:text-white transition-colors">Contact</a></li>
         </ul>
       </div>
@@ -99,7 +102,7 @@
     <!-- Copyright -->
     <div class="border-t border-slate-800 pt-8 flex flex-col sm:flex-row justify-between items-center">
       <p class="text-gray-400 text-sm">
-        © 2025 Kyozo Store. All rights reserved.
+        © 2025 NOCSI. All rights reserved.
       </p>
       <div class="flex space-x-6 mt-4 sm:mt-0">
         <a href="#privacy" class="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>

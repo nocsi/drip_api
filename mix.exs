@@ -89,7 +89,8 @@ defmodule Kyozo.MixProject do
       {:gen_smtp, "~> 1.3"},
       {:mail, ">= 0.0.0"},
       {:yaml_elixir, "~> 2.11"},
-      {:tidewave, "~> 0.4", only: :dev}
+      {:tidewave, "~> 0.4", only: :dev},
+      {:markdown_ld, "~> 0.3.0"}
     ]
   end
 

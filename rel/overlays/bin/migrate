@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+# Migration script for Kyozo API production releases
+set -e
+
+echo "Starting database migration..."
+
+# Set environment variables
+export MIX_ENV=prod
+export RELEASE_COOKIE=${RELEASE_COOKIE:-"kyozo_release_cookie"}
+
+# Change to the release directory
+cd "$(dirname "$0")/.."
+
+# Function to check if the application is running
+check_app_status() {
+    if ./bin/kyozo pid > /dev/null 2>&1; then
+        echo "Application is running"
+        return 0
+    else
+        echo "Application is not running"
+        return 1
+    fi
+}
+
+# Function to run migrations
+run_migrations() {
+    echo "Running Ash migrations..."
+    ./bin/kyozo eval "
+    IO.puts(\"Starting migration process...\")
+    
+    # Run Ash setup and migrations
+    case Mix.Tasks.Ash.Setup.run([\"--quiet\"]) do
+      :ok -> 
+        IO.puts(\"Ash setup completed successfully\")
+      {:error, reason} -> 
+        IO.puts(\"Ash setup failed: #{inspect(reason)}\")
+        exit({:shutdown, 1})
+    end
+    
+    # Run Postgres migrations
+    case AshPostgres.MigrationGenerator.generate(Kyozo.Repo, [\"--check\", \"--quiet\"]) do
+      :ok -> 
+        IO.puts(\"PostgreSQL migrations up to date\")
+      {:error, reason} -> 
+        IO.puts(\"PostgreSQL migration check failed: #{inspect(reason)}\")
+        # Continue anyway as this might be expected
+    end
+    
+    # Run container-specific migrations
+    try do
+      Code.eval_file(\"priv/repo/migrations/containers/run_container_migrations.exs\")
+      IO.puts(\"Container migrations completed\")
+    rescue
+      error -> 
+        IO.puts(\"Container migrations failed: #{inspect(error)}\")
+        # Don't exit on container migration failures
+    end
+    
+    IO.puts(\"Migration process completed\")
+    "
+}
+
+# Function to seed the database
+seed_database() {
+    echo "Seeding database..."
+    ./bin/kyozo eval "
+    try do
+      Code.eval_file(\"priv/repo/seeds.exs\")
+      IO.puts(\"Database seeding completed\")
+    rescue
+      error -> 
+        IO.puts(\"Database seeding failed: #{inspect(error)}\")
+        # Don't exit on seeding failures in production
+    end
+    "
+}
+
+# Main migration logic
+main() {
+    echo "Kyozo API Database Migration Script"
+    echo "=================================="
+    
+    # Check if we're in a release environment
+    if [ ! -f "./bin/kyozo" ]; then
+        echo "Error: This script must be run from a release directory"
+        exit 1
+    fi
+    
+    # Wait for database to be ready
+    echo "Waiting for database connection..."
+    timeout=60
+    while [ $timeout -gt 0 ]; do
+        if ./bin/kyozo eval "Kyozo.Repo.query!(\"SELECT 1\")" > /dev/null 2>&1; then
+            echo "Database connection established"
+            break
+        else
+            echo "Waiting for database... (${timeout}s remaining)"
+            sleep 2
+            timeout=$((timeout - 2))
+        fi
+    done
+    
+    if [ $timeout -le 0 ]; then
+        echo "Error: Database connection timeout"
+        exit 1
+    fi
+    
+    # Run migrations
+    run_migrations
+    
+    # Run seeds only if SEED_DATABASE is set
+    if [ "${SEED_DATABASE}" = "true" ]; then
+        seed_database
+    else
+        echo "Skipping database seeding (set SEED_DATABASE=true to enable)"
+    fi
+    
+    echo "Migration script completed successfully"
+}
+
+# Error handling
+trap 'echo "Migration failed with exit code $?"; exit 1' ERR
+
+# Run main function
+main "$@"

@@ -9,9 +9,8 @@ kill_timeout = "30s"
   auto_rollback = true
 
 [build]
-  # Use build secrets for sensitive build-time variables
-  # [build.args]
-  #   BUILD_SECRET = "secret_value"
+  # Use Docker for consistent builds
+  dockerfile = "Dockerfile"
 
 [env]
   MIX_ENV = "prod"
@@ -23,19 +22,39 @@ kill_timeout = "30s"
   RELEASE_DISTRIBUTION = "name"
   RELEASE_NODE = "kyozo@fly-app-kyozo-api.internal"
 
+  
+  # Oban configuration
+  OBAN_QUEUES = "default:10,containers:20,metrics:5,cleanup:2"
+  
+  # Container system configuration
+  CONTAINERS_HEALTH_CRON = "*/2 * * * *"
+  CONTAINERS_METRICS_CRON = "*/5 * * * *"
+  CONTAINERS_METRICS_CLEANUP_CRON = "0 1 * * *"
+  CONTAINERS_CLEANUP_CRON = "0 2 * * *"
+  CONTAINERS_VACUUM_CRON = "0 3 * * 0"
+  CONTAINERS_METRICS_RETENTION_DAYS = "30"
+  CONTAINERS_METRICS_CLEANUP_BATCH_SIZE = "1000"
+  
+  # Performance tuning
+  ERL_MAX_PORTS = "65536"
+  POOL_SIZE = "20"
+  
+  # Logging
+  LOG_LEVEL = "info"
+
 [http_service]
   internal_port = 4000
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = false
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
   max_machines_running = 10
   processes = ["app"]
 
   [http_service.concurrency]
     type = "connections"
     hard_limit = 1000
-    soft_limit = 1000
+    soft_limit = 800
 
   [[http_service.checks]]
     grace_period = "30s"
@@ -44,34 +63,51 @@ kill_timeout = "30s"
     timeout = "10s"
     path = "/api/health"
     protocol = "http"
-    headers = {}
+    headers = { "User-Agent" = "Fly-Health-Check" }
 
-# Virtual machine configuration
+  [[http_service.checks]]
+    grace_period = "45s"
+    interval = "30s"
+    method = "GET"
+    timeout = "15s"
+    path = "/api/health/deep"
+    protocol = "http"
+    headers = { "User-Agent" = "Fly-Deep-Health-Check" }
+
+# Virtual machine configuration with autoscaling
 [[vm]]
-  memory = "1gb"
+  memory = "2gb"
   cpu_kind = "shared"
-  cpus = 1
+  cpus = 2
 
 # Deploy configuration
 [deploy]
   release_command = "/app/bin/migrate"
   strategy = "rolling"
+  wait_timeout = "5m"
 
 # Static file serving
 [[statics]]
   guest_path = "/app/lib/kyozo-*/priv/static"
   url_prefix = "/static/"
 
-# Persistent storage
+# Persistent storage volumes
 [[mounts]]
   destination = "/app/tmp"
   source = "kyozo_tmp"
+  snapshot_retention = 7
 
 [[mounts]]
   destination = "/app/uploads"
   source = "kyozo_uploads"
+  snapshot_retention = 30
 
-# Process groups
+[[mounts]]
+  destination = "/app/logs"
+  source = "kyozo_logs"
+  snapshot_retention = 14
+
+# Process groups for better resource allocation
 [processes]
   app = "/app/bin/server"
 
@@ -80,18 +116,94 @@ kill_timeout = "30s"
   port = 9091
   path = "/metrics"
 
-# Secrets (configure via fly secrets set)
-# DATABASE_URL - PostgreSQL connection string
-# SECRET_KEY_BASE - Phoenix secret key base
-# LIVE_VIEW_SIGNING_SALT - LiveView signing salt
-# GUARDIAN_SECRET_KEY - Guardian JWT secret
-# OAUTH_GITHUB_CLIENT_ID - GitHub OAuth client ID
-# OAUTH_GITHUB_CLIENT_SECRET - GitHub OAuth client secret
-# OAUTH_GOOGLE_CLIENT_ID - Google OAuth client ID
-# OAUTH_GOOGLE_CLIENT_SECRET - Google OAuth client secret
+# Autoscaling configuration
+[scaling]
+  min_machines_running = 1
+  max_machines_running = 10
 
-# Environment-specific overrides
-# Uncomment and modify as needed for different environments
-# [[env]]
-#   NODE_ENV = "production"
-#   LOG_LEVEL = "info"
+  [[scaling.http_concurrency]]
+    soft_limit = 800
+    hard_limit = 1000
+
+  [[scaling.metrics]]
+    name = "cpu"
+    value = 80
+
+  [[scaling.metrics]]
+    name = "memory"
+    value = 85
+
+  [[scaling.http_response_time]]
+    p50 = 500
+    p95 = 2000
+
+# Regional deployment
+[regions]
+  primary = "sea"
+  backup = ["sjc", "dfw"]
+
+# Database configuration (Postgres)
+[[postgres]]
+  app = "kyozo-postgres"
+  primary_region = "sea"
+  
+  [postgres.ha_mode]
+    enabled = true
+
+# Service discovery
+[services]
+  internal_port = 4000
+  protocol = "tcp"
+  script_checks = []
+
+  [services.concurrency]
+    hard_limit = 1000
+    soft_limit = 800
+    type = "connections"
+
+  [[services.ports]]
+    force_https = true
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "15s"
+    restart_limit = 0
+    timeout = "2s"
+
+  [[services.http_checks]]
+    interval = "10s"
+    grace_period = "5s"
+    method = "get"
+    path = "/api/health"
+    protocol = "http"
+    timeout = "4s"
+    tls_skip_verify = false
+    headers = {}
+
+# Environment-specific secrets (configure via fly secrets set)
+# Required secrets:
+# - DATABASE_URL: PostgreSQL connection string
+# - SECRET_KEY_BASE: Phoenix secret key base (generate with: mix phx.gen.secret)
+# - TOKEN_SIGNING_SECRET: JWT signing secret
+# - LIVE_VIEW_SIGNING_SALT: LiveView signing salt
+# - GUARDIAN_SECRET_KEY: Guardian JWT secret
+#
+# Optional OAuth secrets:
+# - OAUTH_GITHUB_CLIENT_ID: GitHub OAuth client ID
+# - OAUTH_GITHUB_CLIENT_SECRET: GitHub OAuth client secret
+# - OAUTH_GOOGLE_CLIENT_ID: Google OAuth client ID
+# - OAUTH_GOOGLE_CLIENT_SECRET: Google OAuth client secret
+#
+# Optional email configuration:
+# - MAILGUN_API_KEY: Mailgun API key for email
+# - MAILGUN_DOMAIN: Mailgun domain
+#
+# Optional monitoring:
+# - SENTRY_DSN: Sentry error tracking
+# - HONEYCOMB_API_KEY: Honeycomb observability
