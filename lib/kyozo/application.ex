@@ -27,7 +27,11 @@ defmodule Kyozo.Application do
       # {Kyozo.Worker, arg},
       # Start to serve requests, typically the last entry
       KyozoWeb.Endpoint,
-      {AshAuthentication.Supervisor, [otp_app: :kyozo]}
+      {AshAuthentication.Supervisor, [otp_app: :kyozo]},
+      # Container management
+      Kyozo.Containers.ContainerManager,
+      # VFS Cache
+      Kyozo.Storage.VFS.Cache
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

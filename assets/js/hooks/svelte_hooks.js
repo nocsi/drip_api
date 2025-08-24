@@ -2,6 +2,7 @@ import { mount } from 'svelte'
 import WorkspacesApp from '../../svelte/apps/WorkspacesApp.svelte'
 import TeamsApp from '../../svelte/apps/TeamsApp.svelte'
 import PortalApp from '../../svelte/apps/PortalApp.svelte'
+import ContainerDashboard from '../../svelte/services/ContainerDashboard.svelte'
 
 export const SvelteWorkspaces = {
   mounted() {
@@ -140,11 +141,90 @@ function createMockLive(hook) {
   }
 }
 
+export const SvelteContainerDashboard = {
+  mounted() {
+    console.log('SvelteContainerDashboard hook mounted');
+    
+    // Get initial data from Phoenix assigns
+    const teamId = this.el.dataset.teamId;
+    const workspaceId = this.el.dataset.workspaceId;
+    const services = JSON.parse(this.el.dataset.services || '[]');
+    const stats = JSON.parse(this.el.dataset.stats || '{}');
+    const loading = this.el.dataset.loading === 'true';
+    const error = this.el.dataset.error;
+    const filter = JSON.parse(this.el.dataset.filter || '{}');
+
+    // Configure API for this hook
+    const apiConfig = {
+      baseUrl: '/api/v1',
+      apiToken: window.userToken || '',
+      csrfToken: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+      teamId: teamId
+    };
+
+    // Import and configure the API
+    import('../../svelte/services/api.ts').then(({ configureDefaultApi }) => {
+      configureDefaultApi(apiConfig);
+    }).catch(console.error);
+
+    // Create the Svelte component
+    this.app = mount(ContainerDashboard, {
+      target: this.el,
+      props: {
+        teamId,
+        workspaceId
+      }
+    });
+
+    // Handle events from Svelte component
+    this.app.$on('service-action', (event) => {
+      const { action, serviceId, params } = event.detail;
+      
+      this.pushEvent('service_action', {
+        action,
+        service_id: serviceId,
+        ...params
+      });
+    });
+
+    this.app.$on('load-services', () => {
+      this.pushEvent('load_services', {});
+    });
+
+    this.app.$on('filter-change', (event) => {
+      this.pushEvent('filter_services', {
+        filter: event.detail
+      });
+    });
+
+    console.log('SvelteContainerDashboard initialized');
+  },
+
+  updated() {
+    console.log('SvelteContainerDashboard hook updated');
+  },
+
+  reconnected() {
+    console.log('SvelteContainerDashboard hook reconnected');
+    this.pushEvent('load_services', {});
+  },
+
+  destroyed() {
+    console.log('SvelteContainerDashboard hook destroyed');
+    
+    if (this.app) {
+      this.app.$destroy();
+      this.app = null;
+    }
+  }
+}
+
 // Export all hooks
 export default {
   SvelteWorkspaces,
   SvelteTeams,
   SveltePortal,
   SvelteWorkspaceIndex,
-  SvelteWorkspaceDashboard
+  SvelteWorkspaceDashboard,
+  SvelteContainerDashboard
 }

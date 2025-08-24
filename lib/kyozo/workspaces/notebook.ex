@@ -1,10 +1,34 @@
 defmodule Kyozo.Workspaces.Notebook do
-  @derive {Jason.Encoder, only: [:id, :title, :content, :content_html, :status, :execution_state, :extracted_tasks, :execution_order, :current_task_index, :total_execution_time, :last_executed_at, :execution_count, :auto_save_enabled, :collaborative_mode, :kernel_status, :environment_variables, :execution_timeout, :render_cache, :metadata, :created_at, :updated_at, :last_accessed_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :title,
+             :content,
+             :content_html,
+             :status,
+             :execution_state,
+             :extracted_tasks,
+             :execution_order,
+             :current_task_index,
+             :total_execution_time,
+             :last_executed_at,
+             :execution_count,
+             :auto_save_enabled,
+             :collaborative_mode,
+             :kernel_status,
+             :environment_variables,
+             :execution_timeout,
+             :render_cache,
+             :metadata,
+             :created_at,
+             :updated_at,
+             :last_accessed_at
+           ]}
 
   @moduledoc """
   Notebook resource representing a rendered, interactive version of markdown documents.
 
-  Notebooks are created from Documents with .md or .livemd extensions and provide:
+  Notebooks are created from Documents with .md or .markdown extensions and provide:
   - Rendered HTML content with syntax highlighting
   - Extracted executable code blocks as tasks
   - Interactive execution environment
@@ -22,13 +46,17 @@ defmodule Kyozo.Workspaces.Notebook do
 
   alias Kyozo.Workspaces.Notebook.Changes
 
-  render_markdown do
-    render_attributes content: :content_html
-    header_ids? true
-    table_of_contents? true
-    syntax_highlighting? true
-    extract_tasks? true
-    allowed_languages ["elixir", "python", "javascript", "typescript", "bash", "shell", "sql", "r", "julia"]
+  json_api do
+    type "notebook"
+
+    routes do
+      base "/notebooks"
+      get :read
+      index :read
+      post :create_from_document
+      patch :update_content
+      delete :destroy
+    end
   end
 
   postgres do
@@ -48,17 +76,174 @@ defmodule Kyozo.Workspaces.Notebook do
     end
   end
 
-  json_api do
-    type "notebook"
+  render_markdown do
+    render_attributes(content: :content_html)
+    header_ids?(true)
+    table_of_contents?(true)
+    syntax_highlighting?(true)
+    extract_tasks?(true)
 
-    routes do
-      base "/notebooks"
-      get :read
-      index :read
-      post :create_from_document
-      patch :update_content
-      delete :destroy
+    allowed_languages([
+      "elixir",
+      "python",
+      "javascript",
+      "typescript",
+      "bash",
+      "shell",
+      "sql",
+      "r",
+      "julia"
+    ])
+  end
+
+  actions do
+    defaults [:read, :destroy]
+
+    read :list_notebooks do
+      pagination offset?: true, keyset?: true, countable: true
+      prepare build(sort: [updated_at: :desc])
     end
+
+    read :list_by_workspace do
+      argument :workspace_id, :uuid do
+        allow_nil? false
+      end
+
+      filter expr(workspace_id == ^arg(:workspace_id))
+      prepare build(sort: [updated_at: :desc], load: [:document, :tasks])
+    end
+
+    read :list_by_status do
+      argument :status, :atom do
+        allow_nil? false
+        constraints one_of: [:draft, :ready, :running, :completed, :error, :archived]
+      end
+
+      filter expr(status == ^arg(:status))
+      prepare build(sort: [updated_at: :desc])
+    end
+
+    read :list_executable do
+      filter expr(status in [:ready, :completed])
+      prepare build(sort: [last_executed_at: :desc], load: [:tasks])
+    end
+
+    create :create_from_document do
+      argument :file_id, :uuid do
+        allow_nil? false
+      end
+
+      change relate_actor(:workspace, field: :workspace_id)
+      change relate_actor(:team, field: :team_id)
+      change {Changes.CreateFromDocument, []}
+      change {Changes.ExtractTasks, []}
+      change set_attribute(:status, :ready)
+    end
+
+    update :update_content do
+      accept [:content, :title, :metadata]
+
+      change {Changes.RenderContent, []}
+      change {Changes.ExtractTasks, []}
+      change set_attribute(:updated_at, &DateTime.utc_now/0)
+    end
+
+    update :execute_notebook do
+      argument :environment_variables, :map, default: %{}
+      argument :timeout_seconds, :integer, default: 300
+
+      change set_attribute(:status, :running)
+      change set_attribute(:kernel_status, :busy)
+      change {Changes.ExecuteAllTasks, []}
+      change {Changes.UpdateExecutionState, []}
+      change set_attribute(:last_executed_at, &DateTime.utc_now/0)
+    end
+
+    update :execute_task do
+      argument :task_id, :string do
+        allow_nil? false
+      end
+
+      argument :environment_variables, :map, default: %{}
+
+      change {Changes.ExecuteSingleTask, []}
+      change {Changes.UpdateExecutionState, []}
+    end
+
+    update :stop_execution do
+      change set_attribute(:status, :ready)
+      change set_attribute(:kernel_status, :idle)
+      change {Changes.StopAllTasks, []}
+    end
+
+    update :reset_execution do
+      change set_attribute(:status, :ready)
+      change set_attribute(:kernel_status, :idle)
+      change set_attribute(:execution_state, %{})
+      change set_attribute(:current_task_index, 0)
+      change {Changes.ResetAllTasks, []}
+    end
+
+    update :update_execution_state do
+      accept [:execution_state, :current_task_index, :kernel_status]
+      change set_attribute(:updated_at, &DateTime.utc_now/0)
+    end
+
+    update :toggle_collaborative_mode do
+      change {Changes.ToggleCollaborativeMode, []}
+    end
+
+    update :update_access_time do
+      change set_attribute(:last_accessed_at, &DateTime.utc_now/0)
+    end
+
+    action :duplicate_notebook, :struct do
+      argument :new_title, :string, allow_nil?: true
+      argument :copy_to_workspace_id, :uuid, allow_nil?: true
+
+      run {Changes.DuplicateNotebook, []}
+    end
+  end
+
+  policies do
+    policy action_type(:read) do
+      authorize_if relates_to_actor_via([:workspace, :members, :user])
+    end
+
+    policy action_type([:create, :update, :destroy]) do
+      authorize_if relates_to_actor_via([:workspace, :members, :user])
+    end
+
+    policy action(:execute_notebook) do
+      authorize_if relates_to_actor_via([:workspace, :members, :user])
+      authorize_if actor_attribute_equals(:role, :admin)
+    end
+  end
+
+  preparations do
+    prepare build(load: [:document, :workspace]) do
+      on [:read]
+    end
+  end
+
+  validations do
+    validate present([:title, :file_id, :workspace_id, :team_id])
+
+    validate compare(:execution_timeout, greater_than: 0) do
+      where present(:execution_timeout)
+      message "Execution timeout must be positive"
+    end
+
+    validate compare(:current_task_index, greater_than_or_equal_to: 0) do
+      message "Current task index must be non-negative"
+    end
+
+    validate {Changes.ValidateDocumentType, []}
+  end
+
+  multitenancy do
+    strategy :attribute
+    attribute :team_id
   end
 
   # GraphQL configuration removed during GraphQL cleanup
@@ -221,142 +406,6 @@ defmodule Kyozo.Workspaces.Notebook do
       destination_attribute :notebook_id
       description "Executable tasks extracted from this notebook"
     end
-
-
-  end
-
-  actions do
-    defaults [:read, :destroy]
-
-    read :list_notebooks do
-      pagination offset?: true, keyset?: true, countable: true
-      prepare build(sort: [updated_at: :desc])
-    end
-
-    read :list_by_workspace do
-      argument :workspace_id, :uuid do
-        allow_nil? false
-      end
-
-      filter expr(workspace_id == ^arg(:workspace_id))
-      prepare build(sort: [updated_at: :desc], load: [:document, :tasks])
-    end
-
-    read :list_by_status do
-      argument :status, :atom do
-        allow_nil? false
-        constraints one_of: [:draft, :ready, :running, :completed, :error, :archived]
-      end
-
-      filter expr(status == ^arg(:status))
-      prepare build(sort: [updated_at: :desc])
-    end
-
-    read :list_executable do
-      filter expr(status in [:ready, :completed])
-      prepare build(sort: [last_executed_at: :desc], load: [:tasks])
-    end
-
-    create :create_from_document do
-      argument :file_id, :uuid do
-        allow_nil? false
-      end
-
-      change relate_actor(:workspace, field: :workspace_id)
-      change relate_actor(:team, field: :team_id)
-      change {Changes.CreateFromDocument, []}
-      change {Changes.ExtractTasks, []}
-      change set_attribute(:status, :ready)
-    end
-
-    update :update_content do
-      accept [:content, :title, :metadata]
-
-      change {Changes.RenderContent, []}
-      change {Changes.ExtractTasks, []}
-      change set_attribute(:updated_at, &DateTime.utc_now/0)
-    end
-
-    update :execute_notebook do
-      argument :environment_variables, :map, default: %{}
-      argument :timeout_seconds, :integer, default: 300
-
-      change set_attribute(:status, :running)
-      change set_attribute(:kernel_status, :busy)
-      change {Changes.ExecuteAllTasks, []}
-      change {Changes.UpdateExecutionState, []}
-      change set_attribute(:last_executed_at, &DateTime.utc_now/0)
-    end
-
-    update :execute_task do
-      argument :task_id, :string do
-        allow_nil? false
-      end
-      argument :environment_variables, :map, default: %{}
-
-      change {Changes.ExecuteSingleTask, []}
-      change {Changes.UpdateExecutionState, []}
-    end
-
-    update :stop_execution do
-      change set_attribute(:status, :ready)
-      change set_attribute(:kernel_status, :idle)
-      change {Changes.StopAllTasks, []}
-    end
-
-    update :reset_execution do
-      change set_attribute(:status, :ready)
-      change set_attribute(:kernel_status, :idle)
-      change set_attribute(:execution_state, %{})
-      change set_attribute(:current_task_index, 0)
-      change {Changes.ResetAllTasks, []}
-    end
-
-    update :update_execution_state do
-      accept [:execution_state, :current_task_index, :kernel_status]
-      change set_attribute(:updated_at, &DateTime.utc_now/0)
-    end
-
-    update :toggle_collaborative_mode do
-      change {Changes.ToggleCollaborativeMode, []}
-    end
-
-    update :update_access_time do
-      change set_attribute(:last_accessed_at, &DateTime.utc_now/0)
-    end
-
-    action :duplicate_notebook, :struct do
-      argument :new_title, :string, allow_nil?: true
-      argument :copy_to_workspace_id, :uuid, allow_nil?: true
-
-      run {Changes.DuplicateNotebook, []}
-    end
-  end
-
-  multitenancy do
-    strategy :attribute
-    attribute :team_id
-  end
-
-  policies do
-    policy action_type(:read) do
-      authorize_if relates_to_actor_via([:workspace, :members, :user])
-    end
-
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if relates_to_actor_via([:workspace, :members, :user])
-    end
-
-    policy action(:execute_notebook) do
-      authorize_if relates_to_actor_via([:workspace, :members, :user])
-      authorize_if actor_attribute_equals(:role, :admin)
-    end
-  end
-
-  preparations do
-    prepare build(load: [:document, :workspace]) do
-      on [:read]
-    end
   end
 
   calculations do
@@ -366,7 +415,7 @@ defmodule Kyozo.Workspaces.Notebook do
       calculation fn records, _opts ->
         Enum.map(records, fn record ->
           record.status in [:ready, :completed] and
-          not Enum.empty?(record.extracted_tasks || [])
+            not Enum.empty?(record.extracted_tasks || [])
         end)
       end
     end
@@ -385,6 +434,7 @@ defmodule Kyozo.Workspaces.Notebook do
             completed_count =
               Enum.count(tasks, fn task ->
                 task_id = task["id"] || task[:id]
+
                 case Map.get(execution_state, task_id) do
                   %{"status" => "completed"} -> true
                   %{status: :completed} -> true
@@ -420,8 +470,10 @@ defmodule Kyozo.Workspaces.Notebook do
           case Map.get(execution_state, "last_execution") do
             %{"status" => status} when status in ["success", "error", "timeout"] ->
               String.to_atom(status)
+
             %{status: status} when status in [:success, :error, :timeout] ->
               status
+
             _ ->
               :unknown
           end
@@ -441,24 +493,27 @@ defmodule Kyozo.Workspaces.Notebook do
             code = task["code"] || task[:code] || ""
             language = task["language"] || task[:language] || ""
 
-            base_time = case language do
-              lang when lang in ["python", "r", "julia"] -> 5
-              lang when lang in ["javascript", "typescript"] -> 3
-              lang when lang in ["bash", "shell"] -> 2
-              lang when lang in ["elixir"] -> 4
-              _ -> 3
-            end
+            base_time =
+              case language do
+                lang when lang in ["python", "r", "julia"] -> 5
+                lang when lang in ["javascript", "typescript"] -> 3
+                lang when lang in ["bash", "shell"] -> 2
+                lang when lang in ["elixir"] -> 4
+                _ -> 3
+              end
 
             # Adjust based on code length
             line_count = length(String.split(code, "\n"))
-            complexity_multiplier = cond do
-              line_count > 50 -> 3
-              line_count > 20 -> 2
-              line_count > 10 -> 1.5
-              true -> 1
-            end
 
-            acc + (base_time * complexity_multiplier) |> trunc()
+            complexity_multiplier =
+              cond do
+                line_count > 50 -> 3
+                line_count > 20 -> 2
+                line_count > 10 -> 1.5
+                true -> 1
+              end
+
+            (acc + base_time * complexity_multiplier) |> trunc()
           end)
         end)
       end
@@ -485,10 +540,12 @@ defmodule Kyozo.Workspaces.Notebook do
       calculation fn records, _opts ->
         Enum.map(records, fn record ->
           case record.document do
-            nil -> false
+            nil ->
+              false
+
             document ->
               path = document.file_path || ""
-              String.ends_with?(path, ".md") or String.ends_with?(path, ".livemd")
+              String.ends_with?(path, [".md", ".markdown"])
           end
         end)
       end
@@ -506,28 +563,13 @@ defmodule Kyozo.Workspaces.Notebook do
     end
   end
 
-  validations do
-    validate present([:title, :file_id, :workspace_id, :team_id])
-
-    validate compare(:execution_timeout, greater_than: 0) do
-      where present(:execution_timeout)
-      message "Execution timeout must be positive"
-    end
-
-    validate compare(:current_task_index, greater_than_or_equal_to: 0) do
-      message "Current task index must be non-negative"
-    end
-
-    validate {Changes.ValidateDocumentType, []}
-  end
-
   # Helper functions for working with notebooks
 
   @doc """
   Determines if a document can be rendered as a notebook based on its file extension.
   """
   def renderable_as_notebook?(file_path) when is_binary(file_path) do
-    String.ends_with?(file_path, [".md", ".livemd"])
+    String.ends_with?(file_path, [".md", ".markdown"])
   end
 
   def renderable_as_notebook?(_), do: false
@@ -537,8 +579,7 @@ defmodule Kyozo.Workspaces.Notebook do
   """
   def notebook_type_from_path(file_path) when is_binary(file_path) do
     cond do
-      String.ends_with?(file_path, ".livemd") -> :livebook
-      String.ends_with?(file_path, ".md") -> :markdown
+      String.ends_with?(file_path, [".md", ".markdown"]) -> :markdown
       true -> :unknown
     end
   end
@@ -606,6 +647,7 @@ defmodule Kyozo.Workspaces.Notebook do
 
     Enum.find(tasks, fn task ->
       task_id = task["id"] || task[:id]
+
       case Map.get(execution_state, task_id) do
         %{"status" => status} when status in ["completed", "error"] -> false
         %{status: status} when status in [:completed, :error] -> false
@@ -614,7 +656,6 @@ defmodule Kyozo.Workspaces.Notebook do
     end)
   end
 end
-
 
 defmodule Kyozo.Workspaces.Notebook.Cell.Config do
   use Ash.TypedStruct
@@ -632,7 +673,11 @@ defmodule Kyozo.Workspaces.Notebook.Cell do
     embed_nil_values?: false
 
   attributes do
-    attribute :id, :uuid, primary_key?: true, allow_nil?: false, default: &Kyozo.Workspaces.Notebook.Cell.generate_id/0
+    attribute :id, :uuid,
+      primary_key?: true,
+      allow_nil?: false,
+      default: &Kyozo.Workspaces.Notebook.Cell.generate_id/0
+
     attribute :code, :string, public?: true
     attribute :code_hash, :string, public?: true
     attribute :name, :string, public?: true

@@ -68,6 +68,12 @@ importers:
       lowlight:
         specifier: ^3.1.0
         version: 3.3.0
+      marked:
+        specifier: ^14.1.0
+        version: 14.1.4
+      mode-watcher:
+        specifier: ^1.1.0
+        version: 1.1.0(svelte@5.37.3)
       phoenix:
         specifier: file:../deps/phoenix
         version: link:../deps/phoenix
@@ -4403,6 +4409,11 @@ packages:
   markdown-table@3.0.4:
     resolution: {integrity: sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==}
 
+  marked@14.1.4:
+    resolution: {integrity: sha512-vkVZ8ONmUdPnjCKc5uTRvmkRbx4EAi2OkTOXmfTDhZz3OFqMNBM1oTTWwTr4HY4uAEojhzPf+Fy8F1DWa3Sndg==}
+    engines: {node: '>= 18'}
+    hasBin: true
+
   marked@16.1.2:
     resolution: {integrity: sha512-rNQt5EvRinalby7zJZu/mB+BvaAY2oz3wCuCjt1RDrWNpS1Pdf9xqMOeC9Hm5adBdcV/3XZPJpG58eT+WBc0XQ==}
     engines: {node: '>= 20'}
@@ -4639,6 +4650,11 @@ packages:
   mock-socket@9.3.1:
     resolution: {integrity: sha512-qxBgB7Qa2sEQgHFjj0dSigq7fX4k6Saisd5Nelwp2q8mlbAFh5dHV9JTTlF8viYJLSSWgMCZFUom8PJcMNBoJw==}
     engines: {node: '>= 8'}
+
+  mode-watcher@1.1.0:
+    resolution: {integrity: sha512-mUT9RRGPDYenk59qJauN1rhsIMKBmWA3xMF+uRwE8MW/tjhaDSCCARqkSuDTq8vr4/2KcAxIGVjACxTjdk5C3g==}
+    peerDependencies:
+      svelte: ^5.27.0
 
   monocart-coverage-reports@2.12.6:
     resolution: {integrity: sha512-96CMC4B+Rw5Yi8OH2Aot+aMYIw84fK3PNJs7nP9Yw07I0+k0lY1GGiPOJTt123GMDdSpS32lPUIMu/OyqOfBCA==}
@@ -5110,6 +5126,11 @@ packages:
 
   runed@0.23.4:
     resolution: {integrity: sha512-9q8oUiBYeXIDLWNK5DfCWlkL0EW3oGbk845VdKlPeia28l751VpfesaB/+7pI6rnbx1I6rqoZ2fZxptOJLxILA==}
+    peerDependencies:
+      svelte: ^5.7.0
+
+  runed@0.25.0:
+    resolution: {integrity: sha512-7+ma4AG9FT2sWQEA0Egf6mb7PBT2vHyuHail1ie8ropfSjvZGtEAx8YTmUjv/APCsdRRxEVvArNjALk9zFSOrg==}
     peerDependencies:
       svelte: ^5.7.0
 
@@ -11453,6 +11474,8 @@ snapshots:
 
   markdown-table@3.0.4: {}
 
+  marked@14.1.4: {}
+
   marked@16.1.2: {}
 
   mdast-util-definitions@5.1.2:
@@ -11868,6 +11891,12 @@ snapshots:
   mkdirp@3.0.1: {}
 
   mock-socket@9.3.1: {}
+
+  mode-watcher@1.1.0(svelte@5.37.3):
+    dependencies:
+      runed: 0.25.0(svelte@5.37.3)
+      svelte: 5.37.3
+      svelte-toolbelt: 0.7.1(svelte@5.37.3)
 
   monocart-coverage-reports@2.12.6:
     dependencies:
@@ -12402,6 +12431,11 @@ snapshots:
       queue-microtask: 1.2.3
 
   runed@0.23.4(svelte@5.37.3):
+    dependencies:
+      esm-env: 1.2.2
+      svelte: 5.37.3
+
+  runed@0.25.0(svelte@5.37.3):
     dependencies:
       esm-env: 1.2.2
       svelte: 5.37.3

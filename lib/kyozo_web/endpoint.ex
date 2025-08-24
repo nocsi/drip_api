@@ -15,6 +15,11 @@ defmodule KyozoWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
+  # SafeMD Scan WebSocket for streaming markdown analysis
+  socket "/scan/websocket", KyozoWeb.ScanSocket,
+    websocket: [timeout: 45_000],
+    longpoll: false
+
   # GraphQL WebSocket removed during GraphQL cleanup
 
   # Serve at "/" the static files from "priv/static" directory.

@@ -156,9 +156,7 @@ config :kyozo, Oban,
           "retention_days" => metrics_retention_days,
           "batch_size" => metrics_cleanup_batch
         }},
-       {cleanup_cron, Kyozo.Containers.Workers.CleanupWorker,
-        args: %{"type" => "full_cleanup"}},
-       {vacuum_cron, Kyozo.Containers.Workers.CleanupWorker,
-        args: %{"type" => "vacuum_analyze"}}
+       {cleanup_cron, Kyozo.Containers.Workers.CleanupWorker, args: %{"type" => "full_cleanup"}},
+       {vacuum_cron, Kyozo.Containers.Workers.CleanupWorker, args: %{"type" => "vacuum_analyze"}}
      ]}
   ]

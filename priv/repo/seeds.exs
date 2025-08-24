@@ -280,31 +280,47 @@ if default_team do
   # Use seed_workspace action that accepts created_by_id directly
   workspace_name = "Getting Started"
 
+  # Check if workspace already exists
+  existing_workspace =
+    case Workspaces.Workspace
+         |> Ash.Query.filter(name == ^workspace_name and team_id == ^default_team.id)
+         |> Ash.Query.set_tenant(default_team.id)
+         |> Ash.read_one(authorize?: false) do
+      {:ok, workspace} -> workspace
+      {:error, _} -> nil
+      nil -> nil
+    end
+
   result =
-    if workspace_admin_user do
-      Workspaces.Workspace
-      |> Ash.Changeset.for_action(:seed_workspace, %{
-        name: workspace_name,
-        description: "Default workspace for new users",
-        storage_backend: :git,
-        settings: workspace_settings,
-        team_id: default_team.id,
-        created_by_id: workspace_admin_user.id
-      })
-      |> Ash.Changeset.set_tenant(default_team.id)
-      |> Ash.create(authorize?: false)
+    if existing_workspace do
+      IO.puts("ℹ️  Workspace '#{workspace_name}' already exists, skipping creation")
+      {:ok, existing_workspace}
     else
-      # Create without created_by if no admin user available
-      Workspaces.Workspace
-      |> Ash.Changeset.for_action(:seed_workspace, %{
-        name: workspace_name,
-        description: "Default workspace for new users",
-        storage_backend: :git,
-        settings: workspace_settings,
-        team_id: default_team.id
-      })
-      |> Ash.Changeset.set_tenant(default_team.id)
-      |> Ash.create(authorize?: false)
+      if workspace_admin_user do
+        Workspaces.Workspace
+        |> Ash.Changeset.for_action(:seed_workspace, %{
+          name: workspace_name,
+          description: "Default workspace for new users",
+          storage_backend: :git,
+          settings: workspace_settings,
+          team_id: default_team.id,
+          created_by_id: workspace_admin_user.id
+        })
+        |> Ash.Changeset.set_tenant(default_team.id)
+        |> Ash.create(authorize?: false)
+      else
+        # Create without created_by if no admin user available
+        Workspaces.Workspace
+        |> Ash.Changeset.for_action(:seed_workspace, %{
+          name: workspace_name,
+          description: "Default workspace for new users",
+          storage_backend: :git,
+          settings: workspace_settings,
+          team_id: default_team.id
+        })
+        |> Ash.Changeset.set_tenant(default_team.id)
+        |> Ash.create(authorize?: false)
+      end
     end
 
   case result do
@@ -342,6 +358,153 @@ IO.puts("   Roles would be: Admin, User, Viewer")
 #       IO.puts("⚠️  Could not create role #{role_data.name}: #{inspect(error)}")
 #   end
 # end)
+
+# Check if Stripe is configured
+stripe_configured = System.get_env("STRIPE_SECRET_KEY") != nil
+
+IO.puts("Stripe API Key configured: #{stripe_configured}")
+
+if stripe_configured do
+  IO.puts("Creating plans with Stripe integration...")
+
+  # Free plan
+  Kyozo.Billing.Plan.create_with_stripe!(%{
+    code: "FREE",
+    name: "Free",
+    description: "Get started with Kyozo",
+    tier: :free,
+    price_cents: 0,
+    interval: :monthly,
+    max_notebooks: 3,
+    max_executions_per_month: 100,
+    max_ai_requests_per_month: 50,
+    max_storage_gb: 1,
+    max_collaborators: 1,
+    features: %{
+      "basic_editor" => true,
+      "ai_suggestions" => true,
+      "export" => true
+    }
+  })
+else
+  IO.puts("⚠️  Stripe not configured, creating plans without Stripe integration...")
+
+  # Create plans directly without Stripe
+  {:ok, _free_plan} =
+    Kyozo.Billing.Plan
+    |> Ash.Changeset.for_action(:create, %{
+      code: "FREE",
+      name: "Free",
+      description: "Get started with Kyozo",
+      tier: :free,
+      price_cents: 0,
+      interval: :monthly,
+      max_notebooks: 3,
+      max_executions_per_month: 100,
+      max_ai_requests_per_month: 50,
+      max_storage_gb: 1,
+      max_collaborators: 1,
+      features: %{
+        "basic_editor" => true,
+        "ai_suggestions" => true,
+        "export" => true
+      }
+    })
+    |> Ash.create(authorize?: false)
+
+  IO.puts("✅ Free plan created")
+end
+
+if stripe_configured do
+  # Pro plan
+  Kyozo.Billing.Plan.create_with_stripe!(%{
+    code: "PRO_MONTHLY",
+    name: "Pro",
+    description: "For professional developers",
+    tier: :pro,
+    # $29
+    price_cents: 2900,
+    interval: :monthly,
+    trial_days: 14,
+    # unlimited
+    max_notebooks: nil,
+    max_executions_per_month: 5000,
+    max_ai_requests_per_month: 1000,
+    max_storage_gb: 50,
+    max_collaborators: 5,
+    features: %{
+      "basic_editor" => true,
+      "ai_suggestions" => true,
+      "export" => true,
+      "private_notebooks" => true,
+      "custom_environments" => true,
+      "priority_execution" => true,
+      "api_access" => true
+    }
+  })
+
+  # Team plan
+  Kyozo.Billing.Plan.create_with_stripe!(%{
+    code: "TEAM_MONTHLY",
+    name: "Team",
+    description: "For growing teams",
+    tier: :team,
+    # $99
+    price_cents: 9900,
+    interval: :monthly,
+    trial_days: 14,
+    max_notebooks: nil,
+    max_executions_per_month: 20000,
+    max_ai_requests_per_month: 5000,
+    max_storage_gb: 200,
+    max_collaborators: 20,
+    features: %{
+      "basic_editor" => true,
+      "ai_suggestions" => true,
+      "export" => true,
+      "private_notebooks" => true,
+      "custom_environments" => true,
+      "priority_execution" => true,
+      "api_access" => true,
+      "team_management" => true,
+      "sso" => true,
+      "audit_logs" => true
+    }
+  })
+
+  # Enterprise plan
+  Kyozo.Billing.Plan.create_with_stripe!(%{
+    code: "ENTERPRISE",
+    name: "Enterprise",
+    description: "For large organizations",
+    tier: :enterprise,
+    # $299
+    price_cents: 29900,
+    interval: :monthly,
+    max_notebooks: nil,
+    max_executions_per_month: nil,
+    max_ai_requests_per_month: nil,
+    max_storage_gb: nil,
+    max_collaborators: nil,
+    features: %{
+      "basic_editor" => true,
+      "ai_suggestions" => true,
+      "export" => true,
+      "private_notebooks" => true,
+      "custom_environments" => true,
+      "priority_execution" => true,
+      "api_access" => true,
+      "team_management" => true,
+      "sso" => true,
+      "audit_logs" => true,
+      "dedicated_support" => true,
+      "sla" => true,
+      "custom_integrations" => true
+    }
+  })
+else
+  IO.puts("⚠️  Skipping Pro, Team, and Enterprise plans (Stripe not configured)")
+end
 
 IO.puts("")
 IO.puts("🎉 Production seeding complete!")

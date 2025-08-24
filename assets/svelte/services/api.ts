@@ -412,6 +412,75 @@ export class ApiService {
     return this.get('/admin/teams', params);
   }
 
+  // Container Services API
+  async listServices(teamId: string, params?: QueryParams) {
+    return this.get(`/teams/${teamId}/services`, params);
+  }
+
+  async getService(teamId: string, serviceId: string) {
+    return this.get(`/teams/${teamId}/services/${serviceId}`, { 
+      load: ['workspace', 'team', 'deployment_events', 'health_checks', 'service_metrics'] 
+    });
+  }
+
+  async createService(teamId: string, serviceData: any) {
+    return this.post(`/teams/${teamId}/services`, { service: serviceData });
+  }
+
+  async updateService(teamId: string, serviceId: string, serviceData: any) {
+    return this.put(`/teams/${teamId}/services/${serviceId}`, { service: serviceData });
+  }
+
+  async deleteService(teamId: string, serviceId: string) {
+    return this.delete(`/teams/${teamId}/services/${serviceId}`);
+  }
+
+  async getServiceStatus(teamId: string, serviceId: string) {
+    return this.get(`/teams/${teamId}/services/${serviceId}/status`);
+  }
+
+  async startService(teamId: string, serviceId: string) {
+    return this.post(`/teams/${teamId}/services/${serviceId}/start`);
+  }
+
+  async stopService(teamId: string, serviceId: string) {
+    return this.post(`/teams/${teamId}/services/${serviceId}/stop`);
+  }
+
+  async restartService(teamId: string, serviceId: string) {
+    return this.post(`/teams/${teamId}/services/${serviceId}/restart`);
+  }
+
+  async scaleService(teamId: string, serviceId: string, replicaCount: number) {
+    return this.post(`/teams/${teamId}/services/${serviceId}/scale`, { replica_count: replicaCount });
+  }
+
+  async getServiceLogs(teamId: string, serviceId: string, lines: number = 100, follow: boolean = false) {
+    return this.get(`/teams/${teamId}/services/${serviceId}/logs`, { 
+      filter: { lines: lines.toString(), follow: follow.toString() } 
+    });
+  }
+
+  async getServiceMetrics(teamId: string, serviceId: string) {
+    return this.get(`/teams/${teamId}/services/${serviceId}/metrics`);
+  }
+
+  async getServiceHealth(teamId: string, serviceId: string) {
+    return this.get(`/teams/${teamId}/services/${serviceId}/health`);
+  }
+
+  async listWorkspaceServices(teamId: string, workspaceId: string, params?: QueryParams) {
+    return this.get(`/teams/${teamId}/workspaces/${workspaceId}/services`, params);
+  }
+
+  async deployWorkspaceService(teamId: string, workspaceId: string, serviceData: any) {
+    return this.post(`/teams/${teamId}/workspaces/${workspaceId}/services`, { service: serviceData });
+  }
+
+  async analyzeWorkspaceTopology(teamId: string, workspaceId: string, folderPath: string = '/') {
+    return this.post(`/teams/${teamId}/workspaces/${workspaceId}/analyze`, { folder_path: folderPath });
+  }
+
   // Utility methods
   updateConfig(newConfig: Partial<ApiConfig>) {
     this.config = { ...this.config, ...newConfig };
@@ -548,6 +617,105 @@ export interface Notebook {
   document_id?: string;
   team_id: string;
   created_by_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContainerService {
+  id: string;
+  name: string;
+  folder_path: string;
+  service_type: string;
+  detection_confidence?: number;
+  status: 'detecting' | 'pending' | 'building' | 'deploying' | 'running' | 'stopped' | 'error';
+  container_id?: string;
+  image_id?: string;
+  deployment_config: Record<string, any>;
+  port_mappings: Record<string, any>;
+  environment_variables: Record<string, any>;
+  volume_mounts: Record<string, any>;
+  resource_limits?: Record<string, any>;
+  scaling_config?: Record<string, any>;
+  health_check_config?: Record<string, any>;
+  labels: Record<string, any>;
+  network_config: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  deployed_at?: string;
+  last_health_check_at?: string;
+  stopped_at?: string;
+  workspace_id: string;
+  team_id: string;
+  created_by_id?: string;
+  topology_detection_id?: string;
+}
+
+export interface ServiceMetrics {
+  service_id: string;
+  resource_utilization: {
+    cpu_percent: number;
+    memory_percent: number;
+    memory_usage_bytes: number;
+    network_rx_bytes: number;
+    network_tx_bytes: number;
+    disk_read_bytes: number;
+    disk_write_bytes: number;
+  };
+  recent_metrics: ServiceMetric[];
+  updated_at: string;
+}
+
+export interface ServiceMetric {
+  id: string;
+  metric_type: string;
+  value: number;
+  unit: string;
+  metadata: Record<string, any>;
+  collected_at: string;
+  service_instance_id: string;
+}
+
+export interface HealthCheck {
+  id: string;
+  check_type: string;
+  endpoint?: string;
+  status: 'healthy' | 'unhealthy' | 'unknown';
+  response_time_ms?: number;
+  status_code?: number;
+  response_body?: string;
+  error_message?: string;
+  checked_at: string;
+  service_instance_id: string;
+}
+
+export interface DeploymentEvent {
+  id: string;
+  event_type: string;
+  event_data: Record<string, any>;
+  error_message?: string;
+  error_details: Record<string, any>;
+  duration_ms?: number;
+  sequence_number: number;
+  occurred_at: string;
+  service_instance_id: string;
+  team_id: string;
+  triggered_by_id?: string;
+}
+
+export interface TopologyAnalysis {
+  id: string;
+  folder_path: string;
+  detection_timestamp: string;
+  detected_patterns: Record<string, any>;
+  service_graph: Record<string, any>;
+  recommended_services: any[];
+  confidence_scores: Record<string, any>;
+  file_indicators: any[];
+  deployment_strategy?: string;
+  total_services_detected: number;
+  analysis_metadata: Record<string, any>;
+  workspace_id: string;
+  team_id: string;
   created_at: string;
   updated_at: string;
 }

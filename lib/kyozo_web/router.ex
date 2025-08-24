@@ -2,19 +2,12 @@ defmodule KyozoWeb.Router do
   use KyozoWeb, :router
 
   import KyozoWeb.UserAuth
-  alias Kyozo.JSONAPI
-
   use AshAuthentication.Phoenix.Router
-
   import AshAuthentication.Plug.Helpers
 
-  pipeline :mcp do
-    # Temporarily disabled for testing - re-enable authentication later
-    # plug AshAuthentication.Strategy.ApiKey.Plug,
-    #   resource: Kyozo.Accounts.User,
-    #   required?: true
-  end
-
+  # ===============================
+  # PIPELINES
+  # ===============================
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -28,23 +21,13 @@ defmodule KyozoWeb.Router do
     plug :put_user_token
   end
 
-  pipeline :openapi do
-    plug OpenApiSpex.Plug.PutApiSpec, module: KyozoWeb.APISpec
-  end
-
   pipeline :api do
     plug :accepts, ["json"]
     plug :load_from_bearer
     plug :set_actor, :user
-    plug JSONAPI.ContentTypeNegotiation
-    plug JSONAPI.FormatRequired
-    plug JSONAPI.ResponseContentType
-    plug JSONAPI.Deserializer
-    plug JSONAPI.UnderscoreParameters
 
     plug AshAuthentication.Strategy.ApiKey.Plug,
       resource: Kyozo.Accounts.User,
-      # if you want to require an api key to be supplied, set `required?` to true
       required?: false
   end
 
@@ -53,13 +36,21 @@ defmodule KyozoWeb.Router do
     plug :load_from_bearer
     plug :set_actor, :user
     plug KyozoWeb.Plugs.TenantAuth, :load_api_tenant
-    plug JSONAPI.ContentTypeNegotiation
-    plug JSONAPI.FormatRequired
-    plug JSONAPI.ResponseContentType
-    plug JSONAPI.Deserializer
-    plug JSONAPI.UnderscoreParameters
   end
 
+  pipeline :webhook do
+    plug KyozoWeb.Plugs.WebhookBodyReader
+    plug :accepts, ["json"]
+    plug KyozoWeb.Plugs.RawBody
+  end
+
+  pipeline :openapi do
+    plug OpenApiSpex.Plug.PutApiSpec, module: KyozoWeb.APISpec
+  end
+
+  # ===============================
+  # API DOCUMENTATION
+  # ===============================
 
   scope "/" do
     pipe_through [:openapi]
@@ -68,60 +59,90 @@ defmodule KyozoWeb.Router do
     get "/openapi", OpenApiSpex.Plug.SwaggerUI, path: "/api"
   end
 
-  scope "/api/json" do
-    pipe_through [:api]
+  # ===============================
+  # WEBHOOKS (No Authentication)
+  # ===============================
 
-    forward "/swaggerui", OpenApiSpex.Plug.SwaggerUI,
-      path: "/api/v1/openapi.json",
-      default_model_expand_depth: 4
+  scope "/webhooks" do
+    pipe_through :webhook
 
-    forward "/", KyozoWeb.AshJsonApiRouter
+    post "/stripe", KyozoWeb.Webhooks.StripeController, :webhook
+    post "/apple", KyozoWeb.API.BillingController, :apple_webhook
   end
 
-  scope "/api/v2" do
+  # ===============================
+  # PUBLIC API (v1)
+  # ===============================
+
+  scope "/api/v1", KyozoWeb.API do
     pipe_through :api
 
-    # OpenAPI spec with JSON-LD
-    get "/openapi", KyozoWeb.ApiDocsController, :openapi
-    get "/openapi.json", KyozoWeb.ApiDocsController, :openapi
-    get "/context", KyozoWeb.ApiDocsController, :json_ld_context
-    get "/docs", KyozoWeb.ApiDocsController, :docs_viewer
+    # API Documentation
+    get "/openapi.json", DocsController, :openapi
+    get "/docs", DocsController, :swagger_ui
+
+    # AI Services (with API key authentication)
+    post "/ai/suggest", AIController, :suggest
+    post "/ai/confidence", AIController, :confidence
+
+    # Markdown Intelligence Services
+    # PromptSpect security scanning
+    post "/markdown/scan", MarkdownController, :scan
+    # Impromptu prompt enhancement  
+    post "/markdown/rally", MarkdownController, :rally
+    # Polyglot translations
+    post "/markdown/polyglot", MarkdownController, :polyglot
+
+    # SafeMD Security Scanning (public with API key)
+    post "/scan", ScanController, :scan
+    post "/scan/async", ScanController, :async_scan
+    get "/scan/async/:job_id", ScanController, :async_scan_result
+
+    # SafeMD Billing (public)
+    get "/safemd/pricing", SafeMDController, :pricing
+    post "/safemd/checkout", SafeMDController, :create_checkout_session
+    get "/safemd/checkout/success", SafeMDController, :checkout_success
+    get "/safemd/checkout/cancel", SafeMDController, :checkout_cancel
   end
 
-  # Legacy v1 API redirect
-  scope "/api/v1" do
-    pipe_through :api
-
-    # Redirect v1 to v2 for backwards compatibility
-    get "/openapi", KyozoWeb.ApiDocsController, :openapi
-    get "/openapi.json", KyozoWeb.ApiDocsController, :openapi
-    get "/context", KyozoWeb.ApiDocsController, :json_ld_context
-    get "/docs", KyozoWeb.ApiDocsController, :docs_viewer
-  end
+  # ===============================
+  # AUTHENTICATED API (v1)
+  # ===============================
 
   scope "/api/v1", KyozoWeb.API do
     pipe_through :api_authenticated
 
-    # Teams API (authentication required, but no specific tenant)
+    # User Billing & Subscriptions
+    get "/billing/subscription", BillingController, :get_subscription_status
+    post "/billing/apple/validate", BillingController, :validate_apple_receipt
+    get "/safemd/subscription", SafeMDController, :subscription_status
+    post "/safemd/subscription/cancel", SafeMDController, :cancel_subscription
+    post "/safemd/subscription/reactivate", SafeMDController, :reactivate_subscription
+
+    # Teams Management
     resources "/teams", TeamsController, except: [:new, :edit] do
+      # Team Members
       get "/members", TeamsController, :members
       post "/members", TeamsController, :invite_member
       delete "/members/:member_id", TeamsController, :remove_member
       patch "/members/:member_id/role", TeamsController, :update_member_role
 
+      # Team Invitations
       get "/invitations", TeamsController, :invitations
       post "/invitations/:invitation_id/accept", TeamsController, :accept_invitation
       post "/invitations/:invitation_id/decline", TeamsController, :decline_invitation
       delete "/invitations/:invitation_id", TeamsController, :cancel_invitation
-
-      # get "/workspaces", TeamsController, :workspaces
     end
   end
+
+  # ===============================
+  # TEAM-SCOPED API (v1)
+  # ===============================
 
   scope "/api/v1/teams/:team_id", KyozoWeb.API do
     pipe_through :api_authenticated
 
-    # Workspaces API (team-scoped)
+    # Workspaces
     resources "/workspaces", WorkspacesController, except: [:new, :edit] do
       post "/archive", WorkspacesController, :archive
       post "/restore", WorkspacesController, :restore
@@ -129,24 +150,39 @@ defmodule KyozoWeb.Router do
       get "/statistics", WorkspacesController, :statistics
       get "/storage", WorkspacesController, :storage_info
       patch "/storage", WorkspacesController, :change_storage_backend
-
       get "/files", WorkspacesController, :files
       get "/notebooks", WorkspacesController, :notebooks
+
+      # Container Services
+      get "/services", WorkspacesController, :list_services
+      post "/services", WorkspacesController, :deploy_service
+      post "/analyze", WorkspacesController, :analyze_topology
     end
 
-    # Documents API (team-scoped)
-    resources "/files", FileController, except: [:new, :edit] do
-      post "/workspaces/:workspace_id/files/upload", FileController, :upload
-      post "/duplicate", FileController, :duplicate
-      get "/content", FileController, :content
-      patch "/content", FileController, :update_content
-      get "/versions", FileController, :versions
-      post "/render", FileController, :render_as
-      patch "/rename", FileController, :rename
-      post "/view", FileController, :view
+    # Files Management
+    resources "/files", FilesController, except: [:new, :edit] do
+      post "/duplicate", FilesController, :duplicate
+      get "/content", FilesController, :content
+      patch "/content", FilesController, :update_content
+      get "/versions", FilesController, :versions
+      post "/render", FilesController, :render_as
+      patch "/rename", FilesController, :rename
+      post "/view", FilesController, :view
     end
 
-    # Notebooks API (team-scoped)
+    # File Upload (separate endpoint for multipart)
+    post "/workspaces/:workspace_id/files/upload", FilesController, :upload
+
+    # Virtual File System
+    scope "/workspaces/:workspace_id/storage" do
+      get "/vfs", Storage.VFSController, :index
+      get "/vfs/content", Storage.VFSController, :show
+      post "/vfs/share", Storage.VFSAdvancedController, :create_share
+      get "/vfs/export", Storage.VFSAdvancedController, :export
+      post "/vfs/templates", Storage.VFSAdvancedController, :register_template
+    end
+
+    # Notebooks (Markdown as Notebooks)
     resources "/notebooks", NotebooksController, except: [:new, :edit, :create] do
       post "/duplicate", NotebooksController, :duplicate
       post "/execute", NotebooksController, :execute
@@ -155,144 +191,132 @@ defmodule KyozoWeb.Router do
       post "/reset", NotebooksController, :reset_execution
       post "/collaborate", NotebooksController, :toggle_collaborative_mode
       post "/access", NotebooksController, :update_access_time
-
       get "/tasks", NotebooksController, :tasks
     end
 
+    # Notebook Creation from Files
     post "/files/:file_id/notebooks", NotebooksController, :create_from_file
     get "/workspaces/:workspace_id/tasks", NotebooksController, :workspace_tasks
+
+    # Container Services Management
+    resources "/services", ServicesController, except: [:new, :edit] do
+      get "/status", ServicesController, :status
+      post "/start", ServicesController, :start
+      post "/stop", ServicesController, :stop
+      post "/restart", ServicesController, :restart
+      post "/scale", ServicesController, :scale
+      get "/logs", ServicesController, :logs
+      get "/metrics", ServicesController, :metrics
+      get "/health", ServicesController, :health_check
+    end
   end
+
+  # ===============================
+  # PUBLIC WEB ROUTES
+  # ===============================
 
   scope "/", KyozoWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     ash_authentication_live_session :authentication_optional,
       on_mount: {KyozoWeb.LiveUserAuth, :live_user_optional} do
+      # Landing Pages
       live "/", Live.Landing, :index
-      live "/editor", Live.Editor
-      live "/auth/test", Live.AuthTestLive
+      live "/safemd", Live.SafeMDLanding, :index
+      live "/safemd/demo", Live.SafeMDDemo, :demo
 
-      # Authentication routes
+      # Tools
+      live "/editor", Live.Editor
+
+      # Authentication Pages
       live "/auth/sign_in", Live.Auth.SignInLive
       live "/auth/register", Live.Auth.RegisterLive
+      live "/auth/test", Live.AuthTestLive
     end
 
-    # get "/register", UserRegistrationController, :new
-    # post "/register", UserRegistrationController, :create
-    get "/login", UserSessionController, :new
-    post "/login", UserSessionController, :create
+    # User Confirmation (non-LiveView)
     get "/confirm-new-user/:token", UserConfirmationController, :edit
     put "/confirm-new-user/:token", UserConfirmationController, :update
     get "/confirm-new-user", UserConfirmationController, :new
     post "/confirm-new-user", UserConfirmationController, :create
   end
 
+  # ===============================
+  # AUTHENTICATED WEB ROUTES
+  # ===============================
+
   scope "/", KyozoWeb do
     pipe_through :browser
 
     ash_authentication_live_session :authenticated_routes,
       on_mount: {KyozoWeb.LiveUserAuth, :live_user_required} do
+      # User Account
       live "/account", AccountLive
       live "/home", Live.Home
 
+      # Account Groups
       scope "/accounts/groups", Accounts.Groups do
         live "/", GroupsLive
         live "/:group_id/permissions", GroupPermissionsLive
       end
 
-      # Native Svelte 5 routes - these will serve the Svelte app
+      # Workspaces
       scope "/workspaces" do
         live "/", Live.Workspace.Index, :index
         live "/new", Live.Workspace.Index, :new
         live "/:id", Live.Workspace.Index, :show
         live "/:id/dashboard", Live.Workspace.Index, :show
-
-        # scope "/:id/files" do
-        #   live "/", Live.Workspace.Files.Index, :index
-        #   live "/:id", Live.Workspace.Files.Index, :show
-        #   live "/new", Live.Workspace.Files.Index, :new
-        #   live "/media", Live.Workspace.Files.Index, :media
-        #   live "/links", Live.Workspace.Files.Index, :links
-        #   live "/:id/dashboard", Live.Workspace.Files.Index, :show
-        # end
       end
 
-      # Teams routes - LiveView to establish socket connection for Svelte
+      # Teams
       live "/teams", Live.Teams.Index, :index
       live "/teams/:id", Live.Teams.Index, :show
 
-      # Team dashboard routes
+      # Team Dashboard
       live "/team/dashboard", Live.Team.Dashboard, :dashboard
       live "/team/dashboard/svelte", Live.Team.DashboardSvelte, :dashboard
 
-      # # Document editor routes
-      # live "/documents/:id/edit", Live.Document.Editor, :edit
-
-      # # Notebook editor routes
-      # live "/notebooks/:id/edit", Live.Notebook.Editor, :edit
+      # Container Management
+      live "/containers", Live.Containers.Dashboard, :index
+      live "/containers/workspace/:workspace_id", Live.Containers.Dashboard, :workspace
     end
   end
 
-  scope "/auth", KyozoWeb do
-    pipe_through [:browser, :redirect_if_user_is_authenticated]
-
-    # OAuth2 routes handled by AshAuthentication
-    # get "/:provider", OAuth2Controller, :request
-    # get "/:provider/callback", OAuth2Controller, :callback
-  end
+  # ===============================
+  # AUTHENTICATED CONTROLLERS
+  # ===============================
 
   scope "/", KyozoWeb do
     pipe_through [:browser, :require_authenticated_user]
 
+    # Portal & Workspace Management
     get "/portal", PortalController, :index
     get "/teams/new", WorkspaceController, :new
     post "/teams", WorkspaceController, :create
     post "/enter-workspace", WorkspaceController, :enter
-    delete "/decline-invitation", WorkspaceController, :decline_invitation
-    post "/accept-invitation", WorkspaceController, :accept_invitation
 
-    # Set current team for workspace access
+    # Team Management
     post "/set-team/:team_id", WorkspaceController, :set_current_team
+
+    # Invitations
+    post "/accept-invitation", WorkspaceController, :accept_invitation
+    delete "/decline-invitation", WorkspaceController, :decline_invitation
   end
 
-  # scope "/workspace", NotedWeb do
-  #   pipe_through [
-  #     :browser,
-  #     :require_authenticated_user,
-  #     :ensure_tenant,
-  #     :load_user_membership_data,
-  #     :set_permissions
-  #   ]
+  # ===============================
+  # SHARED VFS ROUTES
+  # ===============================
 
-  #   get "/", WorkspaceController, :show
-  #   get "/search-users", WorkspaceController, :search_users
-  #   post "/invite-user", WorkspaceController, :invite_user
-  #   put "/change-member-role", WorkspaceController, :change_role
-  #   delete "/cancel-invitation", WorkspaceController, :cancel_invitation
-  #   delete "/remove-team-member", WorkspaceController, :remove_team_member
-  #   delete "/leave-team", WorkspaceController, :leave_team
-  #   delete "/delete-team", WorkspaceController, :delete_team
-  #   resources "/notes", NotesController, except: [:index, :show]
-  # end
+  scope "/vfs", KyozoWeb.VFS do
+    pipe_through :browser
 
-  scope "/mcp" do
-    pipe_through :mcp
-
-    forward "/", AshAi.Mcp.Router,
-      tools: [
-        # Basic Ash tools for interacting with resources
-        :read_ash_resource,
-        :create_ash_resource,
-        :update_ash_resource,
-        :list_ash_resources,
-        # File system tools
-        :read_file,
-        :write_file,
-        :list_directory
-      ],
-      protocol_version_statement: "2024-11-05",
-      otp_app: :kyozo
+    get "/shared/:id", SharedController, :show_html
+    get "/shared/:id/raw", SharedController, :show
   end
+
+  # ===============================
+  # AUTHENTICATION ROUTES
+  # ===============================
 
   scope "/", KyozoWeb do
     pipe_through :browser
@@ -300,45 +324,30 @@ defmodule KyozoWeb.Router do
     auth_routes AuthController, Kyozo.Accounts.User, path: "/auth"
     sign_out_route AuthController
 
-    # Remove these if you'd like to use your own authentication views
     sign_in_route register_path: "/register",
                   reset_path: "/reset",
                   auth_routes_prefix: "/auth",
                   on_mount: [{KyozoWeb.LiveUserAuth, :live_no_user}],
                   overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
 
-    # Remove this if you do not want to use the reset password feature
     reset_route auth_routes_prefix: "/auth",
                 overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
 
-    # Remove this if you do not use the confirmation strategy
     confirm_route Kyozo.Accounts.User, :confirm_new_user,
       auth_routes_prefix: "/auth",
       overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
 
-    # Remove this if you do not use the magic link strategy.
     magic_sign_in_route(Kyozo.Accounts.User, :magic_link,
       auth_routes_prefix: "/auth",
       overrides: [KyozoWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
     )
-
-    # OAuth2 routes - removed due to GraphQL dependency removal
-    # TODO: Re-implement OAuth routes using AshAuthentication.Phoenix directly
-    # without GraphQL/Absinthe dependencies
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", KyozoWeb do
-  #   pipe_through :api
-  # end
+  # ===============================
+  # DEVELOPMENT ROUTES
+  # ===============================
 
-  # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:kyozo, :dev_routes) do
-    # If you want to use the LiveDashboard in production, you should put
-    # it behind authentication and allow only admins to access it.
-    # If your application does not have an admins-only section yet,
-    # you can use Plug.BasicAuth to set up some basic authentication
-    # as long as you are also using SSL (which you should anyway).
     import Phoenix.LiveDashboard.Router
 
     scope "/dev" do

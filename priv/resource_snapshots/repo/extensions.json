@@ -4,6 +4,7 @@
     "ash-functions",
     "pg_trgm",
     "uuid-ossp",
+    "pgcrypto",
     "citext"
   ]
 }

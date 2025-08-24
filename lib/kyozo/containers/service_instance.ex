@@ -20,14 +20,14 @@ defmodule Kyozo.Containers.ServiceInstance do
   end
 
   postgres do
-    table "service_instances"
+    table "container_service_instances"
     repo Kyozo.Repo
 
     references do
       reference :workspace, on_delete: :delete, index?: true
       reference :team, on_delete: :delete, index?: true
       reference :created_by, on_delete: :nilify
-      reference :topology_detection, on_delete: :nilify
+      reference :topology_detection, on_delete: :nilify, index?: true
     end
 
     custom_indexes do
@@ -46,7 +46,6 @@ defmodule Kyozo.Containers.ServiceInstance do
       trigger :deploy do
         action :deploy
         queue(:container_deployment)
-        worker_module_name(Kyozo.Containers.Workers.ContainerDeploymentWorker)
       end
 
       trigger :stop do
@@ -147,7 +146,7 @@ defmodule Kyozo.Containers.ServiceInstance do
 
   policies do
     policy action_type(:read) do
-      authorize_if relates_to_actor_via([:workspace, :user])
+      authorize_if relates_to_actor_via([:workspace, :team, :users])
     end
 
     policy action_type([:create, :update, :destroy]) do
@@ -155,7 +154,7 @@ defmodule Kyozo.Containers.ServiceInstance do
     end
 
     policy action([:deploy, :start, :stop, :scale]) do
-      authorize_if relates_to_actor_via([:workspace, :user])
+      authorize_if relates_to_actor_via([:workspace, :team, :users])
 
       authorize_if expr(
                      team.user_teams.role in [:owner, :admin] and
@@ -380,5 +379,56 @@ defmodule Kyozo.Containers.ServiceInstance do
     calculate :deployment_status, :string, {Kyozo.Containers.Calculations.DeploymentStatus, []}
 
     calculate :resource_utilization, :map, {Kyozo.Containers.Calculations.ResourceUtilization, []}
+  end
+
+  # Static functions for accessing calculations
+  @doc """
+  Get the uptime in seconds for a service instance.
+  """
+  def uptime(service_instance) do
+    case service_instance.status do
+      :running ->
+        case service_instance.deployed_at do
+          nil ->
+            0
+
+          deployed_at ->
+            now = DateTime.utc_now()
+            DateTime.diff(now, deployed_at, :second)
+        end
+
+      _ ->
+        0
+    end
+  end
+
+  @doc """
+  Get the deployment status as a human-readable string.
+  """
+  def deployment_status(service_instance) do
+    case service_instance.status do
+      :pending -> "Deployment in progress"
+      :running -> "Successfully deployed and running"
+      :stopped -> "Stopped"
+      :failed -> "Deployment failed"
+      :scaling -> "Scaling in progress"
+      :unhealthy -> "Running but unhealthy"
+      _ -> "Unknown status"
+    end
+  end
+
+  @doc """
+  Get resource utilization metrics for a service instance.
+  """
+  def resource_utilization(service_instance) do
+    # Mock data for now - in production this would fetch from container manager
+    %{
+      cpu_usage_percent: :rand.uniform(100),
+      memory_usage_mb: :rand.uniform(1024),
+      memory_limit_mb: 1024,
+      disk_usage_mb: :rand.uniform(512),
+      network_rx_mb: :rand.uniform(100),
+      network_tx_mb: :rand.uniform(50)
+    }
   end
 end

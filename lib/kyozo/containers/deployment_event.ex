@@ -27,12 +27,13 @@ defmodule Kyozo.Containers.DeploymentEvent do
   end
 
   postgres do
-    table "deployment_events"
+    table "container_deployment_events"
     repo Kyozo.Repo
 
     references do
       reference :service_instance, on_delete: :delete, index?: true
-      reference :triggered_by, on_delete: :nilify
+      reference :team, on_delete: :delete, index?: true
+      reference :triggered_by, on_delete: :nilify, index?: true
     end
 
     custom_indexes do

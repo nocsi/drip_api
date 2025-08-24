@@ -1,5 +1,5 @@
 defmodule Kyozo.Workspaces do
-  use Ash.Domain, otp_app: :kyozo, extensions: [AshJsonApi.Domain, AshPhoenix.Domain]
+  use Ash.Domain, otp_app: :kyozo, extensions: [AshPhoenix.Domain]
 
   resources do
     resource Kyozo.Workspaces.Workspace do
@@ -131,6 +131,4 @@ defmodule Kyozo.Workspaces do
   def subscribe(team_id) do
     Phoenix.PubSub.subscribe(Kyozo.PubSub, "workspace:#{team_id}")
   end
-
-
 end

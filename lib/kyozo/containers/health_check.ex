@@ -49,7 +49,6 @@ defmodule Kyozo.Containers.HealthCheck do
       trigger :single_check do
         action :create
         queue(:health_monitoring)
-        worker_module_name(Kyozo.Containers.Workers.ContainerHealthMonitor)
       end
 
       trigger :batch_check do

@@ -1,5 +1,5 @@
 <script lang="ts">
- 	import { Button } from "$lib/ui/button/index.js";
+ 	import { Button } from "$lib/ui/button/index.ts";
 	import {
 		ArrowRight,
 		Database,

@@ -11,6 +11,22 @@ config :kyozo, Kyozo.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
+# Stripe configuration
+config :stripity_stripe,
+  api_key: System.get_env("STRIPE_SECRET_KEY"),
+  public_key: System.get_env("STRIPE_PUBLISHABLE_KEY")
+
+config :kyozo, :safemd,
+  pricing_per_scan: String.to_float(System.get_env("SAFEMD_PRICING_PER_SCAN") || "0.03"),
+  free_tier_limit: String.to_integer(System.get_env("SAFEMD_FREE_TIER_LIMIT") || "10"),
+  webhook_secret: System.get_env("STRIPE_WEBHOOK_SECRET")
+
+# Markdown Intelligence Services Pricing
+config :kyozo, :markdown_services,
+  promptspect_price_per_scan: 0.03,      # PromptSpect security scanning
+  impromptu_price_per_enhancement: 0.05, # Impromptu prompt enhancement
+  polyglot_price_per_kb: 0.02           # Polyglot translation per KB
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

@@ -46,6 +46,27 @@ defmodule KyozoWeb.API.WorkspacesJSON do
     %{data: info}
   end
 
+  @doc """
+  Renders workspace services.
+  """
+  def services(%{services: services}) do
+    %{data: for(service <- services, do: service_data(service))}
+  end
+
+  @doc """
+  Renders a single service.
+  """
+  def service(%{service: service}) do
+    %{data: service_data(service)}
+  end
+
+  @doc """
+  Renders topology analysis results.
+  """
+  def topology_analysis(%{analysis: analysis}) do
+    %{data: analysis_data(analysis)}
+  end
+
   defp data(%Workspace{} = workspace) do
     %{
       id: workspace.id,
@@ -123,6 +144,48 @@ defmodule KyozoWeb.API.WorkspacesJSON do
       name: team.name,
       created_at: team.created_at,
       updated_at: team.updated_at
+    }
+  end
+
+  defp service_data(service) do
+    %{
+      id: service.id,
+      name: service.name,
+      folder_path: service.folder_path,
+      service_type: service.service_type,
+      detection_confidence: service.detection_confidence,
+      status: service.status,
+      container_id: service.container_id,
+      image_id: service.image_id,
+      deployment_config: service.deployment_config || %{},
+      port_mappings: service.port_mappings || %{},
+      environment_variables: service.environment_variables || %{},
+      resource_limits: service.resource_limits,
+      created_at: service.created_at,
+      updated_at: service.updated_at,
+      deployed_at: service.deployed_at,
+      workspace_id: service.workspace_id,
+      team_id: service.team_id
+    }
+  end
+
+  defp analysis_data(analysis) do
+    %{
+      id: analysis.id,
+      folder_path: analysis.folder_path,
+      detection_timestamp: analysis.detection_timestamp,
+      detected_patterns: analysis.detected_patterns || %{},
+      service_graph: analysis.service_graph || %{},
+      recommended_services: analysis.recommended_services || [],
+      confidence_scores: analysis.confidence_scores || %{},
+      file_indicators: analysis.file_indicators || [],
+      deployment_strategy: analysis.deployment_strategy,
+      total_services_detected: analysis.total_services_detected || 0,
+      analysis_metadata: analysis.analysis_metadata || %{},
+      workspace_id: analysis.workspace_id,
+      team_id: analysis.team_id,
+      created_at: analysis.created_at,
+      updated_at: analysis.updated_at
     }
   end
 

@@ -124,7 +124,15 @@ config :spark,
 config :kyozo,
   ecto_repos: [Kyozo.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Kyozo.Accounts, Kyozo.Workspaces, Kyozo.Projects, Kyozo.Storage, Kyozo.Containers]
+  ash_domains: [
+    Kyozo.Accounts,
+    Kyozo.Workspaces,
+    Kyozo.Projects,
+    Kyozo.Storage,
+    Kyozo.Containers,
+    Kyozo.Billing,
+    Kyozo.Collaboration
+  ]
 
 # Configures the endpoint
 config :kyozo, KyozoWeb.Endpoint,
@@ -201,6 +209,33 @@ config :ex_aws, :s3,
   scheme: "https://",
   host: "s3.amazonaws.com",
   port: 443
+
+config :stripity_stripe,
+  api_key: System.get_env("STRIPE_SECRET_KEY"),
+  public_key: System.get_env("STRIPE_PUBLISHABLE_KEY")
+
+# Stripe Configuration
+# Apple App Store Configuration
+config :kyozo,
+  apple_app_store_shared_secret: System.get_env("APPLE_APP_STORE_SHARED_SECRET")
+
+config :ex_cldr,
+  default_backend: Kyozo.Cldr
+
+config :ex_money,
+  default_cldr_backend: Kyozo.Cldr
+
+# VFS Configuration
+config :kyozo, Kyozo.Storage.VFS,
+  cache_ttl: :timer.minutes(5),
+  max_virtual_files_per_dir: 10,
+  generators: [
+    Kyozo.Storage.VFS.Generators.ElixirProject,
+    Kyozo.Storage.VFS.Generators.NodeProject,
+    Kyozo.Storage.VFS.Generators.PythonProject,
+    Kyozo.Storage.VFS.Generators.DockerProject,
+    Kyozo.Storage.VFS.Generators.WorkspaceOverview
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

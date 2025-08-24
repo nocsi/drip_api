@@ -30,13 +30,13 @@ defmodule Kyozo.Containers.TopologyDetection do
   end
 
   postgres do
-    table "topology_detections"
+    table "container_topology_detections"
     repo Kyozo.Repo
 
     references do
       reference :workspace, on_delete: :delete, index?: true
       reference :team, on_delete: :delete, index?: true
-      reference :triggered_by, on_delete: :nilify
+      reference :triggered_by, on_delete: :nilify, index?: true
     end
 
     custom_indexes do

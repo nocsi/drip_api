@@ -1,57 +1,8 @@
 defmodule Kyozo.Containers do
   use Ash.Domain,
-    otp_app: :kyozo,
-    extensions: [AshJsonApi.Domain]
+    otp_app: :kyozo
 
   # GraphQL configuration removed during GraphQL cleanup
-
-  json_api do
-    authorize? true
-
-    routes do
-      # Service instance management routes
-      base_route "/service-instances", Kyozo.Containers.ServiceInstance do
-        get :read
-        index :read
-        post :create
-        patch :update
-        delete :destroy
-
-        # Service lifecycle operations
-        patch :deploy, route: "/:id/deploy"
-        patch :start, route: "/:id/start"
-        patch :stop, route: "/:id/stop"
-        patch :scale, route: "/:id/scale"
-      end
-
-      # Topology detection routes
-      base_route "/topology-detections", Kyozo.Containers.TopologyDetection do
-        get :read
-        index :read
-        post :analyze_folder
-        patch :reanalyze, route: "/:id/reanalyze"
-        delete :destroy
-      end
-
-      # Deployment events routes
-      base_route "/deployment-events", Kyozo.Containers.DeploymentEvent do
-        get :read
-        index :read
-      end
-
-      # Health checks routes
-      base_route "/health-checks", Kyozo.Containers.HealthCheck do
-        get :read
-        index :read
-      end
-
-      # Service metrics routes
-      base_route "/service-metrics", Kyozo.Containers.ServiceMetric do
-        get :read
-        index :read
-      end
-    end
-  end
 
   resources do
     # Core container orchestration resources
@@ -132,6 +83,28 @@ defmodule Kyozo.Containers do
   """
   def subscribe_to_health_checks(service_instance_id) do
     Phoenix.PubSub.subscribe(Kyozo.PubSub, "health:#{service_instance_id}")
+  end
+
+  # Alias functions for controller compatibility
+  @doc """
+  Destroy a service instance (alias for delete_service_instance).
+  """
+  def destroy_service_instance(service_instance, opts \\ []) do
+    delete_service_instance(service_instance, opts)
+  end
+
+  @doc """
+  Start a container (alias for start_service).
+  """
+  def start_container(service_instance, opts \\ []) do
+    start_service(service_instance, opts)
+  end
+
+  @doc """
+  Stop a container (alias for stop_service).
+  """
+  def stop_container(service_instance, opts \\ []) do
+    stop_service(service_instance, opts)
   end
 
   @doc """

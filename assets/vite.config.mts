@@ -175,7 +175,7 @@ const resolveConfig = {
     "@css": cssDir,
     "@static": staticDir,
     "@assets": srcImgDir,
-    $lib: path.resolve("./svelte"),
+    $lib: path.resolve("./svelte/lib"),
   },
   extensions: [
     ".svelte",

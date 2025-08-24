@@ -1,29 +1,7 @@
 defmodule Kyozo.Accounts do
-  use Ash.Domain, otp_app: :kyozo, extensions: [AshJsonApi.Domain]
+  use Ash.Domain, otp_app: :kyozo
 
   # GraphQL configuration removed during GraphQL cleanup
-
-  json_api do
-    routes do
-      base_route "/users", Kyozo.Accounts.User do
-        post :register_with_password do
-          route "/register"
-
-          metadata fn _subject, user, _request ->
-            %{token: user.__metadata__.token}
-          end
-        end
-
-        post :sign_in_with_password do
-          route "/sign-in"
-
-          metadata fn _subject, user, _request ->
-            %{token: user.__metadata__.token}
-          end
-        end
-      end
-    end
-  end
 
   resources do
     resource Kyozo.Accounts.Token
@@ -60,10 +38,17 @@ defmodule Kyozo.Accounts do
 
     resource Kyozo.Accounts.User do
       define :register_with_password
-      define :register_user, action: :register_with_password, args: [:name, :email, :password, :password_confirmation]
+
+      define :register_user,
+        action: :register_with_password,
+        args: [:name, :email, :password, :password_confirmation]
+
       define :sign_in_with_password
       define :search_users
       define :get_user_by_email, action: :get_by_email, args: [:email]
+      define :get_user, action: :read, get_by: :id
+      define :update_user, action: :update
+      define :list_users, action: :read
     end
 
     resource Kyozo.Accounts.UserIdentity
@@ -76,7 +61,6 @@ defmodule Kyozo.Accounts do
 
     resource Kyozo.Accounts.ApiKey
   end
-
 
   def confirm_user(token) do
     Kyozo.Accounts.User

@@ -380,44 +380,30 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       dockerfile: config.dockerfile_path
     )
 
-    if config.dockerfile_path && File.exists?(config.dockerfile_path) do
-      build_custom_image(config)
-    else
-      pull_base_image(config)
-    end
+    # ContainerManager handles the full deployment including image building/pulling
+    # For now, return mock image info to maintain existing flow
+    {:ok,
+     %{
+       image_name: config.image_name,
+       image_tag: config.image_tag,
+       image_id: generate_mock_image_id(),
+       build_time: DateTime.utc_now(),
+       size_mb: :rand.uniform(500) + 100
+     }}
   end
 
   defp build_custom_image(config) do
-    # In production, this would use Docker API to build the image
-    # Simulate image building process
-
     Logger.info("Building custom Docker image", image: config.image_name)
 
-    # Simulate build time
-    :timer.sleep(2000)
-
-    # Check for build failures (simulate 5% failure rate)
-    if :rand.uniform(100) <= 5 do
-      {:error, :image_build_failed}
-    else
-      image_info = %{
-        image_name: config.image_name,
-        image_tag: config.image_tag,
-        image_id: generate_mock_image_id(),
-        build_time: DateTime.utc_now(),
-        size_mb: :rand.uniform(500) + 100
-      }
-
-      {:ok, image_info}
-    end
-  rescue
-    error ->
-      Logger.error("Docker image build failed",
-        image: config.image_name,
-        error: Exception.message(error)
-      )
-
-      {:error, :docker_build_error}
+    # This is now handled by ContainerManager
+    {:ok,
+     %{
+       image_name: config.image_name,
+       image_tag: config.image_tag,
+       image_id: generate_mock_image_id(),
+       build_time: DateTime.utc_now(),
+       size_mb: :rand.uniform(500) + 100
+     }}
   end
 
   defp pull_base_image(config) do
@@ -443,36 +429,24 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
       image: "#{image_info.image_name}:#{image_info.image_tag}"
     )
 
-    # In production, this would use Docker API to create and start the container
-    # Simulate container deployment
+    # Use ContainerManager for actual deployment
+    case Kyozo.Containers.ContainerManager.deploy_service(config.service) do
+      {:ok, container_info} ->
+        Logger.info("Container deployed successfully",
+          container_id: container_info.container_id,
+          service_id: config.service.id
+        )
 
-    container_info = %{
-      container_id: generate_mock_container_id(),
-      container_name: config.container_name,
-      image: "#{image_info.image_name}:#{image_info.image_tag}",
-      status: "running",
-      created_at: DateTime.utc_now(),
-      ports: config.port_mappings,
-      networks: config.networks
-    }
+        {:ok, container_info}
 
-    # Simulate deployment time
-    :timer.sleep(1000)
+      error ->
+        Logger.error("Container deployment failed",
+          service_id: config.service.id,
+          error: inspect(error)
+        )
 
-    # Check for deployment failures (simulate 3% failure rate)
-    if :rand.uniform(100) <= 3 do
-      {:error, :container_start_failed}
-    else
-      {:ok, container_info}
+        error
     end
-  rescue
-    error ->
-      Logger.error("Container deployment failed",
-        container_name: config.container_name,
-        error: Exception.message(error)
-      )
-
-      {:error, :docker_deployment_error}
   end
 
   defp finalize_deployment(service, container_info, tenant) do
@@ -523,28 +497,19 @@ defmodule Kyozo.Containers.Workers.ContainerDeploymentWorker do
     if service.container_id do
       Logger.info("Stopping container", container_id: service.container_id)
 
-      # In production, this would use Docker API to stop the container
-      # Simulate container stop
-      :timer.sleep(500)
+      case Kyozo.Containers.ContainerManager.stop_service(service) do
+        {:ok, _} ->
+          Logger.info("Container stopped successfully", container_id: service.container_id)
+          :ok
 
-      # Check for stop failures (simulate 1% failure rate)
-      if :rand.uniform(100) <= 1 do
-        {:error, :container_stop_failed}
-      else
-        :ok
+        error ->
+          Logger.error("Container stop failed", error: inspect(error))
+          error
       end
     else
       Logger.warn("No container ID found for service", service_id: service.id)
-      :ok
+      {:error, :no_container_id}
     end
-  rescue
-    error ->
-      Logger.error("Failed to stop container",
-        service_id: service.id,
-        error: Exception.message(error)
-      )
-
-      {:error, :docker_stop_error}
   end
 
   defp scale_container(service, replica_count) do

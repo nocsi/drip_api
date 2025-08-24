@@ -1,556 +1,264 @@
 defmodule Kyozo.Containers.Workers.ContainerHealthMonitor do
   @moduledoc """
-  Background worker for monitoring container health and updating service status.
+  Oban worker for monitoring container health status.
 
-  This worker:
-  - Periodically checks the health of running containers
-  - Updates health status in the database
-  - Triggers alerts for unhealthy services
-  - Implements circuit breaker patterns for Docker API resilience
-  - Collects health metrics for analysis
+  This worker performs batch health checks on all running containers
+  and can also handle individual container health monitoring tasks.
   """
 
   use Oban.Worker,
     queue: :health_monitoring,
-    max_attempts: 5,
-    tags: ["health", "monitoring", "containers"]
+    priority: 2,
+    max_attempts: 3,
+    tags: ["containers", "health"]
+
+  alias Kyozo.Containers
+  alias Kyozo.Containers.ContainerManager
 
   require Logger
-  alias Kyozo.{Containers, Events}
-  alias Kyozo.Containers.{ServiceInstance, HealthCheck}
-
-  # Circuit breaker state
-  @circuit_breaker_key "docker_api_circuit_breaker"
-  # 1 minute
-  @circuit_breaker_timeout 60_000
-  # failures before opening
-  @circuit_breaker_threshold 5
-
-  defp job_tenant(%Oban.Job{args: args, meta: meta}), do: (args["tenant"] || (meta && meta["tenant"]))
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"service_instance_id" => service_id} = args} = job) do
-    tenant = job_tenant(job)
-    Logger.debug("Starting health check for service", service_instance_id: service_id)
+  def perform(%Oban.Job{args: %{"batch_check" => true}} = job) do
+    Logger.info("Starting batch container health check")
 
-    with {:ok, service} <- get_service_instance(service_id, tenant),
-         {:ok, health_status} <- check_service_health(service, args),
-         {:ok, updated_service} <- update_service_health(service, health_status, tenant),
-         {:ok, _health_record} <- record_health_check(updated_service, health_status, tenant) do
-      Logger.debug("Health check completed",
-        service_instance_id: service_id,
-        status: health_status.status
-      )
-
-      # Trigger alerts if unhealthy
-      if health_status.status != "healthy" do
-        maybe_trigger_alert(updated_service, health_status)
-      end
-
-      {:ok, health_status}
-    else
-      {:error, reason} = error ->
-        Logger.error("Health check failed",
-          service_instance_id: service_id,
-          reason: reason
+    case perform_batch_health_check() do
+      {:ok, results} ->
+        Logger.info("Batch health check completed successfully",
+          checked: length(results.checked),
+          healthy: length(results.healthy),
+          unhealthy: length(results.unhealthy)
         )
 
-        # Record failed health check
-        record_failed_health_check(service_id, reason, tenant)
-        error
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Batch health check failed", error: inspect(reason))
+        {:error, reason}
     end
   end
 
-  def perform(%Oban.Job{args: %{"batch_check" => true} = args} = job) do
-    tenant = job_tenant(job)
-    Logger.info("Starting batch health check")
+  def perform(%Oban.Job{args: %{"service_id" => service_id, "tenant" => tenant}} = job) do
+    Logger.debug("Performing health check for service", service_id: service_id)
 
-    limit = args["limit"] || 50
-
-    # If no tenant provided, fan out per-tenant batch checks
-    if is_nil(tenant) do
-      tenants = Kyozo.Repo.all_tenants()
-      Enum.each(tenants, fn t ->
-        AshOban.schedule(Kyozo.Containers.HealthCheck, :batch_check, Map.put(args, "tenant", t), tenant: t)
-      end)
-      {:ok, %{enqueued_tenants: length(tenants)}}
-    else
-      with {:ok, services} <- get_active_services(limit, tenant),
-         :ok <- process_batch_health_checks(services, args, tenant) do
-        Logger.info("Batch health check completed", services_checked: length(services))
-        {:ok, %{services_checked: length(services)}}
-      else
-        error -> error
-      end
-    end
-  end
-
-  def perform(%Oban.Job{args: args}) do
-    Logger.error("ContainerHealthMonitor received invalid arguments", args: args)
-    {:error, :invalid_arguments}
-  end
-
-  @doc """
-  Enqueue a health check for a specific service instance.
-  """
-  def enqueue_single_check(service_instance_id, opts \\ []) do
-    args = %{
-      "service_instance_id" => service_instance_id,
-      "check_type" => Keyword.get(opts, :check_type, "standard"),
-      "timeout" => Keyword.get(opts, :timeout, 30),
-      "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-    }
-
-    AshOban.schedule(Kyozo.Containers.HealthCheck, :single_check, args, opts)
-  end
-
-  @doc """
-  Enqueue a batch health check for all active services.
-  """
-  def enqueue_batch_check(opts \\ []) do
-    args = %{
-      "batch_check" => true,
-      "limit" => Keyword.get(opts, :limit, 100),
-      "check_type" => Keyword.get(opts, :check_type, "standard"),
-      "timeout" => Keyword.get(opts, :timeout, 30),
-      "queued_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-    }
-
-    AshOban.schedule(Kyozo.Containers.HealthCheck, :batch_check, args, opts)
-  end
-
-  @doc """
-  Schedule periodic health checks using Oban cron.
-  Add this to your application's Oban config:
-
-  plugins: [
-    {Oban.Plugins.Cron,
-     crontab: [
-       {"*/2 * * * *", Kyozo.Containers.Workers.ContainerHealthMonitor,
-        args: %{"batch_check" => true}}
-     ]}
-  ]
-  """
-  def schedule_periodic_checks do
-    enqueue_batch_check(priority: 5)
-  end
-
-  # Private Functions
-
-  defp get_service_instance(service_id, tenant) do
-    case Containers.get_service_instance(service_id, tenant: tenant) do
-      nil -> {:error, :service_not_found}
-      service -> {:ok, service}
-    end
-  end
-
-  defp get_active_services(limit, tenant) do
-    # Get services that are running or deploying
-    services =
-      Containers.list_service_instances(
-        filters: %{
-          container_status: ["running", "deploying", "starting"]
-        },
-        limit: limit,
-        tenant: tenant
-      )
-
-    {:ok, services}
-  end
-
-  defp check_service_health(service, args) do
-    check_type = args["check_type"] || "standard"
-    timeout = args["timeout"] || 30
-
-    Logger.debug("Performing health check",
-      service_id: service.id,
-      check_type: check_type,
-      timeout: timeout
-    )
-
-    with {:ok, _circuit_status} <- check_circuit_breaker(),
-         {:ok, container_status} <- check_container_status(service),
-         {:ok, health_endpoint} <- check_health_endpoint(service, timeout),
-         {:ok, resource_usage} <- check_resource_usage(service) do
-      overall_status =
-        determine_overall_health_status(container_status, health_endpoint, resource_usage)
-
-      health_status = %{
-        status: overall_status,
-        container_status: container_status,
-        health_endpoint_status: health_endpoint.status,
-        health_endpoint_response_time: health_endpoint.response_time,
-        cpu_usage_percent: resource_usage.cpu_percent,
-        memory_usage_mb: resource_usage.memory_mb,
-        disk_usage_percent: resource_usage.disk_percent,
-        network_status: resource_usage.network_status,
-        checked_at: DateTime.utc_now(),
-        # Will be calculated
-        check_duration_ms: 0,
-        alerts: []
-      }
-
-      {:ok, health_status}
-    else
-      {:error, :circuit_breaker_open} = error ->
-        Logger.warn("Docker API circuit breaker is open, skipping health check",
-          service_id: service.id
+    case perform_single_health_check(service_id, tenant) do
+      {:ok, status} ->
+        Logger.debug("Health check completed",
+          service_id: service_id,
+          status: status
         )
 
-        error
+        :ok
 
-      {:error, reason} = error ->
-        record_circuit_breaker_failure()
-
-        Logger.error("Health check failed",
-          service_id: service.id,
-          reason: reason
+      {:error, reason} ->
+        Logger.warning("Health check failed for service",
+          service_id: service_id,
+          error: inspect(reason)
         )
 
-        error
+        {:error, reason}
     end
   end
 
-  defp check_circuit_breaker do
-    case get_circuit_breaker_state() do
-      {:open, last_failure} ->
-        if DateTime.diff(DateTime.utc_now(), last_failure, :millisecond) >
-             @circuit_breaker_timeout do
-          reset_circuit_breaker()
-          {:ok, :half_open}
-        else
-          {:error, :circuit_breaker_open}
-        end
-
-      {:closed, _} ->
-        {:ok, :closed}
-
-      {:half_open, _} ->
-        {:ok, :half_open}
-    end
-  end
-
-  defp check_container_status(service) do
-    # In a real implementation, this would use Docker API
-    # For now, simulate based on service attributes
-    case service.container_status do
-      "running" ->
-        # Simulate occasional failures
-        if :rand.uniform(100) > 95 do
-          {:error, :container_not_responding}
-        else
-          {:ok, "running"}
-        end
-
-      status ->
-        {:ok, status}
-    end
-  rescue
-    error ->
-      Logger.error("Container status check failed",
-        service_id: service.id,
-        error: Exception.message(error)
-      )
-
-      {:error, :docker_api_error}
-  end
-
-  defp check_health_endpoint(service, timeout) do
-    # Extract health check configuration
-    health_config = service.health_check_config || %{}
-    path = health_config["path"] || "/health"
-    port = health_config["port"] || get_primary_port(service)
-
-    if should_check_health_endpoint?(service, health_config) do
-      perform_health_endpoint_check(service, path, port, timeout)
-    else
-      {:ok, %{status: "not_configured", response_time: 0}}
-    end
-  end
-
-  defp perform_health_endpoint_check(service, path, port, timeout) do
-    start_time = System.monotonic_time(:millisecond)
-
-    # Simulate HTTP health check
-    # In production, this would make actual HTTP requests
-    result = simulate_health_endpoint_check(service, path)
-
-    end_time = System.monotonic_time(:millisecond)
-    response_time = end_time - start_time
-
-    case result do
-      :ok ->
-        {:ok, %{status: "healthy", response_time: response_time}}
-
-      :unhealthy ->
-        {:ok, %{status: "unhealthy", response_time: response_time}}
-
-      :timeout ->
-        {:ok, %{status: "timeout", response_time: timeout * 1000}}
-
-      :error ->
-        {:error, :health_endpoint_error}
-    end
-  rescue
-    error ->
-      Logger.error("Health endpoint check failed",
-        service_id: service.id,
-        error: Exception.message(error)
-      )
-
-      {:error, :health_endpoint_error}
-  end
-
-  defp check_resource_usage(service) do
-    # In production, this would query Docker stats API
-    # Simulate resource usage data
-    cpu_percent = :rand.uniform(100)
-    memory_mb = :rand.uniform(1024) + 256
-    disk_percent = :rand.uniform(80) + 10
-
-    network_status = if :rand.uniform(100) > 98, do: "degraded", else: "healthy"
-
-    {:ok,
-     %{
-       cpu_percent: cpu_percent,
-       memory_mb: memory_mb,
-       disk_percent: disk_percent,
-       network_status: network_status
-     }}
-  rescue
-    error ->
-      Logger.error("Resource usage check failed",
-        service_id: service.id,
-        error: Exception.message(error)
-      )
-
-      {:error, :resource_check_error}
-  end
-
-  defp determine_overall_health_status(container_status, health_endpoint, resource_usage) do
-    cond do
-      container_status != "running" ->
-        "unhealthy"
-
-      health_endpoint.status in ["unhealthy", "timeout"] ->
-        "unhealthy"
-
-      resource_usage.cpu_percent > 90 or resource_usage.memory_mb > 2048 ->
-        "degraded"
-
-      resource_usage.network_status == "degraded" ->
-        "degraded"
-
-      true ->
-        "healthy"
-    end
-  end
-
-  defp update_service_health(service, health_status, tenant) do
-    updates = %{
-      health_status: health_status.status,
-      last_health_check_at: health_status.checked_at,
-      cpu_usage_percent: health_status.cpu_usage_percent,
-      memory_usage_mb: health_status.memory_usage_mb
-    }
-
-    case Containers.update_service_instance(service, updates, tenant: tenant) do
-      {:ok, updated_service} ->
-        # Successful operation
-        reset_circuit_breaker()
-        {:ok, updated_service}
-
-      error ->
-        error
-    end
-  end
-
-  defp record_health_check(service, health_status, tenant) do
-    attrs = %{
-      service_instance_id: service.id,
-      status: health_status.status,
-      response_time_ms: health_status.health_endpoint_response_time,
-      cpu_usage_percent: health_status.cpu_usage_percent,
-      memory_usage_mb: health_status.memory_usage_mb,
-      disk_usage_percent: health_status.disk_usage_percent,
-      details: %{
-        container_status: health_status.container_status,
-        health_endpoint_status: health_status.health_endpoint_status,
-        network_status: health_status.network_status,
-        check_duration_ms: health_status.check_duration_ms
-      },
-      checked_at: health_status.checked_at
-    }
-
-    Containers.create_health_check(attrs, tenant: tenant)
-  end
-
-  defp record_failed_health_check(service_id, reason, tenant) do
-    attrs = %{
-      service_instance_id: service_id,
-      status: "failed",
-      error_message: to_string(reason),
-      checked_at: DateTime.utc_now(),
-      details: %{
-        failure_reason: reason,
-        worker_error: true
-      }
-    }
-
-    Containers.create_health_check(attrs, tenant: tenant)
-  end
-
-  defp process_batch_health_checks(services, args, tenant) do
-    # Process in smaller batches to avoid overwhelming the system
-    batch_size = 10
-
-    services
-    |> Enum.chunk_every(batch_size)
-    |> Enum.each(fn batch ->
-      # Process batch with slight delay between checks
-      Enum.each(batch, fn service ->
-        case check_service_health(service, args) do
-          {:ok, health_status} ->
-            update_service_health(service, health_status, tenant)
-            record_health_check(service, health_status, tenant)
-
-            if health_status.status != "healthy" do
-              maybe_trigger_alert(service, health_status)
-            end
-
-          {:error, reason} ->
-            record_failed_health_check(service.id, reason, tenant)
-        end
-
-        # Small delay between checks
-        Process.sleep(100)
-      end)
-
-      # Longer delay between batches
-      Process.sleep(500)
-    end)
-
+  def perform(%Oban.Job{args: args} = job) do
+    Logger.warning("Unknown health monitor job args", args: inspect(args))
     :ok
   end
 
-  defp maybe_trigger_alert(service, health_status) do
-    # Check if we should send an alert based on:
-    # - Service hasn't been healthy for X minutes
-    # - Alert frequency limits
-    # - Alert escalation rules
+  @doc """
+  Enqueue a single health check for a specific service.
+  """
+  def enqueue_single_check(service_id, opts \\ []) do
+    priority = Keyword.get(opts, :priority, 2)
+    tenant = Keyword.get(opts, :tenant)
 
-    if should_send_alert?(service, health_status) do
-      Events.publish_event("service_health_alert", %{
-        service_instance_id: service.id,
-        service_name: service.name,
-        health_status: health_status.status,
-        details: %{
-          container_status: health_status.container_status,
-          cpu_usage: health_status.cpu_usage_percent,
-          memory_usage: health_status.memory_usage_mb,
-          response_time: health_status.health_endpoint_response_time
-        },
-        workspace_id: service.workspace_id,
-        alert_level: determine_alert_level(health_status),
-        timestamp: DateTime.utc_now()
-      })
+    args = %{
+      "service_id" => service_id,
+      "tenant" => tenant
+    }
 
-      Logger.warn("Service health alert triggered",
+    %{args: args, priority: priority}
+    |> __MODULE__.new()
+    |> Oban.insert()
+  end
+
+  @doc """
+  Enqueue a batch health check job.
+  """
+  def enqueue_batch_check(opts \\ []) do
+    priority = Keyword.get(opts, :priority, 3)
+
+    args = %{"batch_check" => true}
+
+    %{args: args, priority: priority}
+    |> __MODULE__.new()
+    |> Oban.insert()
+  end
+
+  # Private functions
+
+  defp perform_batch_health_check do
+    try do
+      # Get all running service instances
+      {:ok, services} = Containers.list_service_instances()
+
+      running_services =
+        Enum.filter(services, fn service ->
+          service.status in [:running, :deployed, :starting]
+        end)
+
+      # Perform health checks in parallel with limited concurrency
+      task_results =
+        running_services
+        |> Task.async_stream(&check_service_health/1,
+          max_concurrency: 10,
+          timeout: 30_000,
+          on_timeout: :kill_task
+        )
+        |> Enum.to_list()
+
+      # Process results
+      {healthy, unhealthy} =
+        task_results
+        |> Enum.reduce({[], []}, fn
+          {:ok, {:ok, service_id}} = result, {healthy, unhealthy} ->
+            {[service_id | healthy], unhealthy}
+
+          {:ok, {:error, service_id}} = result, {healthy, unhealthy} ->
+            {healthy, [service_id | unhealthy]}
+
+          {:exit, reason}, {healthy, unhealthy} ->
+            Logger.warning("Health check task crashed", reason: inspect(reason))
+            {healthy, unhealthy}
+        end)
+
+      results = %{
+        checked: running_services |> Enum.map(& &1.id),
+        healthy: healthy,
+        unhealthy: unhealthy
+      }
+
+      {:ok, results}
+    rescue
+      exception ->
+        Logger.error("Batch health check exception",
+          exception: inspect(exception),
+          stacktrace: Exception.format_stacktrace(__STACKTRACE__)
+        )
+
+        {:error, exception}
+    end
+  end
+
+  defp perform_single_health_check(service_id, tenant) do
+    try do
+      # Get service details
+      case Containers.get_service_instance(service_id, tenant: tenant) do
+        {:ok, service} ->
+          check_service_health(service)
+
+        {:error, reason} = error ->
+          Logger.warning("Service not found for health check",
+            service_id: service_id,
+            error: inspect(reason)
+          )
+
+          error
+      end
+    rescue
+      exception ->
+        Logger.error("Single health check exception",
+          service_id: service_id,
+          exception: inspect(exception),
+          stacktrace: Exception.format_stacktrace(__STACKTRACE__)
+        )
+
+        {:error, exception}
+    end
+  end
+
+  defp check_service_health(service) do
+    case ContainerManager.check_container_health(service.container_id, service.team_id) do
+      {:ok, :healthy} ->
+        # Update service status if needed
+        maybe_update_service_status(service, :healthy)
+        {:ok, service.id}
+
+      {:ok, :unhealthy} ->
+        Logger.warning("Container reported unhealthy",
+          service_id: service.id,
+          container_id: service.container_id
+        )
+
+        maybe_update_service_status(service, :unhealthy)
+        {:error, service.id}
+
+      {:error, :not_found} ->
+        Logger.warning("Container not found during health check",
+          service_id: service.id,
+          container_id: service.container_id
+        )
+
+        maybe_update_service_status(service, :stopped)
+        {:error, service.id}
+
+      {:error, reason} ->
+        Logger.warning("Health check failed",
+          service_id: service.id,
+          container_id: service.container_id,
+          error: inspect(reason)
+        )
+
+        {:error, service.id}
+    end
+  rescue
+    exception ->
+      Logger.error("Health check crashed for service",
         service_id: service.id,
-        status: health_status.status
-      )
-    end
-  end
-
-  # Circuit Breaker Implementation
-
-  defp get_circuit_breaker_state do
-    case :ets.lookup(:kyozo_circuit_breakers, @circuit_breaker_key) do
-      [{_, state, timestamp, failure_count}] ->
-        {state, timestamp, failure_count}
-
-      [] ->
-        {:closed, DateTime.utc_now(), 0}
-    end
-  end
-
-  defp record_circuit_breaker_failure do
-    {state, timestamp, failure_count} = get_circuit_breaker_state()
-    new_failure_count = failure_count + 1
-
-    if new_failure_count >= @circuit_breaker_threshold do
-      :ets.insert(
-        :kyozo_circuit_breakers,
-        {@circuit_breaker_key, :open, DateTime.utc_now(), new_failure_count}
+        exception: inspect(exception)
       )
 
-      Logger.warn("Docker API circuit breaker opened", failures: new_failure_count)
+      {:error, service.id}
+  end
+
+  defp maybe_update_service_status(service, health_status) do
+    # Map health status to service status
+    new_status =
+      case {service.status, health_status} do
+        # No change needed
+        {:running, :healthy} -> nil
+        # No change needed
+        {:deployed, :healthy} -> nil
+        # Starting -> Running
+        {:starting, :healthy} -> :running
+        {_, :unhealthy} -> :unhealthy
+        {_, :stopped} -> :stopped
+        _ -> nil
+      end
+
+    if new_status && new_status != service.status do
+      case Containers.update_service_instance(service, %{status: new_status},
+             tenant: service.team_id
+           ) do
+        {:ok, _updated_service} ->
+          Logger.info("Updated service status after health check",
+            service_id: service.id,
+            old_status: service.status,
+            new_status: new_status
+          )
+
+          :ok
+
+        {:error, reason} ->
+          Logger.warning("Failed to update service status after health check",
+            service_id: service.id,
+            new_status: new_status,
+            error: inspect(reason)
+          )
+
+          :error
+      end
     else
-      :ets.insert(
-        :kyozo_circuit_breakers,
-        {@circuit_breaker_key, state, timestamp, new_failure_count}
-      )
-    end
-  end
-
-  defp reset_circuit_breaker do
-    :ets.insert(
-      :kyozo_circuit_breakers,
-      {@circuit_breaker_key, :closed, DateTime.utc_now(), 0}
-    )
-  end
-
-  # Helper Functions
-
-  defp should_check_health_endpoint?(service, health_config) do
-    service.container_status == "running" and
-      health_config["enabled"] != false and
-      service.service_type in ["web_app", "api_service"]
-  end
-
-  defp get_primary_port(service) do
-    case service.port_mappings do
-      %{} = mappings when map_size(mappings) > 0 ->
-        mappings |> Map.values() |> List.first()
-
-      # default
-      _ ->
-        "8080"
-    end
-  end
-
-  defp simulate_health_endpoint_check(_service, _path) do
-    # Simulate different health check outcomes
-    case :rand.uniform(100) do
-      n when n <= 85 -> :ok
-      n when n <= 95 -> :unhealthy
-      n when n <= 98 -> :timeout
-      _ -> :error
-    end
-  end
-
-  defp should_send_alert?(service, health_status) do
-    # Implement alert frequency limiting and escalation logic
-    # For now, simple implementation
-    health_status.status in ["unhealthy", "degraded"] and
-      consecutive_unhealthy_checks(service.id) >= 3
-  end
-
-  defp consecutive_unhealthy_checks(service_id) do
-    # Query recent health checks to determine consecutive failures
-    # Simplified implementation
-    recent_checks = Containers.list_health_checks(service_id, limit: 5)
-
-    recent_checks
-    |> Enum.take_while(fn check -> check.status != "healthy" end)
-    |> length()
-  end
-
-  defp determine_alert_level(health_status) do
-    case health_status.status do
-      "unhealthy" -> "critical"
-      "degraded" -> "warning"
-      _ -> "info"
+      :ok
     end
   end
 end

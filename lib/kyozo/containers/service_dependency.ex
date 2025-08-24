@@ -29,12 +29,12 @@ defmodule Kyozo.Containers.ServiceDependency do
   end
 
   postgres do
-    table "service_dependencies"
+    table "container_service_dependencies"
     repo Kyozo.Repo
 
     references do
       reference :dependent_service, on_delete: :delete, index?: true
-      reference :required_service, on_delete: :restrict, index?: true
+      reference :required_service, on_delete: :delete, index?: true
     end
 
     custom_indexes do

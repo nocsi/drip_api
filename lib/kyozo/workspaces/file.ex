@@ -1,5 +1,32 @@
 defmodule Kyozo.Workspaces.File do
-  @derive {Jason.Encoder, only: [:id, :name, :file_path, :content_type, :description, :tags, :file_size, :storage_backend, :storage_metadata, :version, :checksum, :is_directory, :is_binary, :render_cache, :view_count, :last_viewed_at, :deleted_at, :workspace_id, :parent_file_id, :created_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :name,
+             :file_path,
+             :content_type,
+             :description,
+             :tags,
+             :file_size,
+             :storage_backend,
+             :storage_metadata,
+             :version,
+             :checksum,
+             :is_directory,
+             :is_binary,
+             :render_cache,
+             :view_count,
+             :last_viewed_at,
+             :deleted_at,
+             :workspace_id,
+             :parent_file_id,
+             :is_executable,
+             :execution_state,
+             :enlightenment_metadata,
+             :parsed_cells,
+             :created_at,
+             :updated_at
+           ]}
 
   @moduledoc """
   File resource representing generic files and folders in a workspace.
@@ -21,14 +48,17 @@ defmodule Kyozo.Workspaces.File do
   alias Kyozo.Workspaces.Events
   alias Kyozo.Workspaces.File.Changes
   alias Kyozo.Workspaces.FileTypeMapper
+  alias Kyozo.Workspaces.{LivemdParser, LivemdExecution}
+  alias Kyozo.Enlightenment
 
-  render_markdown do
-    render_attributes content: :content_html, description: :description_html
-    header_ids? true
-    table_of_contents? false
-    syntax_highlighting? true
-    extract_tasks? true
-    allowed_languages ["markdown", "html", "css", "javascript", "python", "bash", "sql"]
+  json_api do
+    type "file"
+
+    routes do
+      base "/files"
+      get :read
+      index :read
+    end
   end
 
   postgres do
@@ -56,15 +86,27 @@ defmodule Kyozo.Workspaces.File do
     end
   end
 
+  render_markdown do
+    render_attributes(content: :content_html, description: :description_html)
+    header_ids?(true)
+    table_of_contents?(false)
+    syntax_highlighting?(true)
+    extract_tasks?(true)
 
-  json_api do
-    type "file"
-
-    routes do
-      base "/files"
-      get :read
-      index :read
-    end
+    allowed_languages([
+      "markdown",
+      "html",
+      "css",
+      "javascript",
+      "python",
+      "bash",
+      "sql",
+      "elixir",
+      "typescript",
+      "yaml",
+      "json",
+      "toml"
+    ])
   end
 
   # GraphQL configuration removed during GraphQL cleanup
@@ -76,14 +118,39 @@ defmodule Kyozo.Workspaces.File do
   #   event :file_deleted, Kyozo.Workspaces.Events.FileDeleted
   #   event :file_renamed, Kyozo.Workspaces.Events.FileRenamed
   #   event :file_viewed, Kyozo.Workspaces.Events.FileViewed
+  #   event :file_executed, Kyozo.Workspaces.Events.FileExecuted
+  #   event :file_enlightened, Kyozo.Workspaces.Events.FileEnlightened
   # end
 
   actions do
-    default_accept [:name, :content_type, :description, :tags, :is_directory, :parent_file_id]
+    default_accept [
+      :name,
+      :content_type,
+      :description,
+      :tags,
+      :is_directory,
+      :parent_file_id,
+      :is_executable,
+      :execution_state,
+      :enlightenment_metadata,
+      :parsed_cells
+    ]
+
     defaults [:read, :destroy]
 
     read :list_files do
-      prepare build(load: [:author, :can_update, :can_destroy, :file_metadata, :storage_info, :parent, :children])
+      prepare build(
+                load: [
+                  :author,
+                  :can_update,
+                  :can_destroy,
+                  :file_metadata,
+                  :storage_info,
+                  :parent,
+                  :children
+                ]
+              )
+
       filter expr(is_nil(deleted_at))
     end
 
@@ -91,22 +158,50 @@ defmodule Kyozo.Workspaces.File do
       argument :content_type, :string, allow_nil?: false
 
       prepare build(
-        filter: [content_type: arg(:content_type)],
-        load: [:author, :file_metadata]
-      )
+                filter: [content_type: arg(:content_type)],
+                load: [:author, :file_metadata]
+              )
+    end
+
+    read :list_markdown do
+      prepare build(
+                filter: [content_type: "text/markdown"],
+                load: [:author, :file_metadata]
+              )
+
+      filter expr(fragment("? LIKE '%.md' OR ? LIKE '%.markdown'", file_path, file_path))
+    end
+
+    action :enlighten, :struct do
+      argument :force_refresh, :boolean, default: false
+
+      run fn input, _context ->
+        file = input.subject
+        force_refresh = input.arguments.force_refresh
+
+        if is_markdown_file?(file) do
+          case Enlightenment.enlighten_file(file, force_refresh: force_refresh) do
+            {:ok, enlightened_file} -> {:ok, enlightened_file}
+            {:error, reason} -> {:error, reason}
+          end
+        else
+          {:error, "File is not a Markdown file"}
+        end
+      end
     end
 
     read :search do
       argument :query, :string, allow_nil?: false
 
       prepare build(
-        filter: expr(
-          contains(title, ^arg(:query)) or
-          contains(description, ^arg(:query)) or
-          contains(tags, ^arg(:query))
-        ),
-        load: [:author, :file_metadata]
-      )
+                filter:
+                  expr(
+                    contains(title, ^arg(:query)) or
+                      contains(description, ^arg(:query)) or
+                      contains(tags, ^arg(:query))
+                  ),
+                load: [:author, :file_metadata]
+              )
     end
 
     create :create_file do
@@ -117,9 +212,9 @@ defmodule Kyozo.Workspaces.File do
       change {Changes.CreatePrimaryStorage, []}
       change {Changes.UpdateFileMetadata, []}
 
-      after_action {Changes.EmitFileEvent, event: :file_created}
-      after_action {Changes.SyncWithStorageMetadata, []}
-      after_action {Changes.CreateSpecializedResource, []}
+      after_action({Changes.EmitFileEvent, event: :file_created})
+      after_action({Changes.SyncWithStorageMetadata, []})
+      after_action({Changes.CreateSpecializedResource, []})
     end
 
     create :create_folder do
@@ -130,7 +225,7 @@ defmodule Kyozo.Workspaces.File do
       change relate_actor(:team_member, field: :membership_id)
       change {Changes.CreateFolderStructure, []}
 
-      after_action {Changes.EmitFileEvent, event: :file_created}
+      after_action({Changes.EmitFileEvent, event: :file_created})
     end
 
     create :upload_file do
@@ -142,8 +237,8 @@ defmodule Kyozo.Workspaces.File do
       # change {Changes.CreateFileStorage, []}
       change {Changes.ExtractFileMetadata, []}
 
-      after_action {Changes.EmitFileEvent, event: :file_created}
-      after_action {Changes.SyncWithPrimaryStorage, []}
+      after_action({Changes.EmitFileEvent, event: :file_created})
+      after_action({Changes.SyncWithPrimaryStorage, []})
     end
 
     update :update_content do
@@ -153,8 +248,8 @@ defmodule Kyozo.Workspaces.File do
       change {Changes.UpdatePrimaryStorage, []}
       change {Changes.UpdateFileMetadata, []}
 
-      after_action {Changes.EmitFileEvent, event: :file_updated}
-      after_action {Changes.SyncWithStorageMetadata, []}
+      after_action({Changes.EmitFileEvent, event: :file_updated})
+      after_action({Changes.SyncWithStorageMetadata, []})
     end
 
     update :rename_file do
@@ -164,8 +259,8 @@ defmodule Kyozo.Workspaces.File do
       change {Changes.RenameFile, []}
       change {Changes.UpdateFileMetadata, []}
 
-      after_action {Changes.EmitFileEvent, event: :file_renamed}
-      after_action {Changes.SyncWithStorageMetadata, []}
+      after_action({Changes.EmitFileEvent, event: :file_renamed})
+      after_action({Changes.SyncWithStorageMetadata, []})
     end
 
     update :move_file do
@@ -175,26 +270,26 @@ defmodule Kyozo.Workspaces.File do
       # change {Changes.MoveFile, []}
       # change {Changes.UpdatePrimaryStorage, []}
 
-      after_action {Changes.EmitFileEvent, event: :file_updated}
+      after_action({Changes.EmitFileEvent, event: :file_updated})
       # after_action {Changes.SyncWithPrimaryStorage, []}
     end
 
     update :update_metadata do
       accept [:description, :tags, :content_type]
 
-      after_action {Changes.EmitFileEvent, event: :file_updated}
+      after_action({Changes.EmitFileEvent, event: :file_updated})
     end
 
     update :update do
       accept [:name, :content_type, :description, :tags]
 
-      after_action {Changes.EmitFileEvent, event: :file_updated}
+      after_action({Changes.EmitFileEvent, event: :file_updated})
     end
 
     action :view_file, :struct do
       run {Changes.RecordFileView, []}
 
-      after_action {Changes.EmitFileEvent, event: :file_viewed}
+      after_action({Changes.EmitFileEvent, event: :file_viewed})
     end
 
     action :get_content, :string do
@@ -259,7 +354,7 @@ defmodule Kyozo.Workspaces.File do
 
       run {Changes.DuplicateFile, []}
 
-      after_action {Changes.EmitFileEvent, event: :file_created}
+      after_action({Changes.EmitFileEvent, event: :file_created})
       # after_action {Changes.SyncWithPrimaryStorage, []}
     end
 
@@ -275,7 +370,7 @@ defmodule Kyozo.Workspaces.File do
       change set_attribute(:deleted_at, expr(now()))
       # change {Changes.DeleteFileStorage, soft_delete: true}
 
-      after_action {Changes.EmitFileEvent, event: :file_deleted}
+      after_action({Changes.EmitFileEvent, event: :file_deleted})
     end
 
     destroy :hard_delete do
@@ -283,7 +378,7 @@ defmodule Kyozo.Workspaces.File do
 
       # change {Changes.DeleteFileStorage, soft_delete: false}
 
-      after_action {Changes.EmitFileEvent, event: :file_deleted}
+      after_action({Changes.EmitFileEvent, event: :file_deleted})
     end
   end
 
@@ -321,6 +416,32 @@ defmodule Kyozo.Workspaces.File do
     publish_all :create, ["workspace_files", :team_id]
     publish_all :update, ["workspace_files", :team_id]
     publish_all :destroy, ["workspace_files", :team_id]
+  end
+
+  preparations do
+    prepare build(load: [:author])
+  end
+
+  changes do
+    change before_action({Changes.BuildFilePath, []}), on: [:create]
+    change before_action({Changes.DetectBinaryContent, []}), on: [:create, :update]
+    change before_action({Changes.ValidateFileSize, []}), on: [:create, :update]
+
+    change after_action({Changes.ClearRenderCache, []}), on: [:update]
+  end
+
+  validations do
+    validate present([:name, :file_path, :team_id, :team_member])
+
+    validate match(:name, ~r/^[^\/\\:*?"<>|]+$/) do
+      message "Name contains invalid characters"
+    end
+
+    validate {Kyozo.Workspaces.File.Validations.ValidateFilePath, []}
+    validate {Kyozo.Workspaces.File.Validations.ValidateContentType, []}
+    validate {Kyozo.Workspaces.File.Validations.ValidateStorageBackend, []}
+    validate {Kyozo.Workspaces.File.Validations.ValidateDirectoryConstraints, []}
+    validate {Kyozo.Workspaces.File.Validations.ValidateParentDirectory, []}
   end
 
   multitenancy do
@@ -394,14 +515,52 @@ defmodule Kyozo.Workspaces.File do
       default false
     end
 
-   attribute :is_notebook_file, :boolean do
-     public? true
-     default true
-   end
+    attribute :is_notebook_file, :boolean do
+      public? true
+      default true
+    end
 
     attribute :render_cache, :map do
       public? true
       default %{}
+    end
+
+    # Markdown-related attributes
+    attribute :is_executable, :boolean do
+      public? true
+      default false
+      description "Whether this file can be executed (e.g., .md with code blocks)"
+    end
+
+    attribute :execution_state, :map do
+      public? true
+
+      default %{
+        "status" => "idle",
+        "outputs" => %{},
+        "runtime" => nil,
+        "last_run" => nil
+      }
+
+      description "Current execution state for Markdown files with code blocks"
+    end
+
+    attribute :enlightenment_metadata, :map do
+      public? true
+
+      default %{
+        "detected_services" => [],
+        "generated_cells" => [],
+        "last_scan" => nil
+      }
+
+      description "Enlightenment metadata for auto-detected services and generated content"
+    end
+
+    attribute :parsed_cells, {:array, :map} do
+      public? true
+      default []
+      description "Parsed Markdown cells with positions and metadata"
     end
 
     attribute :view_count, :integer do
@@ -447,32 +606,38 @@ defmodule Kyozo.Workspaces.File do
       attribute_writable? true
     end
 
-
-
     # Storage relationships through FileStorage join resource
     has_many :file_storages, Kyozo.Workspaces.FileStorage do
       destination_attribute :file_id
       sort created_at: :desc
-      public? false  # Not exposed via GraphQL - internal storage management
+
+      # Not exposed via GraphQL - internal storage management
+      public? false
     end
 
     has_many :image_storages, Kyozo.Workspaces.ImageStorage do
       destination_attribute :file_id
       sort created_at: :desc
-      public? false  # Not exposed via GraphQL - internal storage management
+
+      # Not exposed via GraphQL - internal storage management
+      public? false
     end
 
     # Intermediary relationships for specialized content types
     has_many :file_media, Kyozo.Workspaces.FileMedia do
       destination_attribute :file_id
       sort created_at: :desc
-      public? false  # Not exposed via GraphQL - internal intermediary resource
+
+      # Not exposed via GraphQL - internal intermediary resource
+      public? false
     end
 
     has_many :file_notebooks, Kyozo.Workspaces.FileNotebook do
       destination_attribute :file_id
       sort created_at: :desc
-      public? false  # Not exposed via GraphQL - internal intermediary resource
+
+      # Not exposed via GraphQL - internal intermediary resource
+      public? false
     end
 
     # Many-to-many relationships through intermediary resources
@@ -494,36 +659,48 @@ defmodule Kyozo.Workspaces.File do
       through Kyozo.Workspaces.FileStorage
       source_attribute_on_join_resource :file_id
       destination_attribute_on_join_resource :storage_resource_id
-      public? false  # Not exposed via GraphQL - internal storage management
+
+      # Not exposed via GraphQL - internal storage management
+      public? false
     end
 
     has_one :primary_file_storage, Kyozo.Workspaces.FileStorage do
       destination_attribute :file_id
       filter expr(is_primary == true)
-      public? false  # Not exposed via GraphQL - internal storage management
+
+      # Not exposed via GraphQL - internal storage management
+      public? false
     end
 
     has_one :primary_image_storage, Kyozo.Workspaces.ImageStorage do
       destination_attribute :file_id
       filter expr(is_primary == true)
-      public? false  # Not exposed via GraphQL - internal storage management
+
+      # Not exposed via GraphQL - internal storage management
+      public? false
     end
 
     has_one :primary_file_media, Kyozo.Workspaces.FileMedia do
       destination_attribute :file_id
       filter expr(is_primary == true)
-      public? false  # Not exposed via GraphQL - internal intermediary resource
+
+      # Not exposed via GraphQL - internal intermediary resource
+      public? false
     end
 
     has_one :primary_file_notebook, Kyozo.Workspaces.FileNotebook do
       destination_attribute :file_id
       filter expr(is_primary == true)
-      public? false  # Not exposed via GraphQL - internal intermediary resource
+
+      # Not exposed via GraphQL - internal intermediary resource
+      public? false
     end
 
     has_one :primary_storage, Kyozo.Storage.StorageResource do
       manual Kyozo.Workspaces.File.Relationships.PrimaryStorage
-      public? false  # Not exposed via GraphQL since StorageResource is internal
+
+      # Not exposed via GraphQL since StorageResource is internal
+      public? false
       description "Primary storage resource for this file"
     end
 
@@ -549,7 +726,7 @@ defmodule Kyozo.Workspaces.File do
 
     has_many :children, __MODULE__ do
       destination_attribute :parent_file_id
-      sort [is_directory: :desc, name: :asc]
+      sort is_directory: :desc, name: :asc
     end
   end
 
@@ -561,16 +738,26 @@ defmodule Kyozo.Workspaces.File do
     calculate :can_update, :boolean, {Kyozo.Calculations.CanPerformAction, action: :update}
     calculate :can_destroy, :boolean, {Kyozo.Calculations.CanPerformAction, action: :destroy}
 
-    calculate :file_extension, :string, expr(
-      if is_nil(file_path) do
-        ""
-      else
-        fragment("regexp_replace(?, '^.*\\.', '')", file_path)
-      end
-    )
+    calculate :file_extension,
+              :string,
+              expr(
+                if is_nil(file_path) do
+                  ""
+                else
+                  fragment("regexp_replace(?, '^.*\\.', '')", file_path)
+                end
+              )
 
     calculate :file_metadata, :map do
-      load [:primary_storage, :file_size, :version, :checksum, :storage_backend, :storage_metadata, :is_binary]
+      load [
+        :primary_storage,
+        :file_size,
+        :version,
+        :checksum,
+        :storage_backend,
+        :storage_metadata,
+        :is_binary
+      ]
 
       calculation fn documents, _context ->
         Enum.map(documents, fn document ->
@@ -608,26 +795,29 @@ defmodule Kyozo.Workspaces.File do
 
       calculation fn documents, _context ->
         Enum.map(documents, fn document ->
-          primary_backend = if document.primary_storage do
-            document.primary_storage.storage_backend
-          else
-            document.storage_backend
-          end
+          primary_backend =
+            if document.primary_storage do
+              document.primary_storage.storage_backend
+            else
+              document.storage_backend
+            end
 
           %{
             backend: primary_backend,
-            metadata: if document.primary_storage do
-              document.primary_storage.storage_metadata || %{}
-            else
-              document.storage_metadata || %{}
-            end,
+            metadata:
+              if document.primary_storage do
+                document.primary_storage.storage_metadata || %{}
+              else
+                document.storage_metadata || %{}
+              end,
             supports_versioning: primary_backend in [:git, :hybrid],
             supports_binary: primary_backend in [:s3, :hybrid],
             storage_count: length(document.document_storages || []),
             has_multiple_storages: length(document.document_storages || []) > 1,
-            available_backends: document.document_storages
+            available_backends:
+              document.document_storages
               |> Enum.map(fn ds -> ds.storage && ds.storage.storage_backend end)
-              |> Enum.filter(&(&1))
+              |> Enum.filter(& &1)
               |> Enum.uniq()
           }
         end)
@@ -653,9 +843,13 @@ defmodule Kyozo.Workspaces.File do
 
       calculation fn files, _context ->
         renderable_types = [
-          "text/markdown", "application/x-jupyter-notebook",
-          "text/html", "application/json", "text/x-python",
-          "text/x-r", "text/x-julia"
+          "text/markdown",
+          "application/x-jupyter-notebook",
+          "text/html",
+          "application/json",
+          "text/x-python",
+          "text/x-r",
+          "text/x-julia"
         ]
 
         Enum.map(files, fn file ->
@@ -664,11 +858,13 @@ defmodule Kyozo.Workspaces.File do
             false
           else
             content_type = file.content_type
-            is_binary = if file.primary_storage do
-              not String.starts_with?(file.primary_storage.mime_type, "text/")
-            else
-              file.is_binary
-            end
+
+            is_binary =
+              if file.primary_storage do
+                not String.starts_with?(file.primary_storage.mime_type, "text/")
+              else
+                file.is_binary
+              end
 
             content_type in renderable_types and not is_binary
           end
@@ -699,8 +895,8 @@ defmodule Kyozo.Workspaces.File do
             relationship_types: storages |> Enum.map(& &1.relationship_type) |> Enum.uniq(),
             storage_backends: file.storages |> Enum.map(& &1.storage_backend) |> Enum.uniq(),
             total_size: file.storages |> Enum.map(& &1.file_size) |> Enum.sum(),
-            has_versions: Enum.any?(storages, & &1.relationship_type == :version),
-            has_backups: Enum.any?(storages, & &1.relationship_type == :backup)
+            has_versions: Enum.any?(storages, &(&1.relationship_type == :version)),
+            has_backups: Enum.any?(storages, &(&1.relationship_type == :backup))
           }
         end)
       end
@@ -739,32 +935,6 @@ defmodule Kyozo.Workspaces.File do
         end)
       end
     end
-  end
-
-  validations do
-    validate present([:name, :file_path, :team_id, :team_member])
-
-    validate match(:name, ~r/^[^\/\\:*?"<>|]+$/) do
-      message "Name contains invalid characters"
-    end
-
-    validate {Kyozo.Workspaces.File.Validations.ValidateFilePath, []}
-    validate {Kyozo.Workspaces.File.Validations.ValidateContentType, []}
-    validate {Kyozo.Workspaces.File.Validations.ValidateStorageBackend, []}
-    validate {Kyozo.Workspaces.File.Validations.ValidateDirectoryConstraints, []}
-    validate {Kyozo.Workspaces.File.Validations.ValidateParentDirectory, []}
-  end
-
-  changes do
-    change before_action({Changes.BuildFilePath, []}), on: [:create]
-    change before_action({Changes.DetectBinaryContent, []}), on: [:create, :update]
-    change before_action({Changes.ValidateFileSize, []}), on: [:create, :update]
-
-    change after_action({Changes.ClearRenderCache, []}), on: [:update]
-  end
-
-  preparations do
-    prepare build(load: [:author])
   end
 
   # Resource-specific functions
@@ -807,9 +977,12 @@ defmodule Kyozo.Workspaces.File do
   @doc """
   Checks if the file can be rendered to the target format.
   """
-  def can_render_as?(%{content_type: content_type, is_binary: is_binary, is_directory: is_directory}, target_format) do
+  def can_render_as?(
+        %{content_type: content_type, is_binary: is_binary, is_directory: is_directory},
+        target_format
+      ) do
     not is_directory and not is_binary and content_type in renderable_content_types() and
-    target_format in supported_render_formats(content_type)
+      target_format in supported_render_formats(content_type)
   end
 
   @doc """
@@ -827,9 +1000,13 @@ defmodule Kyozo.Workspaces.File do
   """
   def renderable_content_types do
     [
-      "text/markdown", "application/x-jupyter-notebook",
-      "text/html", "application/json", "text/x-python",
-      "text/x-r", "text/x-julia"
+      "text/markdown",
+      "application/x-jupyter-notebook",
+      "text/html",
+      "application/json",
+      "text/x-python",
+      "text/x-r",
+      "text/x-julia"
     ]
   end
 
@@ -844,24 +1021,26 @@ defmodule Kyozo.Workspaces.File do
       |> String.replace(~r/\s+/, "_")
       |> String.downcase()
     else
-      extension = case content_type do
-        "text/markdown" -> ".md"
-        "application/x-jupyter-notebook" -> ".ipynb"
-        "text/html" -> ".html"
-        "application/json" -> ".json"
-        "text/x-python" -> ".py"
-        "text/x-r" -> ".R"
-        "text/x-julia" -> ".jl"
-        "text/x-sql" -> ".sql"
-        "application/javascript" -> ".js"
-        "text/css" -> ".css"
-        _ -> ".txt"
-      end
+      extension =
+        case content_type do
+          "text/markdown" -> ".md"
+          "application/x-jupyter-notebook" -> ".ipynb"
+          "text/html" -> ".html"
+          "application/json" -> ".json"
+          "text/x-python" -> ".py"
+          "text/x-r" -> ".R"
+          "text/x-julia" -> ".jl"
+          "text/x-sql" -> ".sql"
+          "application/javascript" -> ".js"
+          "text/css" -> ".css"
+          _ -> ".txt"
+        end
 
-      sanitized_name = name
-      |> String.replace(~r/[^a-zA-Z0-9\-_\s]/, "")
-      |> String.replace(~r/\s+/, "_")
-      |> String.downcase()
+      sanitized_name =
+        name
+        |> String.replace(~r/[^a-zA-Z0-9\-_\s]/, "")
+        |> String.replace(~r/\s+/, "_")
+        |> String.downcase()
 
       sanitized_name <> extension
     end
@@ -873,10 +1052,122 @@ defmodule Kyozo.Workspaces.File do
   def binary_content?(content) when is_binary(content) do
     # Simple heuristic: check for null bytes and non-printable characters
     String.contains?(content, <<0>>) or
-    String.length(content) != String.length(String.printable(content))
+      not String.printable?(content)
   end
 
   def binary_content?(_), do: false
+
+  # Markdown helper functions
+
+  @doc """
+  Check if a file is a Markdown file based on its path.
+  """
+  def is_markdown_file?(%{file_path: file_path}) when is_binary(file_path) do
+    String.ends_with?(file_path, [".md", ".markdown"])
+  end
+
+  def is_markdown_file?(_), do: false
+
+  @doc """
+  Get file content from storage.
+  """
+  def get_file_content(file) do
+    # This would integrate with your storage system
+    # For now, return the content if available
+    case file.content do
+      nil -> ""
+      content -> content
+    end
+  end
+
+  @doc """
+  Find a specific cell by ID in parsed cells.
+  """
+  def find_cell(cells, cell_id) when is_list(cells) do
+    Enum.find(cells, fn cell ->
+      Map.get(cell, "id") == cell_id or Map.get(cell, :id) == cell_id
+    end)
+  end
+
+  def find_cell(_, _), do: nil
+
+  @doc """
+  Check if file can be executed (is a Markdown file with code blocks).
+  """
+  def executable?(file) do
+    is_markdown_file?(file) and file.is_executable
+  end
+
+  @doc """
+  Get code cells from parsed cells.
+  """
+  def get_code_cells(file) do
+    (file.parsed_cells || [])
+    |> Enum.filter(fn cell ->
+      Map.get(cell, "type") == "code" or Map.get(cell, :type) == :code
+    end)
+  end
+
+  @doc """
+  Check if file has enlightenment metadata.
+  """
+  def enlightened?(file) do
+    case file.enlightenment_metadata do
+      %{"detected_services" => services} when is_list(services) and length(services) > 0 ->
+        true
+
+      _ ->
+        false
+    end
+  end
+
+  @doc """
+  Get execution status from execution state.
+  """
+  def execution_status(file) do
+    case file.execution_state do
+      %{"status" => status} -> status
+      _ -> "idle"
+    end
+  end
+
+  @doc """
+  Check if file is currently executing.
+  """
+  def executing?(file) do
+    execution_status(file) in ["running", "executing"]
+  end
+
+  @doc """
+  Get cell outputs from execution state.
+  """
+  def cell_outputs(file) do
+    case file.execution_state do
+      %{"outputs" => outputs} when is_map(outputs) -> outputs
+      _ -> %{}
+    end
+  end
+
+  @doc """
+  Get output for a specific cell.
+  """
+  def cell_output(file, cell_id) do
+    file
+    |> cell_outputs()
+    |> Map.get(cell_id)
+  end
+
+  @doc """
+  Update execution state with new output.
+  """
+  def update_execution_output(file, cell_id, output) do
+    current_outputs = cell_outputs(file)
+    updated_outputs = Map.put(current_outputs, cell_id, output)
+
+    updated_state = Map.put(file.execution_state || %{}, "outputs", updated_outputs)
+
+    Map.put(file, :execution_state, updated_state)
+  end
 
   # Private helper functions for calculations
   defp calculate_depth(file, current_depth) do

@@ -1,7 +1,7 @@
 defmodule Kyozo.Workspaces.Notebook.Changes do
   @moduledoc """
   Change modules for Notebook operations focused on markdown document rendering.
-  
+
   These changes handle creating notebooks from documents, rendering content,
   extracting tasks, and managing execution state for markdown-based notebooks.
   """
@@ -15,21 +15,28 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
     def change(changeset, _opts, _context) do
       Ash.Changeset.before_action(changeset, fn changeset ->
         document_id = Ash.Changeset.get_argument(changeset, :document_id)
-        
+
         case Kyozo.Workspaces.get_document!(document_id) do
           document ->
             # Validate document type
             if Kyozo.Workspaces.Notebook.renderable_as_notebook?(document.file_path) do
               changeset
-              |> Ash.Changeset.force_change_attribute(:title, document.title || Path.basename(document.file_path, Path.extname(document.file_path)))
+              |> Ash.Changeset.force_change_attribute(
+                :title,
+                document.title ||
+                  Path.basename(document.file_path, Path.extname(document.file_path))
+              )
               |> Ash.Changeset.force_change_attribute(:content, document.content || "")
               |> Ash.Changeset.force_change_attribute(:document_id, document_id)
               |> Ash.Changeset.force_change_attribute(:workspace_id, document.workspace_id)
               |> Ash.Changeset.force_change_attribute(:team_id, document.team_id)
             else
-              Ash.Changeset.add_error(changeset, field: :document_id, message: "Document must be a markdown file (.md or .livemd)")
+              Ash.Changeset.add_error(changeset,
+                field: :document_id,
+                message: "Document must be a markdown file (.md or .markdown)"
+              )
             end
-          
+
           nil ->
             Ash.Changeset.add_error(changeset, field: :document_id, message: "Document not found")
         end
@@ -57,17 +64,20 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
     def change(changeset, _opts, _context) do
       Ash.Changeset.before_action(changeset, fn changeset ->
         content = Ash.Changeset.get_attribute(changeset, :content)
-        
+
         if content do
           case extract_tasks_from_content(content) do
             {:ok, tasks} ->
               execution_order = Enum.map(tasks, & &1["id"])
-              
+
               changeset
               |> Ash.Changeset.force_change_attribute(:extracted_tasks, tasks)
               |> Ash.Changeset.force_change_attribute(:execution_order, execution_order)
-              |> Ash.Changeset.force_change_attribute(:execution_state, Kyozo.Workspaces.Notebook.empty_execution_state())
-            
+              |> Ash.Changeset.force_change_attribute(
+                :execution_state,
+                Kyozo.Workspaces.Notebook.empty_execution_state()
+              )
+
             {:error, _reason} ->
               changeset
               |> Ash.Changeset.force_change_attribute(:extracted_tasks, [])
@@ -83,7 +93,7 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
       case Kyozo.Workspaces.Extensions.RenderMarkdown.extract_code_blocks(content, []) do
         {_processed_text, tasks} ->
           # Add IDs to tasks and format them properly
-          formatted_tasks = 
+          formatted_tasks =
             tasks
             |> Enum.with_index()
             |> Enum.map(fn {task, index} ->
@@ -93,9 +103,9 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
                 "status" => "ready"
               })
             end)
-          
+
           {:ok, formatted_tasks}
-        
+
         error ->
           {:error, error}
       end
@@ -119,15 +129,15 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
           "environment" => %{},
           "last_execution" => nil
         }
-        
-        updated_notebook = 
+
+        updated_notebook =
           notebook
           |> Ash.Changeset.for_update(:update_execution_state, %{
             execution_state: updated_execution_state,
             kernel_status: :busy
           })
           |> Ash.update!()
-        
+
         {changeset, updated_notebook}
       end)
     end
@@ -152,8 +162,10 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
 
     def change(changeset, _opts, _context) do
       changeset
-      |> Ash.Changeset.change_attribute(:execution_count, 
-        (Ash.Changeset.get_data(changeset, :execution_count) || 0) + 1)
+      |> Ash.Changeset.change_attribute(
+        :execution_count,
+        (Ash.Changeset.get_data(changeset, :execution_count) || 0) + 1
+      )
       |> Ash.Changeset.change_attribute(:last_executed_at, DateTime.utc_now())
     end
   end
@@ -178,8 +190,8 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
     def change(changeset, _opts, _context) do
       Ash.Changeset.before_action(changeset, fn changeset ->
         tasks = Ash.Changeset.get_data(changeset, :extracted_tasks) || []
-        
-        reset_tasks = 
+
+        reset_tasks =
           Enum.map(tasks, fn task ->
             Map.merge(task, %{
               "status" => "ready",
@@ -188,7 +200,7 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
               "execution_time" => nil
             })
           end)
-        
+
         changeset
         |> Ash.Changeset.force_change_attribute(:extracted_tasks, reset_tasks)
         |> Ash.Changeset.force_change_attribute(:current_task_index, 0)
@@ -218,16 +230,18 @@ defmodule Kyozo.Workspaces.Notebook.Changes do
       case Ash.Changeset.get_attribute(changeset, :document_id) do
         nil ->
           :ok
-        
+
         document_id ->
           case Kyozo.Workspaces.get_document(document_id) do
             {:ok, document} ->
               if Kyozo.Workspaces.Notebook.renderable_as_notebook?(document.file_path) do
                 :ok
               else
-                {:error, field: :document_id, message: "Document must be a markdown file (.md or .livemd)"}
+                {:error,
+                 field: :document_id,
+                 message: "Document must be a markdown file (.md or .markdown)"}
               end
-            
+
             {:error, _} ->
               {:error, field: :document_id, message: "Document not found"}
           end

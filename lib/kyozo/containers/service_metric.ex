@@ -48,7 +48,6 @@ defmodule Kyozo.Containers.ServiceMetric do
       trigger :collect_single do
         action :create
         queue(:metrics_collection)
-        worker_module_name(Kyozo.Containers.Workers.MetricsCollector)
       end
 
       trigger :batch_collection do

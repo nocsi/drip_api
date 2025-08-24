@@ -344,7 +344,7 @@
       <p class="text-gray-300 text-center mb-12 text-lg">
         A revolutionary approach to development where every folder becomes a complete service ecosystem
       </p>
-      
+
       <div class="grid md:grid-cols-3 gap-8">
         <div class="bg-white/5 backdrop-blur rounded-xl p-8 border border-white/10">
           <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mx-auto mb-6">
@@ -353,7 +353,7 @@
           <h4 class="text-2xl font-bold text-center mb-4">Folder as a Service</h4>
           <p class="text-gray-300 text-center">Transform any folder into a complete microservice with built-in APIs, storage, and processing capabilities.</p>
         </div>
-        
+
         <div class="bg-white/5 backdrop-blur rounded-xl p-8 border border-white/10">
           <div class="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mx-auto mb-6">
             <span class="text-2xl">⚡</span>
@@ -361,7 +361,7 @@
           <h4 class="text-2xl font-bold text-center mb-4">FileOps Engine</h4>
           <p class="text-gray-300 text-center">Advanced file operations with built-in versioning, collaboration, and real-time synchronization across teams.</p>
         </div>
-        
+
         <div class="bg-white/5 backdrop-blur rounded-xl p-8 border border-white/10">
           <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mx-auto mb-6">
             <span class="text-2xl">🔗</span>
@@ -463,24 +463,59 @@
     <div class="max-w-7xl mx-auto">
       <h3 class="text-4xl font-bold text-center mb-12">See It In Action</h3>
 
-      <div class="bg-gray-900/50 rounded-xl p-8 border border-gray-700">
+      <div class="grid md:grid-cols-2 gap-8">
+       <div class="bg-gray-900/50 rounded-xl p-8 border border-gray-700">
+        <h4 class="text-2xl font-bold mb-4 text-teal-400">🚨 The Problem</h4>
         <div class="font-mono text-sm">
-          <div class="text-green-400 mb-4">$ ls -la ~/my-projects/</div>
-          {#each folderExamples as folder}
-            <div class="ml-4 mb-4">
-              <div class="flex items-center space-x-4 mb-2">
-                <span class="text-blue-400">{folder.icon} {folder.name}/</span>
-                <span class="px-2 py-1 rounded text-xs {getStatusColor(folder.status)}">
-                  {folder.status}
-                </span>
-                <span class="text-gray-400 text-xs">{folder.metrics}</span>
-              </div>
-              {#each folder.services as service}
-                <div class="ml-8 text-gray-300">├── {service}/</div>
-              {/each}
-            </div>
-          {/each}
+         <div class="text-red-400 mb-2"># Dangerous markdown content</div>
+         <div class="text-gray-300 mb-2">[Click me](javascript:alert('xss'))</div>
+         <div class="text-gray-300 mb-2">```python</div>
+         <div class="text-gray-300 mb-2">import os; os.system('rm -rf /')</div>
+         <div class="text-gray-300 mb-4">```</div>
+         <div class="text-yellow-400">⚠️ Hidden threats in innocent-looking markdown</div>
         </div>
+       </div>
+       <div class="bg-gray-900/50 rounded-xl p-8 border border-gray-700">
+        <h4 class="text-2xl font-bold mb-4 text-green-400">✅ The Solution</h4>
+        <div class="font-mono text-sm">
+         <div class="text-green-400 mb-2">POST /api/v1/scan</div>
+         <div class="text-gray-300 mb-2">{'{'}"safe": false,</div>
+         <div class="text-gray-300 mb-2"> "threat_level": "high",</div>
+         <div class="text-gray-300 mb-2"> "threats_detected": 2,</div>
+         <div class="text-gray-300 mb-4"> "processing_time_ms": 45{'}'}</div>
+         <div class="text-cyan-400">🛡️ Enterprise-grade protection at $0.03/scan</div>
+        </div>
+       </div>
+      </div>
+      <div class="mt-12 text-center">
+       <div class="bg-white/5 backdrop-blur rounded-xl p-8 border border-white/10 max-w-4xl mx-auto">
+        <h4 class="text-2xl font-bold mb-4">Why SafeMD?</h4>
+        <div class="grid md:grid-cols-3 gap-6 text-sm">
+         <div>
+          <div class="text-3xl mb-2">🔍</div>
+          <h5 class="font-bold mb-2">Advanced Detection</h5>
+          <p class="text-gray-300">Prompt injection, hidden scripts, Unicode attacks, malicious links</p>
+         </div>
+         <div>
+          <div class="text-3xl mb-2">⚡</div>
+          <h5 class="font-bold mb-2">Lightning Fast</h5>
+          <p class="text-gray-300">50MB/s processing, sub-second response times, real-time streaming</p>
+         </div>
+         <div>
+          <div class="text-3xl mb-2">💰</div>
+          <h5 class="font-bold mb-2">Fair Pricing</h5>
+          <p class="text-gray-300">$0.03 per scan, 10 free scans/month, volume discounts available</p>
+         </div>
+        </div>
+        <div class="mt-8 flex justify-center space-x-4">
+         <Button class="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg hover:shadow-red-500/25 transition-all transform hover:scale-105">
+          <a href="/safemd/demo">Try SafeMD Demo</a>
+         </Button>
+         <Button variant="outline" class="border border-red-500 text-red-400 px-6 py-3 rounded-lg font-semibold hover:bg-red-500/10 transition-all">
+          <a href="/safemd">View Pricing</a>
+         </Button>
+        </div>
+       </div>
       </div>
     </div>
   </section>

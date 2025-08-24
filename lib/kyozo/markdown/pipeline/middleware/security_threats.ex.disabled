@@ -1,0 +1,483 @@
+defmodule Kyozo.Markdown.Pipeline.Middleware.SecurityThreats do
+  @moduledoc """
+  Comprehensive security threat detection middleware.
+
+  Detects:
+  - XSS (Cross-Site Scripting)
+  - LFI (Local File Inclusion)
+  - RFI (Remote File Inclusion)
+  - Prompt Injection
+  - SQL Injection patterns
+  - Command Injection
+  - SSRF (Server-Side Request Forgery)
+  - XXE (XML External Entity)
+  - Path Traversal
+  - And more...
+  """
+
+  alias Kyozo.Markdown.Pipeline.Context
+  @behaviour Kyozo.Markdown.Pipeline.Middleware
+
+  # XSS Patterns
+  @xss_patterns [
+    # Script tags
+    ~r/<script[^>]*>.*?<\/script>/is,
+    ~r/<script[^>]*\/>/is,
+
+    # Event handlers
+    ~r/\bon\w+\s*=\s*["'][^"']*["']/i,
+    ~r/\bon\w+\s*=\s*[^>\s]+/i,
+
+    # JavaScript protocols
+    ~r/javascript\s*:/i,
+    ~r/vbscript\s*:/i,
+
+    # Data URLs with scripts
+    ~r/data:[^;]+;base64,[a-zA-Z0-9+\/]+=*/,
+
+    # Object/embed tags
+    ~r/<object[^>]*>/i,
+    ~r/<embed[^>]*>/i,
+    ~r/<iframe[^>]*>/i,
+
+    # SVG with scripts
+    ~r/<svg[^>]*on\w+\s*=/i,
+
+    # Meta refresh
+    ~r/<meta[^>]*http-equiv\s*=\s*["']?refresh/i,
+
+    # Expression injection
+    # Angular/Vue style
+    ~r/\{\{.*?\}\}/,
+    # ERB/ASP style
+    ~r/<%.*?%>/
+  ]
+
+  # LFI/RFI Patterns
+  @file_inclusion_patterns [
+    # Path traversal
+    ~r/\.\.[\\\/]/,
+    ~r/\.\.%2[fF]/,
+    ~r/\.\.%5[cC]/,
+
+    # Absolute paths
+    ~r/\/etc\/passwd/,
+    ~r/\/etc\/shadow/,
+    ~r/\/var\/log/,
+    ~r/c:\\windows/i,
+    ~r/c:%5[cC]windows/i,
+
+    # File protocols
+    ~r/file:\/\//,
+    ~r/php:\/\//,
+    ~r/zip:\/\//,
+    ~r/phar:\/\//,
+    ~r/expect:\/\//,
+
+    # Include/require patterns
+    ~r/include\s*\(/,
+    ~r/require\s*\(/,
+    ~r/include_once\s*\(/,
+    ~r/require_once\s*\(/,
+
+    # Common sensitive files
+    ~r/\.env$/,
+    ~r/\.git\//,
+    ~r/\.ssh\//,
+    ~r/\.aws\//,
+    ~r/wp-config\.php/,
+    ~r/configuration\.php/
+  ]
+
+  # Prompt Injection Patterns (AI-specific)
+  @prompt_injection_patterns [
+    # Direct instructions
+    ~r/ignore\s+(all\s+)?previous\s+instructions/i,
+    ~r/disregard\s+(all\s+)?prior\s+(instructions|context)/i,
+    ~r/forget\s+everything\s+(above|before)/i,
+    ~r/new\s+instruction(s)?:/i,
+    ~r/system\s*:\s*[^}]+/i,
+
+    # Role playing
+    ~r/you\s+are\s+now\s+[a-zA-Z]/i,
+    ~r/act\s+as\s+(a|an)\s+[a-zA-Z]/i,
+    ~r/pretend\s+to\s+be/i,
+    ~r/roleplay\s+as/i,
+
+    # Special tokens
+    ~r/\[\[system\]\]/,
+    ~r/<\|im_start\|>/,
+    ~r/<\|im_end\|>/,
+    ~r/\[INST\]/,
+    ~r/\[\/INST\]/,
+    ~r/Assistant:/,
+    ~r/Human:/,
+
+    # Hidden in markdown
+    ~r/<!--\s*SYSTEM:/i,
+    ~r/<!--\s*INSTRUCTION:/i,
+    ~r/\[_\]:\s*#\s*\(.*SYSTEM/i,
+
+    # Encoding attempts
+    # Hex encoding
+    ~r/\\x[0-9a-fA-F]{2}/,
+    # Unicode encoding
+    ~r/\\u[0-9a-fA-F]{4}/,
+    # HTML entities
+    ~r/&#x?[0-9]+;/
+  ]
+
+  # SQL Injection Patterns
+  @sql_injection_patterns [
+    ~r/'\s*OR\s*'1'\s*=\s*'1/i,
+    ~r/"\s*OR\s*"1"\s*=\s*"1/i,
+    ~r/OR\s+1\s*=\s*1/i,
+    ~r/'\s*OR\s+'[^']+'\s*=\s*'[^']+/i,
+    ~r/UNION\s+SELECT/i,
+    ~r/DROP\s+TABLE/i,
+    ~r/INSERT\s+INTO/i,
+    ~r/UPDATE\s+\w+\s+SET/i,
+    ~r/DELETE\s+FROM/i,
+    ~r/SELECT\s+.*\s+FROM/i,
+    ~r/EXEC(\s|\()/i,
+    ~r/EXECUTE(\s|\()/i,
+    # SQL comment
+    ~r/--\s*$/m,
+    # SQL block comment
+    ~r/\/\*.*?\*\//s,
+    # Statement termination
+    ~r/;.*?--/,
+    # SQL Server extended procs
+    ~r/\bxp_\w+/i,
+    # Stored procedures
+    ~r/\bsp_\w+/i
+  ]
+
+  # Command Injection Patterns
+  @command_injection_patterns [
+    ~r/;\s*cat\s+/,
+    ~r/;\s*ls\s+/,
+    ~r/;\s*rm\s+/,
+    ~r/\|\s*cat\s+/,
+    ~r/\|\s*ls\s+/,
+    # Backticks
+    ~r/`[^`]+`/,
+    # Command substitution
+    ~r/\$\([^)]+\)/,
+    # OR operator
+    ~r/\|\|/,
+    # AND operator
+    ~r/&&/,
+    ~r/>\s*\/dev\/null/,
+    ~r/2>&1/,
+    # Curl pipe to shell
+    ~r/curl\s+[^|]+\|\s*sh/,
+    # Wget pipe to shell
+    ~r/wget\s+[^|]+\|\s*sh/
+  ]
+
+  # SSRF Patterns
+  @ssrf_patterns [
+    ~r/localhost/i,
+    ~r/127\.0\.0\.1/,
+    ~r/0\.0\.0\.0/,
+    ~r/\[::1\]/,
+    # Link-local
+    ~r/169\.254\.\d+\.\d+/,
+    # Private IP
+    ~r/10\.\d+\.\d+\.\d+/,
+    # Private IP
+    ~r/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/,
+    # Private IP
+    ~r/192\.168\.\d+\.\d+/,
+    # Cloud metadata
+    ~r/http:\/\/metadata/,
+    ~r/gopher:\/\//,
+    ~r/dict:\/\//,
+    ~r/ftp:\/\//,
+    ~r/sftp:\/\//
+  ]
+
+  # XXE Patterns
+  @xxe_patterns [
+    ~r/<!ENTITY/i,
+    ~r/<!DOCTYPE[^>]*SYSTEM/i,
+    ~r/<!DOCTYPE[^>]*PUBLIC/i,
+    ~r/SYSTEM\s+["'][^"']*["']/i,
+    ~r/xmlns\s*=/i
+  ]
+
+  def call(%Context{current: markdown} = ctx) do
+    threats =
+      []
+      |> detect_xss(markdown)
+      |> detect_file_inclusion(markdown)
+      |> detect_prompt_injection(markdown)
+      |> detect_sql_injection(markdown)
+      |> detect_command_injection(markdown)
+      |> detect_ssrf(markdown)
+      |> detect_xxe(markdown)
+      |> detect_polyglot_attacks(markdown)
+      |> detect_unicode_attacks(markdown)
+      |> Enum.sort_by(& &1.severity_score, :desc)
+
+    {:ok, %{ctx | threats: ctx.threats ++ threats}}
+  end
+
+  # Detection Functions
+
+  defp detect_xss(threats, markdown) do
+    @xss_patterns
+    |> Enum.flat_map(fn pattern ->
+      Regex.scan(pattern, markdown, return: :index)
+      |> Enum.map(fn [{start, length}] ->
+        %{
+          type: :xss,
+          severity: :critical,
+          severity_score: 10,
+          pattern: inspect(pattern),
+          location: %{
+            start: start,
+            end: start + length,
+            line: count_lines(markdown, start)
+          },
+          description: "Cross-Site Scripting (XSS) attempt detected",
+          details: extract_snippet(markdown, start, length),
+          remediation: "Remove or escape HTML/JavaScript content",
+          cwe: "CWE-79"
+        }
+      end)
+    end)
+    |> Enum.concat(threats)
+  end
+
+  defp detect_file_inclusion(threats, markdown) do
+    @file_inclusion_patterns
+    |> Enum.flat_map(fn pattern ->
+      Regex.scan(pattern, markdown, return: :index)
+      |> Enum.map(fn [{start, length}] ->
+        severity = if pattern == ~r/\.\.[\\\/]/, do: :high, else: :critical
+
+        %{
+          type: :file_inclusion,
+          severity: severity,
+          severity_score: if(severity == :critical, do: 9, else: 7),
+          pattern: inspect(pattern),
+          location: %{
+            start: start,
+            end: start + length,
+            line: count_lines(markdown, start)
+          },
+          description: "File Inclusion vulnerability detected",
+          details: extract_snippet(markdown, start, length),
+          remediation: "Remove file paths and traversal sequences",
+          cwe: "CWE-98"
+        }
+      end)
+    end)
+    |> Enum.concat(threats)
+  end
+
+  defp detect_prompt_injection(threats, markdown) do
+    @prompt_injection_patterns
+    |> Enum.flat_map(fn pattern ->
+      Regex.scan(pattern, markdown, return: :index)
+      |> Enum.map(fn [{start, length}] ->
+        %{
+          type: :prompt_injection,
+          severity: :high,
+          severity_score: 8,
+          pattern: inspect(pattern),
+          location: %{
+            start: start,
+            end: start + length,
+            line: count_lines(markdown, start)
+          },
+          description: "AI Prompt Injection attempt detected",
+          details: extract_snippet(markdown, start, length),
+          remediation: "Remove or neutralize instruction-like patterns",
+          # Improper Control of Generation of Code
+          cwe: "CWE-94"
+        }
+      end)
+    end)
+    |> Enum.concat(threats)
+  end
+
+  defp detect_sql_injection(threats, markdown) do
+    @sql_injection_patterns
+    |> Enum.flat_map(fn pattern ->
+      Regex.scan(pattern, markdown, return: :index)
+      |> Enum.map(fn [{start, length}] ->
+        %{
+          type: :sql_injection,
+          severity: :high,
+          severity_score: 8,
+          pattern: inspect(pattern),
+          location: %{
+            start: start,
+            end: start + length,
+            line: count_lines(markdown, start)
+          },
+          description: "SQL Injection pattern detected",
+          details: extract_snippet(markdown, start, length),
+          remediation: "Use parameterized queries, escape SQL content",
+          cwe: "CWE-89"
+        }
+      end)
+    end)
+    |> Enum.concat(threats)
+  end
+
+  defp detect_command_injection(threats, markdown) do
+    @command_injection_patterns
+    |> Enum.flat_map(fn pattern ->
+      Regex.scan(pattern, markdown, return: :index)
+      |> Enum.map(fn [{start, length}] ->
+        %{
+          type: :command_injection,
+          severity: :critical,
+          severity_score: 10,
+          pattern: inspect(pattern),
+          location: %{
+            start: start,
+            end: start + length,
+            line: count_lines(markdown, start)
+          },
+          description: "Command Injection attempt detected",
+          details: extract_snippet(markdown, start, length),
+          remediation: "Remove shell metacharacters and command sequences",
+          cwe: "CWE-78"
+        }
+      end)
+    end)
+    |> Enum.concat(threats)
+  end
+
+  defp detect_ssrf(threats, markdown) do
+    @ssrf_patterns
+    |> Enum.flat_map(fn pattern ->
+      Regex.scan(pattern, markdown, return: :index)
+      |> Enum.map(fn [{start, length}] ->
+        %{
+          type: :ssrf,
+          severity: :medium,
+          severity_score: 6,
+          pattern: inspect(pattern),
+          location: %{
+            start: start,
+            end: start + length,
+            line: count_lines(markdown, start)
+          },
+          description: "Server-Side Request Forgery (SSRF) risk detected",
+          details: extract_snippet(markdown, start, length),
+          remediation: "Validate and whitelist URLs",
+          cwe: "CWE-918"
+        }
+      end)
+    end)
+    |> Enum.concat(threats)
+  end
+
+  defp detect_xxe(threats, markdown) do
+    @xxe_patterns
+    |> Enum.flat_map(fn pattern ->
+      Regex.scan(pattern, markdown, return: :index)
+      |> Enum.map(fn [{start, length}] ->
+        %{
+          type: :xxe,
+          severity: :high,
+          severity_score: 8,
+          pattern: inspect(pattern),
+          location: %{
+            start: start,
+            end: start + length,
+            line: count_lines(markdown, start)
+          },
+          description: "XML External Entity (XXE) pattern detected",
+          details: extract_snippet(markdown, start, length),
+          remediation: "Disable external entity processing",
+          cwe: "CWE-611"
+        }
+      end)
+    end)
+    |> Enum.concat(threats)
+  end
+
+  defp detect_polyglot_attacks(threats, markdown) do
+    # Detect files trying to be multiple formats at once
+    suspicious_combinations = [
+      {~r/^%PDF/, ~r/<script/i, :pdf_xss},
+      {~r/^GIF8[79]a/, ~r/<script/i, :gif_xss},
+      {~r/^\xFF\xD8\xFF/, ~r/<\?php/i, :jpeg_php},
+      {~r/^PK\x03\x04/, ~r/\.xml/i, :zip_xml}
+    ]
+
+    suspicious_combinations
+    |> Enum.flat_map(fn {header, payload, attack_type} ->
+      if Regex.match?(header, markdown) and Regex.match?(payload, markdown) do
+        [
+          %{
+            type: :polyglot_file,
+            severity: :critical,
+            severity_score: 10,
+            attack_type: attack_type,
+            location: %{start: 0, end: 100, line: 1},
+            description: "Polyglot file attack detected (#{attack_type})",
+            details: "File appears to be multiple formats simultaneously",
+            remediation: "Reject files with multiple format signatures",
+            cwe: "CWE-434"
+          }
+        ]
+      else
+        []
+      end
+    end)
+    |> Enum.concat(threats)
+  end
+
+  defp detect_unicode_attacks(threats, markdown) do
+    unicode_threats = []
+
+    # Homograph attacks
+    if markdown =~ ~r/[а-яА-Я]/ and markdown =~ ~r/[a-zA-Z]/ do
+      unicode_threats ++
+        [
+          %{
+            type: :homograph_attack,
+            severity: :medium,
+            severity_score: 5,
+            location: %{start: 0, end: 0, line: 0},
+            description: "Homograph attack risk (mixed scripts)",
+            details: "Document contains visually similar characters from different scripts",
+            remediation: "Normalize to ASCII or warn about mixed scripts",
+            cwe: "CWE-451"
+          }
+        ]
+    else
+      unicode_threats
+    end
+    |> Enum.concat(threats)
+  end
+
+  # Helper Functions
+
+  defp count_lines(text, position) do
+    text
+    |> String.slice(0, position)
+    |> String.split("\n")
+    |> length()
+  end
+
+  defp extract_snippet(text, start, length, context_size \\ 50) do
+    snippet_start = max(0, start - context_size)
+    snippet_length = min(String.length(text) - snippet_start, length + 2 * context_size)
+
+    snippet = String.slice(text, snippet_start, snippet_length)
+
+    # Sanitize the snippet for safe display
+    snippet
+    |> String.replace(~r/[\x00-\x1F\x7F-\x9F]/, "?")
+    |> String.slice(0, 200)
+  end
+end

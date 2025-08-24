@@ -51,16 +51,17 @@ defmodule Kyozo.Storage do
   end
 
   resources do
-    resource StorageResource do
-      # CRUD operations - these work with standard Ash actions
-      define :create_storage_resource, action: :create
-      define :create_storage_entry, action: :create_storage_entry
-      define :get_storage_resource, action: :read
-      define :list_storage_resources, action: :list
-      define :update_storage_resource, action: :update
-      define :destroy_storage_resource, action: :destroy
-    end
+    # Existing resources
+    resource Kyozo.Storage.StorageResource
+    # VFS is not a persisted resource, just a service
   end
+
+  # VFS API - delegates to VFS module
+  defdelegate list_files_with_virtual(workspace_id, path, opts \\ %{}),
+    to: Kyozo.Storage.VFS,
+    as: :list_files
+
+  defdelegate read_virtual_file(workspace_id, path), to: Kyozo.Storage.VFS, as: :read_file
 
   @doc """
   Stores content in the appropriate storage backend.
@@ -637,27 +638,31 @@ defmodule Kyozo.Storage do
   Lists all storage resources with optional filtering.
   """
 
-  # def list_storage_resources(opts \\ []) do
-  #   query = StorageResource
-  #   |> Ash.Query.load([:storage_info])
+  def list_storage_resources(opts \\ []) do
+    query =
+      StorageResource
+      |> Ash.Query.load([:storage_info])
 
-  #   query = case Keyword.get(opts, :backend) do
-  #     nil -> query
-  #     backend -> Ash.Query.filter(query, storage_backend == ^backend)
-  #   end
+    query =
+      case Keyword.get(opts, :backend) do
+        nil -> query
+        backend -> Ash.Query.filter(query, storage_backend == ^backend)
+      end
 
-  #   query = case Keyword.get(opts, :mime_type) do
-  #     nil -> query
-  #     mime_type -> Ash.Query.filter(query, mime_type == ^mime_type)
-  #   end
+    query =
+      case Keyword.get(opts, :mime_type) do
+        nil -> query
+        mime_type -> Ash.Query.filter(query, mime_type == ^mime_type)
+      end
 
-  #   query = case Keyword.get(opts, :limit) do
-  #     nil -> query
-  #     limit -> Ash.Query.limit(query, limit)
-  #   end
+    query =
+      case Keyword.get(opts, :limit) do
+        nil -> query
+        limit -> Ash.Query.limit(query, limit)
+      end
 
-  #   Ash.read(query)
-  # end
+    Ash.read(query)
+  end
 
   @doc """
   Finds a storage resource by locator ID.

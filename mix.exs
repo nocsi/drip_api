@@ -40,6 +40,8 @@ defmodule Kyozo.MixProject do
       {:ash_oban, "~> 0.4"},
       {:bcrypt_elixir, "~> 3.0"},
       {:assent, "~> 0.2"},
+      {:stripity_stripe, "~> 3.0"},
+      {:ex_money, "~> 5.0"},
       {:picosat_elixir, "~> 0.2"},
       {:open_api_spex, "~> 3.0"},
       {:ash_json_api, "~> 1.0"},
@@ -89,8 +91,10 @@ defmodule Kyozo.MixProject do
       {:gen_smtp, "~> 1.3"},
       {:mail, ">= 0.0.0"},
       {:yaml_elixir, "~> 2.11"},
-      {:tidewave, "~> 0.4", only: :dev},
-      {:markdown_ld, "~> 0.3.0"}
+      {:tidewave, "~> 0.4.1", only: :dev},
+      {:jsonld_ex, "~> 0.1.1"},
+      {:markdown_ld, "~> 0.3.0"},
+      {:httpoison, "~> 2.0"}
     ]
   end
 

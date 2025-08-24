@@ -1,0 +1,204 @@
+defmodule Kyozo.Billing.StripeSetup do
+  @moduledoc """
+  Script to create all Stripe products and prices.
+  Run this in production to set up your Stripe account.
+  """
+
+  alias Kyozo.Billing.Products
+
+  @doc """
+  Create all products and prices in Stripe.
+  Returns a map of product keys to Stripe IDs.
+  """
+  def setup_all_products do
+    IO.puts("Creating Kyozo products in Stripe...\n")
+
+    # Create products
+    product_ids =
+      Products.list_products()
+      |> Enum.map(fn {key, config} ->
+        IO.puts("Creating product: #{config.name}")
+        {:ok, product} = create_product(key, config)
+
+        # Create metered price
+        {:ok, metered_price} = create_metered_price(product, config)
+        IO.puts("  ✓ Metered price: $#{config.unit_price}/#{config.unit_label}")
+
+        # Create package prices
+        package_prices = create_package_prices(product, config)
+        IO.puts("  ✓ #{map_size(package_prices)} package prices created")
+
+        {key,
+         %{
+           product_id: product.id,
+           metered_price_id: metered_price.id,
+           package_prices: package_prices
+         }}
+      end)
+      |> Map.new()
+
+    # Create subscription products
+    IO.puts("\nCreating subscription plans...")
+    subscription_ids = create_subscription_plans()
+
+    # Output configuration
+    output_configuration(product_ids, subscription_ids)
+
+    %{products: product_ids, subscriptions: subscription_ids}
+  end
+
+  defp create_product(key, config) do
+    Stripe.Product.create(%{
+      # Predictable IDs
+      id: "prod_kyozo_#{key}",
+      name: config.name,
+      description: config.description,
+      metadata: %{
+        kyozo_product: to_string(key),
+        features: Enum.join(config.features, ",")
+      }
+    })
+  end
+
+  defp create_metered_price(product, config) do
+    Stripe.Price.create(%{
+      product: product.id,
+      nickname: "#{config.name} - Pay as you go",
+      currency: "usd",
+      billing_scheme: "per_unit",
+      # Convert to cents
+      unit_amount: round(config.unit_price * 100),
+      recurring: %{
+        interval: "month",
+        usage_type: "metered"
+      }
+    })
+  end
+
+  defp create_package_prices(product, config) do
+    config.packages
+    |> Enum.map(fn {package_key, {price_dollars, quantity}} ->
+      {:ok, price} =
+        Stripe.Price.create(%{
+          product: product.id,
+          nickname: "#{config.name} - #{format_package_name(package_key)}",
+          currency: "usd",
+          # Convert to cents
+          unit_amount: price_dollars * 100,
+          metadata: %{
+            package_type: to_string(package_key),
+            included_quantity: to_string(quantity),
+            unit_price: to_string(Float.round(price_dollars / quantity, 4))
+          }
+        })
+
+      {package_key, price.id}
+    end)
+    |> Map.new()
+  end
+
+  defp create_subscription_plans do
+    Products.get_subscription(:starter)
+    |> Map.keys()
+    |> Enum.filter(&(&1 not in [:name, :price, :included, :features]))
+    |> Enum.map(fn tier ->
+      config = Products.get_subscription(tier)
+
+      # Create subscription product
+      {:ok, product} =
+        Stripe.Product.create(%{
+          id: "prod_kyozo_sub_#{tier}",
+          name: config.name,
+          description: "All-in-one subscription with included usage",
+          metadata: %{
+            subscription_tier: to_string(tier)
+          }
+        })
+
+      # Create monthly price
+      {:ok, price} =
+        Stripe.Price.create(%{
+          product: product.id,
+          nickname: "#{config.name} - Monthly",
+          currency: "usd",
+          recurring: %{interval: "month"},
+          unit_amount: config.price * 100,
+          metadata: %{
+            included_usage: Jason.encode!(config.included)
+          }
+        })
+
+      # Create annual price (10% discount)
+      annual_price = round(config.price * 12 * 0.9)
+
+      {:ok, annual} =
+        Stripe.Price.create(%{
+          product: product.id,
+          nickname: "#{config.name} - Annual",
+          currency: "usd",
+          recurring: %{interval: "year"},
+          unit_amount: annual_price * 100,
+          metadata: %{
+            included_usage: Jason.encode!(config.included),
+            discount: "10%"
+          }
+        })
+
+      {tier,
+       %{
+         product_id: product.id,
+         monthly_price_id: price.id,
+         annual_price_id: annual.id
+       }}
+    end)
+    |> Map.new()
+  end
+
+  defp format_package_name(key) do
+    key
+    |> to_string()
+    |> String.split("_")
+    |> Enum.map(&String.capitalize/1)
+    |> Enum.join(" ")
+  end
+
+  defp output_configuration(products, subscriptions) do
+    config = %{
+      products: products,
+      subscriptions: subscriptions,
+      generated_at: DateTime.utc_now()
+    }
+
+    # Write to config file
+    File.write!(
+      "config/stripe_ids.exs",
+      """
+      # Generated by Kyozo.Billing.StripeSetup
+      # #{config.generated_at}
+
+      config :kyozo, :stripe_products, #{inspect(config, pretty: true)}
+      """
+    )
+
+    IO.puts("""
+
+    ✅ Stripe setup complete!
+
+    Configuration written to: config/stripe_ids.exs
+
+    Next steps:
+    1. Import the config in your config.exs
+    2. Update webhook endpoints in Stripe Dashboard
+    3. Test with Stripe CLI
+
+    Products created:
+    #{products |> Map.keys() |> Enum.map(&"  - #{&1}") |> Enum.join("\n")}
+
+    Subscriptions created:
+    #{subscriptions |> Map.keys() |> Enum.map(&"  - #{&1}") |> Enum.join("\n")}
+    """)
+  end
+end
+
+# To run:
+# iex> Kyozo.Billing.StripeSetup.setup_all_products()
