@@ -1,8 +1,8 @@
 # MCP Setup Script for Kyozo API
 # Run with: mix run scripts/setup_mcp.exs
 
-alias Kyozo.Accounts
-alias Kyozo.Accounts.{User, ApiKey}
+alias Dirup.Accounts
+alias Dirup.Accounts.{User, ApiKey}
 
 IO.puts("🔧 Setting up MCP connection for Kyozo API...")
 

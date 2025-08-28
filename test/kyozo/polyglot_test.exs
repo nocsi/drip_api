@@ -1,9 +1,9 @@
-defmodule Kyozo.PolyglotTest do
+defmodule Dirup.PolyglotTest do
   @moduledoc """
   Tests for the Polyglot module - where markdown transcends reality.
   """
   use ExUnit.Case, async: true
-  alias Kyozo.Polyglot
+  alias Dirup.Polyglot
 
   describe "parse/1" do
     test "detects Dockerfile in markdown" do

@@ -1,5 +1,5 @@
-defmodule Kyozo.Accounts.NotificationTest do
-  use Kyozo.ConnCase, async: false
+defmodule Dirup.Accounts.NotificationTest do
+  use Dirup.ConnCase, async: false
   require Ash.Query
 
   describe "User Notifications" do
@@ -12,10 +12,10 @@ defmodule Kyozo.Accounts.NotificationTest do
         body: "This is a test notification body text."
       }
 
-      {:ok, _notification} = Kyozo.Accounts.notify(attrs, actor: user)
+      {:ok, _notification} = Dirup.Accounts.notify(attrs, actor: user)
 
       # Confirm we have the notification in the database
-      assert Kyozo.Accounts.Notification
+      assert Dirup.Accounts.Notification
              |> Ash.Query.filter(recipient_user_id == ^user.id)
              |> Ash.Query.filter(subject == ^attrs.subject)
              |> Ash.Query.filter(body == ^attrs.body)
@@ -25,12 +25,12 @@ defmodule Kyozo.Accounts.NotificationTest do
       # Confirm the job can be queued and triggered in the background
       assert %{success: 2} =
                AshOban.Test.schedule_and_run_triggers(
-                 Kyozo.Accounts.Notification,
+                 Dirup.Accounts.Notification,
                  actor: user
                )
 
       # Confirm the notification was processed and marked as such
-      assert Kyozo.Accounts.Notification
+      assert Dirup.Accounts.Notification
              |> Ash.Query.filter(recipient_user_id == ^user.id)
              |> Ash.Query.filter(subject == ^attrs.subject)
              |> Ash.Query.filter(body == ^attrs.body)

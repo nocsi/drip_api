@@ -1,5 +1,5 @@
-defmodule KyozoWeb.AuthenticationTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.AuthenticationTest do
+  use DirupWeb.ConnCase, async: true
 
   test "register for a new account", %{conn: conn} do
     conn

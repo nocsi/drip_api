@@ -1,5 +1,5 @@
-defmodule KyozoWeb.JsonApi.ArtistTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.JsonApi.ArtistTest do
+  use DirupWeb.ConnCase, async: true
 
   import AshJsonApi.Test
 
@@ -9,9 +9,9 @@ defmodule KyozoWeb.JsonApi.ArtistTest do
     generate(artist(name: "three"))
 
     get(
-      Kyozo.Music,
+      Dirup.Music,
       "/artists?sort=-name&query=o&fields=name,album_count",
-      router: KyozoWeb.AshJsonApiRouter,
+      router: DirupWeb.AshJsonApiRouter,
       status: 200
     )
     |> assert_data_matches([
@@ -24,9 +24,9 @@ defmodule KyozoWeb.JsonApi.ArtistTest do
     artist = generate(artist(name: "Hello world!"))
 
     get(
-      Kyozo.Music,
+      Dirup.Music,
       "/artists/#{artist.id}",
-      router: KyozoWeb.AshJsonApiRouter,
+      router: DirupWeb.AshJsonApiRouter,
       status: 200
     )
     |> assert_data_matches(%{
@@ -38,14 +38,14 @@ defmodule KyozoWeb.JsonApi.ArtistTest do
     user = generate(user(role: :admin))
 
     post(
-      Kyozo.Music,
+      Dirup.Music,
       "/artists",
       %{
         data: %{
           attributes: %{name: "New JSON:API artist"}
         }
       },
-      router: KyozoWeb.AshJsonApiRouter,
+      router: DirupWeb.AshJsonApiRouter,
       status: 201,
       actor: user
     )
@@ -59,14 +59,14 @@ defmodule KyozoWeb.JsonApi.ArtistTest do
     artist = generate(artist())
 
     patch(
-      Kyozo.Music,
+      Dirup.Music,
       "/artists/#{artist.id}",
       %{
         data: %{
           attributes: %{name: "Updated name"}
         }
       },
-      router: KyozoWeb.AshJsonApiRouter,
+      router: DirupWeb.AshJsonApiRouter,
       status: 200,
       actor: user
     )
@@ -80,9 +80,9 @@ defmodule KyozoWeb.JsonApi.ArtistTest do
     artist = generate(artist(name: "Test"))
 
     delete(
-      Kyozo.Music,
+      Dirup.Music,
       "/artists/#{artist.id}",
-      router: KyozoWeb.AshJsonApiRouter,
+      router: DirupWeb.AshJsonApiRouter,
       status: 200,
       actor: user
     )

@@ -1,4 +1,4 @@
-defmodule KyozoWeb.ConnCase do
+defmodule DirupWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -11,7 +11,7 @@ defmodule KyozoWeb.ConnCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use KyozoWeb.ConnCase, async: true`, although
+  by setting `use DirupWeb.ConnCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -20,22 +20,22 @@ defmodule KyozoWeb.ConnCase do
   using do
     quote do
       # The default endpoint for testing
-      @endpoint KyozoWeb.Endpoint
+      @endpoint DirupWeb.Endpoint
 
-      use KyozoWeb, :verified_routes
+      use DirupWeb, :verified_routes
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest, except: [get: 3, delete: 3]
-      import KyozoWeb.ConnCase
-      import Kyozo.Support.Helpers
-      import Kyozo.Generator
+      import DirupWeb.ConnCase
+      import Dirup.Support.Helpers
+      import Dirup.Generator
       import PhoenixTest
     end
   end
 
   setup tags do
-    Kyozo.DataCase.setup_sandbox(tags)
+    Dirup.DataCase.setup_sandbox(tags)
     {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 
@@ -50,7 +50,7 @@ defmodule KyozoWeb.ConnCase do
   def insert_and_authenticate_user(conn, role \\ :user)
 
   def insert_and_authenticate_user(%{conn: conn}, role) do
-    user = Kyozo.Generator.generate(Kyozo.Generator.user(role: role))
+    user = Dirup.Generator.generate(Dirup.Generator.user(role: role))
     %{conn: log_in_user(conn, user), user: user}
   end
 

@@ -1,7 +1,7 @@
-defmodule KyozoWeb.Artists.ShowLiveTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.Artists.ShowLiveTest do
+  use DirupWeb.ConnCase, async: true
 
-  alias Kyozo.Music, warn: false
+  alias Dirup.Music, warn: false
 
   describe "render/1" do
     test "can view artists details", %{conn: conn} do

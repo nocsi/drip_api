@@ -1,0 +1,26 @@
+<div class="min-h-screen bg-slate-950 font-sans antialiased">
+  <.svelte
+    name="MobileNav"
+    socket={@socket}
+  />
+
+  <.svelte
+    name="Navbar"
+    props={
+      %{
+        scroll: true,
+        current_user: assigns[:current_user]
+      }
+    }
+    socket={@socket}
+  />
+
+  <main class="w-full">
+    {@inner_content}
+  </main>
+
+  <.svelte
+    name="SiteFooter"
+    socket={@socket}
+  />
+</div>

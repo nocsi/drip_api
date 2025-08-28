@@ -1,4 +1,4 @@
-defmodule Kyozo.Support.Helpers do
+defmodule Dirup.Support.Helpers do
   require Ash.Query
 
   @doc """
@@ -6,7 +6,7 @@ defmodule Kyozo.Support.Helpers do
 
   ## Examples
 
-      iex> Kyozo.Support.Helpers.time_ago(5, :second)
+      iex> Dirup.Support.Helpers.time_ago(5, :second)
   """
   def ago(seconds, unit) when is_integer(seconds) do
     DateTime.utc_now()
@@ -22,7 +22,7 @@ defmodule Kyozo.Support.Helpers do
 
   ## Examples
 
-      iex> Kyozo.Support.Helpers.get_by_name(Kyozo.Music.Artist, "Anderon")
+      iex> Dirup.Support.Helpers.get_by_name(Dirup.Music.Artist, "Anderon")
   """
   def get_by_name(resource, name, opts \\ []) do
     resource

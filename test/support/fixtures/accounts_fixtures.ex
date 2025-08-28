@@ -1,18 +1,18 @@
-defmodule Kyozo.AccountsFixtures do
+defmodule Dirup.AccountsFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `Kyozo.Accounts` context.
+  entities via the `Dirup.Accounts` context.
   """
 
-  alias Kyozo.Accounts
-  alias Kyozo.Accounts.{User, Team}
+  alias Dirup.Accounts
+  alias Dirup.Accounts.{User, Team}
 
   @doc """
   Generate a user.
   """
   def user_fixture(attrs \\ %{}) do
     unique_id = System.unique_integer([:positive])
-    
+
     default_attrs = %{
       email: "user#{unique_id}@example.com",
       password: "password123",
@@ -34,14 +34,14 @@ defmodule Kyozo.AccountsFixtures do
   def team_fixture(attrs \\ %{}) do
     user = attrs[:owner] || user_fixture()
     unique_id = System.unique_integer([:positive])
-    
+
     default_attrs = %{
       name: "Test Team #{unique_id}",
       description: "A test team",
       owner_id: user.id
     }
 
-    attrs = 
+    attrs =
       attrs
       |> Map.drop([:owner])
       |> Enum.into(default_attrs)
@@ -58,7 +58,7 @@ defmodule Kyozo.AccountsFixtures do
   def team_membership_fixture(attrs \\ %{}) do
     team = attrs[:team] || team_fixture()
     user = attrs[:user] || user_fixture()
-    
+
     default_attrs = %{
       team_id: team.id,
       user_id: user.id,
@@ -68,8 +68,11 @@ defmodule Kyozo.AccountsFixtures do
     attrs = Enum.into(attrs, default_attrs)
 
     case Accounts.add_team_member(team.id, user.id, attrs[:role], actor: team.owner) do
-      {:ok, membership} -> membership
-      {:error, changeset} -> raise "Failed to create team membership: #{inspect(changeset.errors)}"
+      {:ok, membership} ->
+        membership
+
+      {:error, changeset} ->
+        raise "Failed to create team membership: #{inspect(changeset.errors)}"
     end
   end
 

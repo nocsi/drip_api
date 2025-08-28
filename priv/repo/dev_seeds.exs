@@ -3,8 +3,8 @@
 # This file contains seeds for development environment only.
 # It creates test data and demo users for easy development.
 
-alias Kyozo.Accounts
-alias Kyozo.Workspaces
+alias Dirup.Accounts
+alias Dirup.Workspaces
 
 IO.puts("🌱 Seeding development data...")
 

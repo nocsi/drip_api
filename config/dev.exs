@@ -2,7 +2,7 @@ import Config
 config :ash, policies: [show_policy_breakdowns?: true]
 
 # Configure your database
-config :kyozo, Kyozo.Repo,
+config :dirup, Dirup.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -16,16 +16,19 @@ config :stripity_stripe,
   api_key: System.get_env("STRIPE_SECRET_KEY"),
   public_key: System.get_env("STRIPE_PUBLISHABLE_KEY")
 
-config :kyozo, :safemd,
+config :dirup, :safemd,
   pricing_per_scan: String.to_float(System.get_env("SAFEMD_PRICING_PER_SCAN") || "0.03"),
   free_tier_limit: String.to_integer(System.get_env("SAFEMD_FREE_TIER_LIMIT") || "10"),
   webhook_secret: System.get_env("STRIPE_WEBHOOK_SECRET")
 
 # Markdown Intelligence Services Pricing
-config :kyozo, :markdown_services,
-  promptspect_price_per_scan: 0.03,      # PromptSpect security scanning
-  impromptu_price_per_enhancement: 0.05, # Impromptu prompt enhancement
-  polyglot_price_per_kb: 0.02           # Polyglot translation per KB
+config :dirup, :markdown_services,
+  # PromptSpect security scanning
+  promptspect_price_per_scan: 0.03,
+  # Impromptu prompt enhancement
+  impromptu_price_per_enhancement: 0.05,
+  # Polyglot translation per KB
+  polyglot_price_per_kb: 0.02
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -33,7 +36,7 @@ config :kyozo, :markdown_services,
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we can use it
 # to bundle .js and .css sources.
-config :kyozo, KyozoWeb.Endpoint,
+config :dirup, DirupWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
   http: [ip: {127, 0, 0, 1}, port: 4000],
@@ -73,7 +76,7 @@ config :kyozo, KyozoWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :kyozo, KyozoWeb.Endpoint,
+config :dirup, DirupWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
@@ -82,7 +85,7 @@ config :kyozo, KyozoWeb.Endpoint,
     ]
   ]
 
-config :kyozo, Kyozo.Mailer,
+config :dirup, Dirup.Mailer,
   adapter: Swoosh.Adapters.SMTP,
   relay: System.get_env("MAILTRAP_SERVER", "smtp.mailtrap.io"),
   username: System.get_env("MAILTRAP_USERNAME", "YOUR USERNAME"),
@@ -95,7 +98,7 @@ config :kyozo, Kyozo.Mailer,
   no_mx_lookups: System.get_env("MAILTRAP_NO_MX_LOOKUPS", "false")
 
 # Enable dev routes for dashboard and mailbox
-config :kyozo, dev_routes: true, token_signing_secret: "HGcuS+aLVn83xvSiCblt3LCx11VPsWVA"
+config :dirup, dev_routes: true, token_signing_secret: "HGcuS+aLVn83xvSiCblt3LCx11VPsWVA"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console, format: "[$level] $message\n"
@@ -115,7 +118,7 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 # OAuth2 Configuration for development
-config :kyozo,
+config :dirup,
   google_client_id: System.get_env("GOOGLE_CLIENT_ID"),
   google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
   google_redirect_uri:
@@ -132,7 +135,7 @@ config :kyozo,
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
 
-config :kyozo, Kyozo.Mailer, adapter: Swoosh.Adapters.Local
+config :dirup, Dirup.Mailer, adapter: Swoosh.Adapters.Local
 
 config :ash_authentication, debug_authentication_failures?: true
 config :ash_authentication, :bypass_require_interaction_for_confirmation?, true
@@ -140,7 +143,7 @@ config :ash_authentication, :bypass_require_interaction_for_confirmation?, true
 config :ash, :pub_sub, debug?: true
 
 # OAuth2 Configuration for Development
-config :kyozo,
+config :dirup,
   apple_client_id: System.get_env("APPLE_CLIENT_ID"),
   apple_client_secret: System.get_env("APPLE_CLIENT_SECRET"),
   apple_team_id: System.get_env("APPLE_TEAM_ID"),
@@ -149,12 +152,12 @@ config :kyozo,
   apple_redirect_uri: "http://localhost:4000/auth/apple/callback"
 
 # S3 development configuration
-config :kyozo, :s3_storage,
+config :dirup, :s3_storage,
   bucket: System.get_env("S3_BUCKET", "kyozo-dev-storage"),
   region: System.get_env("AWS_REGION", "us-east-1")
 
 # Use disk storage by default in development, set BLOB_STORAGE_BACKEND=s3 to test S3
-config :kyozo,
+config :dirup,
   blob_storage_backend:
     (case System.get_env("BLOB_STORAGE_BACKEND") do
        "s3" -> :s3

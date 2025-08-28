@@ -1,9 +1,9 @@
-defmodule Kyozo.MixProject do
+defmodule Dirup.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :kyozo,
+      app: :dirup,
       version: "0.1.0",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -20,7 +20,7 @@ defmodule Kyozo.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Kyozo.Application, []},
+      mod: {Dirup.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -42,6 +42,7 @@ defmodule Kyozo.MixProject do
       {:assent, "~> 0.2"},
       {:stripity_stripe, "~> 3.0"},
       {:ex_money, "~> 5.0"},
+      {:uuid, "~> 1.1"},
       {:picosat_elixir, "~> 0.2"},
       {:open_api_spex, "~> 3.0"},
       {:ash_json_api, "~> 1.0"},
@@ -92,8 +93,8 @@ defmodule Kyozo.MixProject do
       {:mail, ">= 0.0.0"},
       {:yaml_elixir, "~> 2.11"},
       {:tidewave, "~> 0.4.1", only: :dev},
-      {:jsonld_ex, "~> 0.1.1"},
-      {:markdown_ld, "~> 0.3.0"},
+      {:jsonld_ex, "~> 0.4.0"},
+      {:markdown_ld, "~> 0.4.0"},
       {:httpoison, "~> 2.0"}
     ]
   end

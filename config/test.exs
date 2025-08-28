@@ -1,5 +1,5 @@
 import Config
-config :kyozo, token_signing_secret: "widzEZZsnplJzO6OoNEoi4cdUWt+AHUM"
+config :dirup, token_signing_secret: "widzEZZsnplJzO6OoNEoi4cdUWt+AHUM"
 config :bcrypt_elixir, log_rounds: 1
 config :ash, policies: [show_policy_breakdowns?: true]
 
@@ -8,7 +8,7 @@ config :ash, policies: [show_policy_breakdowns?: true]
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :kyozo, Kyozo.Repo,
+config :dirup, Dirup.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
@@ -18,13 +18,13 @@ config :kyozo, Kyozo.Repo,
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :kyozo, KyozoWeb.Endpoint,
+config :dirup, DirupWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "juvWYF54fW6O46xWjNKvoSyt24rsG4J6/T0bv1YgNqVwRSxCqGj7Qumm1G0seN74",
   server: false
 
 # In test we don't send emails
-config :kyozo, Kyozo.Mailer, adapter: Swoosh.Adapters.Test
+config :dirup, Dirup.Mailer, adapter: Swoosh.Adapters.Test
 
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
@@ -39,16 +39,17 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
-config :phoenix_test, :endpoint, KyozoWeb.Endpoint
+config :phoenix_test, :endpoint, DirupWeb.Endpoint
 
 # Blob storage configuration for testing
-config :kyozo,
+config :dirup,
   blob_storage_backend: :disk,
   blob_storage_root: Path.join([System.tmp_dir!(), "kyozo_test_blobs"])
 
 # S3 storage configuration for testing (disabled by default)
-config :kyozo, :s3_storage,
-  bucket: nil,  # No S3 in test by default
+config :dirup, :s3_storage,
+  # No S3 in test by default
+  bucket: nil,
   region: "us-east-1"
 
 # ExAws configuration for testing
@@ -60,12 +61,15 @@ config :ex_aws,
 config :ex_aws, :s3,
   scheme: "http://",
   host: "localhost",
-  port: 9000  # MinIO test server port
+  # MinIO test server port
+  port: 9000
 
 # LiveSvelte configuration for testing
 config :live_svelte,
-  vite_host: nil  # Disable vite in tests
+  # Disable vite in tests
+  vite_host: nil
 
 # Markdown processing configuration
-config :kyozo,
-  markdown_processor: :earmark  # Use earmark for consistent test results
+config :dirup,
+  # Use earmark for consistent test results
+  markdown_processor: :earmark

@@ -3,10 +3,10 @@
 # Simple MCP API Key Generation Script
 # Usage: mix run scripts/generate_mcp_key.exs
 
-IO.puts("🔑 Generating MCP API Key for Kyozo...")
+IO.puts("🔑 Generating MCP API Key for Dirup...")
 
-alias Kyozo.Accounts
-alias Kyozo.Accounts.{User, ApiKey}
+alias Dirup.Accounts
+alias Dirup.Accounts.{User, ApiKey}
 
 # MCP user credentials
 email = "mcp@kyozo.dev"

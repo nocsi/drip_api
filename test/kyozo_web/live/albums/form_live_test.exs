@@ -1,7 +1,7 @@
-defmodule KyozoWeb.Albums.FormLiveTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.Albums.FormLiveTest do
+  use DirupWeb.ConnCase, async: true
 
-  alias Kyozo.Music, warn: false
+  alias Dirup.Music, warn: false
 
   describe "creating a new album" do
     test "errors for forbidden users", %{conn: conn} do
@@ -25,7 +25,7 @@ defmodule KyozoWeb.Albums.FormLiveTest do
       |> click_button("Save")
       |> assert_has(flash(:info), text: "Album saved successfully")
 
-      album = get_by_name!(Kyozo.Music.Album, "Final Days")
+      album = get_by_name!(Dirup.Music.Album, "Final Days")
       assert album.artist_id == artist.id
     end
 
@@ -50,7 +50,7 @@ defmodule KyozoWeb.Albums.FormLiveTest do
       |> click_button("Save")
       |> assert_has(flash(:info), text: "Album saved successfully")
 
-      album = get_by_name!(Kyozo.Music.Album, "Sample With Tracks", load: [:tracks])
+      album = get_by_name!(Dirup.Music.Album, "Sample With Tracks", load: [:tracks])
       assert ["First Track", "Second Track"] == Enum.map(album.tracks, & &1.name)
     end
 
@@ -64,7 +64,7 @@ defmodule KyozoWeb.Albums.FormLiveTest do
       |> click_button("Save")
       |> assert_has(flash(:error), text: "Could not save album data")
 
-      refute get_by_name(Kyozo.Music.Artist, "Missing Year")
+      refute get_by_name(Dirup.Music.Artist, "Missing Year")
     end
   end
 

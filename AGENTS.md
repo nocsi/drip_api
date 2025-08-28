@@ -1,8 +1,35 @@
 # Kyozo Development Agent Guidelines
 
+## 🚨 CRITICAL REQUIREMENT - MANDATORY COMPILATION TESTING
+
+### **ALL AGENTS MUST BUILD AFTER EVERY CHANGE**
+
+**ABSOLUTE REQUIREMENT**: Every agent MUST run `mix compile` after making ANY code changes.
+
+```bash
+# MANDATORY after every file edit
+mix compile
+```
+
+**⚠️ NO EXCEPTIONS**: Do not "run away" without testing compilation. This is not optional.
+
+**Why This Matters**:
+- Agents frequently introduce syntax errors (missing `end`, malformed blocks, etc.)
+- Compilation errors block all development work
+- Previous agents have left broken code that prevents project building
+- This wastes time for subsequent agents and human developers
+
+**Workflow Rule**:
+1. Make code changes
+2. **IMMEDIATELY** run `mix compile` 
+3. Fix any compilation errors before proceeding
+4. Only then continue with additional work
+
+**If compilation fails**: Fix the errors immediately, don't continue with other tasks.
+
 ## 🚨 CRITICAL ISSUES TO AVOID
 
-### Broken API Routes - DO NOT ACCESS
+### Broken API Routes - DO NOT ACCESS  
 The following routes are currently **BROKEN** and will cause application errors:
 - `/api/json/*` - Missing `Kyozo.JSONAPI` modules
 - `/api/*` endpoints using JSONAPI pipeline
@@ -144,12 +171,25 @@ Prerequisites:
 
 ## 🛠 FRAMEWORK-SPECIFIC GUIDELINES
 
+### **MANDATORY COMPILATION TESTING**
+```bash
+# After every single code change:
+mix compile
+
+# If you see compilation errors, fix them immediately:
+# 1. Read the error message carefully
+# 2. Fix missing `end` statements, syntax errors, etc.
+# 3. Run `mix compile` again
+# 4. Only continue when compilation succeeds
+```
+
 ### Elixir/Phoenix Best Practices
 - **Pattern Matching**: Use over conditional logic when possible
 - **Error Handling**: Use `{:ok, result}` and `{:error, reason}` tuples
 - **With Statements**: Chain operations that return ok/error tuples
 - **Guards**: Use function head guards for validation
 - **Avoid**: `String.to_atom/1` on user input (memory leak risk)
+- **ALWAYS**: Test compilation after every change (`mix compile`)
 
 ### Ash Framework Integration
 - **Domains**: Use `Kyozo.Accounts`, `Kyozo.Workspaces`, `Kyozo.Containers`
@@ -214,13 +254,22 @@ import { Users, Plus, Mail, Settings } from "lucide-svelte";
 
 ## 🧪 TESTING STRATEGIES FOR AGENTS
 
+### **MANDATORY FIRST STEP: COMPILATION TEST**
+```bash
+# ALWAYS run this first after any code change
+mix compile
+
+# This must succeed before any other testing
+# Fix any compilation errors immediately
+```
+
 ### Safe Testing Methods
 ```elixir
 # Test domain logic directly (always safe)
 iex> {:ok, user} = Kyozo.Accounts.get_user_by_email("test@example.com")
 iex> Kyozo.Workspaces.list_workspaces(actor: user)
 
-# Test compilation (safe)
+# Test compilation (MANDATORY after every change)
 $ mix compile
 
 # Test database (safe)  
@@ -259,7 +308,8 @@ curl -X POST http://localhost:4000/api/v1/ai/confidence \
 5. **UI Functionality** - LiveView and Svelte components working
 
 ### Development Quality Gates
-- **Code Quality**: Follow Elixir/Phoenix conventions
+- **COMPILATION**: `mix compile` must succeed after every change (MANDATORY)
+- **Code Quality**: Follow Elixir/Phoenix conventions  
 - **Test Coverage**: Existing tests continue to pass
 - **Documentation**: Update implementation status documents
 - **Error Handling**: Graceful degradation when services unavailable
@@ -314,10 +364,12 @@ iex> exports(Kyozo.Workspaces)
 4. **Safe Defaults**: Use mock mode for external dependencies
 
 ### Communication with Other Agents
+- **COMPILATION GUARANTEE**: Leave code in a compilable state (MANDATORY)
 - **Context Sharing**: Agents start with clean slate, provide full context
 - **Status Updates**: Update AGENTS.md with current implementation status
 - **Error Reporting**: Document any new issues discovered
 - **Success Tracking**: Note completed fixes for future agents
+- **No Broken Code**: Never leave compilation errors for the next agent
 
 ---
 

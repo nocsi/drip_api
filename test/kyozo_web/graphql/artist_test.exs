@@ -1,5 +1,5 @@
-defmodule KyozoWeb.Graphql.ArtistTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.Graphql.ArtistTest do
+  use DirupWeb.ConnCase, async: true
 
   describe "queries" do
     test "getArtistById" do
@@ -15,7 +15,7 @@ defmodule KyozoWeb.Graphql.ArtistTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{"id" => artist.id}
                )
 
@@ -37,7 +37,7 @@ defmodule KyozoWeb.Graphql.ArtistTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{
                    "query" => "o",
                    "sort" => [%{"field" => "NAME", "order" => "ASC"}]
@@ -62,7 +62,7 @@ defmodule KyozoWeb.Graphql.ArtistTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{"input" => %{"name" => "New Artist"}},
                  context: %{actor: user}
                )
@@ -112,7 +112,7 @@ defmodule KyozoWeb.Graphql.ArtistTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{"id" => artist.id, "input" => %{"name" => "A different name"}},
                  context: %{actor: user}
                )
@@ -134,7 +134,7 @@ defmodule KyozoWeb.Graphql.ArtistTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{"id" => artist.id},
                  context: %{actor: user}
                )

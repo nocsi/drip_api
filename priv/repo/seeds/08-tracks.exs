@@ -3,10 +3,10 @@
 
 require Ash.Query
 
-album_names = Enum.map(Kyozo.Seeder.albums(), & &1.name)
+album_names = Enum.map(Dirup.Seeder.albums(), & &1.name)
 
 albums =
-  Kyozo.Music.Album
+  Dirup.Music.Album
   |> Ash.Query.filter(name in ^album_names)
   |> Ash.read!()
 
@@ -14,12 +14,12 @@ album_ids = Enum.map(albums, & &1.id)
 album_name_map = Enum.map(albums, &{&1.name, &1.id}) |> Map.new()
 
 # Delete the existing records for tracks from the seed data albums
-Kyozo.Music.Track
+Dirup.Music.Track
 |> Ash.Query.filter(album_id in ^album_ids)
 |> Ash.bulk_destroy!(:destroy, %{}, authorize?: false)
 
 # And re-insert fresh copies of them
-Kyozo.Seeder.albums()
+Dirup.Seeder.albums()
 |> Enum.filter(fn album -> Map.has_key?(album_name_map, album.name) end)
 |> Enum.flat_map(fn album ->
   album.tracks
@@ -30,4 +30,4 @@ Kyozo.Seeder.albums()
     |> Map.put(:order, order)
   end)
 end)
-|> Ash.bulk_create!(Kyozo.Music.Track, :create, skip_unknown_inputs: [:*], return_errors?: true, authorize?: false)
+|> Ash.bulk_create!(Dirup.Music.Track, :create, skip_unknown_inputs: [:*], return_errors?: true, authorize?: false)

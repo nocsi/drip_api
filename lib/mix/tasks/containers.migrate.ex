@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Containers.Migrate do
   @moduledoc """
   Generate and run container domain migrations for Kyozo Store's "Folder as a Service" functionality.
 
-  This task creates all necessary database migrations for the Kyozo.Containers domain,
+  This task creates all necessary database migrations for the Dirup.Containers domain,
   including service instances, topology detection, deployment events, and monitoring tables.
 
   ## Usage
@@ -55,13 +55,13 @@ defmodule Mix.Tasks.Containers.Migrate do
   ]
 
   @container_resources [
-    Kyozo.Containers.TopologyDetection,
-    Kyozo.Containers.ServiceInstance,
-    Kyozo.Containers.DeploymentEvent,
-    Kyozo.Containers.ServiceDependency,
-    Kyozo.Containers.HealthCheck,
-    Kyozo.Containers.ServiceMetric,
-    Kyozo.Containers.ServicePermission
+    Dirup.Containers.TopologyDetection,
+    Dirup.Containers.ServiceInstance,
+    Dirup.Containers.DeploymentEvent,
+    Dirup.Containers.ServiceDependency,
+    Dirup.Containers.HealthCheck,
+    Dirup.Containers.ServiceMetric,
+    Dirup.Containers.ServicePermission
   ]
 
   def run(args) do
@@ -254,7 +254,7 @@ defmodule Mix.Tasks.Containers.Migrate do
     WHERE schemaname = 'public'
     """
 
-    case Ecto.Adapters.SQL.query(Kyozo.Repo, query, []) do
+    case Ecto.Adapters.SQL.query(Dirup.Repo, query, []) do
       {:ok, %{rows: rows}} -> Enum.map(rows, &List.first/1)
       _ -> []
     end
@@ -267,7 +267,7 @@ defmodule Mix.Tasks.Containers.Migrate do
     WHERE table_name = $1 AND table_schema = 'public'
     """
 
-    case Ecto.Adapters.SQL.query(Kyozo.Repo, query, [table_name]) do
+    case Ecto.Adapters.SQL.query(Dirup.Repo, query, [table_name]) do
       {:ok, %{rows: rows}} -> Enum.map(rows, &List.first/1)
       _ -> []
     end
@@ -276,13 +276,13 @@ defmodule Mix.Tasks.Containers.Migrate do
   defp get_table_name(resource) do
     # Extract table name from resource module
     case resource do
-      Kyozo.Containers.TopologyDetection -> "topology_detections"
-      Kyozo.Containers.ServiceInstance -> "service_instances"
-      Kyozo.Containers.DeploymentEvent -> "deployment_events"
-      Kyozo.Containers.ServiceDependency -> "service_dependencies"
-      Kyozo.Containers.HealthCheck -> "health_checks"
-      Kyozo.Containers.ServiceMetric -> "service_metrics"
-      Kyozo.Containers.ServicePermission -> "service_permissions"
+      Dirup.Containers.TopologyDetection -> "topology_detections"
+      Dirup.Containers.ServiceInstance -> "service_instances"
+      Dirup.Containers.DeploymentEvent -> "deployment_events"
+      Dirup.Containers.ServiceDependency -> "service_dependencies"
+      Dirup.Containers.HealthCheck -> "health_checks"
+      Dirup.Containers.ServiceMetric -> "service_metrics"
+      Dirup.Containers.ServicePermission -> "service_permissions"
       _ -> "unknown"
     end
   end
@@ -296,7 +296,7 @@ defmodule Mix.Tasks.Containers.Migrate do
     ORDER BY version DESC
     """
 
-    case Ecto.Adapters.SQL.query(Kyozo.Repo, query, []) do
+    case Ecto.Adapters.SQL.query(Dirup.Repo, query, []) do
       {:ok, %{rows: rows}} -> Enum.map(rows, &List.first/1)
       _ -> []
     end

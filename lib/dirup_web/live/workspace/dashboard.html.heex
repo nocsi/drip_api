@@ -1,0 +1,143 @@
+<!-- File Editor (when editing) -->
+<div :if={@editing_file || @creating_file} class="h-screen">
+  <.svelte
+    name="workspace/file-editor"
+    class="h-full"
+    props={
+      %{
+        file: @editing_file,
+        content: @file_content || "",
+        workspace: @workspace,
+        is_editing: !!@editing_file,
+        socket: @socket
+      }
+    }
+    socket={@socket}
+  />
+</div>
+
+<!-- Dashboard (when browsing) -->
+<div :if={!@editing_file && !@creating_file}>
+  <.svelte
+    name="workspace/dashboard"
+    class="flex min-h-0 h-full"
+    props={
+      %{
+        workspace: @workspace,
+        files: @files,
+        selected_file: @selected_file,
+        current_path: @current_path,
+        breadcrumbs: @breadcrumbs,
+        view_mode: @view_mode,
+        sort_by: @sort_by,
+        sort_order: @sort_order,
+        search_query: @search_query,
+        file_content: @file_content,
+        editing_file: @editing_file,
+        creating_file: @creating_file,
+        file_tree: @file_tree
+      }
+    }
+    socket={@socket}
+  />
+</div>
+
+<!-- Create File Modal -->
+<.modal :if={@creating_file} show on_cancel={JS.patch(~p"/workspaces/#{@workspace.id}/dashboard")}>
+  <:title>Create New File</:title>
+  <:content :let={{on_cancel, _}}>
+    <.simple_form
+      for={@file_form}
+      phx-submit="create_file"
+      phx-change="validate_file"
+    >
+      <.input field={@file_form[:name]} type="text" label="File Name" required />
+      <.input
+        field={@file_form[:file_type]}
+        type="select"
+        label="File Type"
+        options={[
+          {"File", "file"},
+          {"Notebook", "notebook"}
+        ]}
+      />
+      <.input field={@file_form[:path]} type="text" label="Path" value={@current_path} />
+      <.input field={@file_form[:content]} type="textarea" label="Initial Content" rows="10" />
+
+      <:actions>
+        <.button variant="secondary" phx-click={on_cancel}>Cancel</.button>
+        <.button type="submit">Create File</.button>
+      </:actions>
+    </.simple_form>
+  </:content>
+</.modal>
+
+<!-- Edit File Modal -->
+<.modal :if={@editing_file} show on_cancel={JS.patch(~p"/workspaces/#{@workspace.id}/dashboard")}>
+  <:title>
+    Edit {@editing_file.name || @editing_file.file_name || @editing_file.title || "Untitled"}
+  </:title>
+  <:content :let={{on_cancel, _}}>
+    <.simple_form
+      for={@file_form}
+      phx-submit="update_file"
+      phx-change="validate_file"
+    >
+      <.input field={@file_form[:name]} type="text" label="File Name" required />
+      <.input field={@file_form[:content]} type="textarea" label="Content" rows="20" />
+
+      <:actions>
+        <.button variant="secondary" phx-click={on_cancel}>Cancel</.button>
+        <.button type="submit">Save Changes</.button>
+      </:actions>
+    </.simple_form>
+  </:content>
+</.modal>
+
+<!-- File Preview Modal -->
+<.modal
+  :if={@selected_file && !@editing_file}
+  show
+  on_cancel={JS.push("select_file", value: %{id: nil})}
+>
+  <:title>
+    {@selected_file.name || @selected_file.file_name || @selected_file.title || "Untitled"}
+  </:title>
+  <:content>
+    <div class="space-y-4">
+      <div class="flex justify-between items-center">
+        <div class="text-sm text-muted-foreground">
+          Type: {case @selected_file do
+            %Dirup.Workspaces.File{} -> "file"
+            %Dirup.Workspaces.Notebook{} -> "notebook"
+            _ -> "unknown"
+          end} •
+          Size: {(@selected_file.file_size || 0) |> format_bytes()} •
+          Modified: {(@selected_file.updated_at || @selected_file.created_at) |> format_datetime()}
+        </div>
+        <div class="flex gap-2">
+          <.button
+            size="sm"
+            variant="outline"
+            phx-click="duplicate_file"
+            phx-value-id={@selected_file.id}
+          >
+            Duplicate
+          </.button>
+          <.button
+            size="sm"
+            phx-click={
+              JS.patch(~p"/workspaces/#{@workspace.id}/dashboard/edit/#{@selected_file.id}")
+            }
+          >
+            Edit
+          </.button>
+        </div>
+      </div>
+
+      <div class="border rounded-lg p-4 bg-muted/50 max-h-96 overflow-auto">
+        <pre class="text-sm whitespace-pre-wrap">{@file_content || "Loading..."}</pre>
+      </div>
+    </div>
+  </:content>
+</.modal>

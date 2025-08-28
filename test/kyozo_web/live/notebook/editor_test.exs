@@ -1,13 +1,13 @@
-defmodule KyozoWeb.Live.Notebook.EditorTest do
-  use KyozoWeb.ConnCase
-  use KyozoWeb.LiveCase
+defmodule DirupWeb.Live.Notebook.EditorTest do
+  use DirupWeb.ConnCase
+  use DirupWeb.LiveCase
 
   import Phoenix.LiveViewTest
-  import Kyozo.AccountsFixtures
-  import Kyozo.WorkspacesFixtures
+  import Dirup.AccountsFixtures
+  import Dirup.WorkspacesFixtures
 
-  alias Kyozo.Workspaces
-  alias Kyozo.Workspaces.{Notebook, DocumentBlobRef}
+  alias Dirup.Workspaces
+  alias Dirup.Workspaces.{Notebook, DocumentBlobRef}
 
   describe "mount" do
     setup [:create_user, :create_workspace, :create_notebook]
@@ -44,9 +44,9 @@ defmodule KyozoWeb.Live.Notebook.EditorTest do
       {:ok, _view, _html} = live(conn, ~p"/notebooks/#{notebook.id}/edit")
 
       # Verify subscriptions by sending test messages
-      Phoenix.PubSub.broadcast(Kyozo.PubSub, "notebook:#{notebook.id}", {:test_message})
-      Phoenix.PubSub.broadcast(Kyozo.PubSub, "notebook:#{notebook.id}:execution", {:test_execution})
-      Phoenix.PubSub.broadcast(Kyozo.PubSub, "notebook:#{notebook.id}:collaboration", {:test_collaboration})
+      Phoenix.PubSub.broadcast(Dirup.PubSub, "notebook:#{notebook.id}", {:test_message})
+      Phoenix.PubSub.broadcast(Dirup.PubSub, "notebook:#{notebook.id}:execution", {:test_execution})
+      Phoenix.PubSub.broadcast(Dirup.PubSub, "notebook:#{notebook.id}:collaboration", {:test_collaboration})
 
       # If we get here without errors, subscriptions are working
       assert true
@@ -94,7 +94,7 @@ defmodule KyozoWeb.Live.Notebook.EditorTest do
       {:ok, view, _html} = live(conn, ~p"/notebooks/#{notebook.id}/edit")
 
       # Subscribe to the collaboration channel to verify broadcast
-      Phoenix.PubSub.subscribe(Kyozo.PubSub, "notebook:#{notebook.id}")
+      Phoenix.PubSub.subscribe(Dirup.PubSub, "notebook:#{notebook.id}")
 
       new_content = "# Collaborative Content\n\nUpdated by user."
 
@@ -180,7 +180,7 @@ defmodule KyozoWeb.Live.Notebook.EditorTest do
       {:ok, view, _html} = live(conn, ~p"/notebooks/#{notebook.id}/edit")
 
       # Subscribe to execution events
-      Phoenix.PubSub.subscribe(Kyozo.PubSub, "notebook:#{notebook.id}:execution")
+      Phoenix.PubSub.subscribe(Dirup.PubSub, "notebook:#{notebook.id}:execution")
 
       task_id = "test_task_123"
       python_code = "print('Hello from Python')\nresult = 2 + 2\nprint(f'Result: {result}')"
@@ -203,7 +203,7 @@ defmodule KyozoWeb.Live.Notebook.EditorTest do
       conn = log_in_user(conn, user)
       {:ok, view, _html} = live(conn, ~p"/notebooks/#{notebook.id}/edit")
 
-      Phoenix.PubSub.subscribe(Kyozo.PubSub, "notebook:#{notebook.id}:execution")
+      Phoenix.PubSub.subscribe(Dirup.PubSub, "notebook:#{notebook.id}:execution")
 
       task_id = "elixir_task_456"
       elixir_code = "IO.puts(\"Hello from Elixir\")\n1 + 1"
@@ -223,7 +223,7 @@ defmodule KyozoWeb.Live.Notebook.EditorTest do
       conn = log_in_user(conn, user)
       {:ok, view, _html} = live(conn, ~p"/notebooks/#{notebook.id}/edit")
 
-      Phoenix.PubSub.subscribe(Kyozo.PubSub, "notebook:#{notebook.id}:execution")
+      Phoenix.PubSub.subscribe(Dirup.PubSub, "notebook:#{notebook.id}:execution")
 
       task_id = "error_task_789"
       invalid_elixir_code = "this is not valid elixir syntax {"
@@ -267,7 +267,7 @@ defmodule KyozoWeb.Live.Notebook.EditorTest do
       conn = log_in_user(conn, user)
       {:ok, view, _html} = live(conn, ~p"/notebooks/#{notebook.id}/edit")
 
-      Phoenix.PubSub.subscribe(Kyozo.PubSub, "notebook:#{notebook.id}:collaboration")
+      Phoenix.PubSub.subscribe(Dirup.PubSub, "notebook:#{notebook.id}:collaboration")
 
       render_hook(view, "toggle_collaborative_mode", %{"enabled" => true})
 
@@ -287,7 +287,7 @@ defmodule KyozoWeb.Live.Notebook.EditorTest do
       conn = log_in_user(conn, user)
       {:ok, view, _html} = live(conn, ~p"/notebooks/#{notebook.id}/edit")
 
-      Phoenix.PubSub.subscribe(Kyozo.PubSub, "notebook:#{notebook.id}:collaboration")
+      Phoenix.PubSub.subscribe(Dirup.PubSub, "notebook:#{notebook.id}:collaboration")
 
       render_hook(view, "toggle_collaborative_mode", %{"enabled" => false})
 

@@ -13,7 +13,7 @@ defmodule OAuthVerifier do
   """
 
   def verify_all do
-    IO.puts("🔍 Verifying OAuth2 Configuration for Kyozo...")
+    IO.puts("🔍 Verifying OAuth2 Configuration for Dirup...")
     IO.puts("=" |> String.duplicate(50))
 
     results = [

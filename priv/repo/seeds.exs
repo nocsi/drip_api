@@ -3,13 +3,13 @@
 # This file contains seeds for production environment.
 # It creates essential system data and an initial admin user.
 
-alias Kyozo.Accounts
-alias Kyozo.Workspaces
+alias Dirup.Accounts
+alias Dirup.Workspaces
 require Ash.Query
 require Ash.Expr
 IO.puts("🌱 Seeding production data...")
 
-defmodule Kyozo.Seeds do
+defmodule Dirup.Seeds do
   # Helper function to safely create or get existing record
   def create_or_get(module, action, params, opts \\ []) do
     tenant = Keyword.get(opts, :tenant)
@@ -78,7 +78,7 @@ admin_password = System.get_env("ADMIN_PASSWORD", "secure_password_123")
 
 IO.puts("Creating system admin user...")
 
-case Kyozo.Seeds.create_or_get(
+case Dirup.Seeds.create_or_get(
        Accounts.User,
        :seed_admin,
        %{
@@ -351,7 +351,7 @@ IO.puts("   Roles would be: Admin, User, Viewer")
 # ]
 #
 # Enum.each(essential_roles, fn role_data ->
-#   case Kyozo.Seeds.create_or_get(Workspaces.Role, :create, role_data) do
+#   case Dirup.Seeds.create_or_get(Workspaces.Role, :create, role_data) do
 #     {:ok, role} ->
 #       IO.puts("✅ Role created/found: #{role.name}")
 #     {:error, error} ->
@@ -368,7 +368,7 @@ if stripe_configured do
   IO.puts("Creating plans with Stripe integration...")
 
   # Free plan
-  Kyozo.Billing.Plan.create_with_stripe!(%{
+  Dirup.Billing.Plan.create_with_stripe!(%{
     code: "FREE",
     name: "Free",
     description: "Get started with Kyozo",
@@ -391,7 +391,7 @@ else
 
   # Create plans directly without Stripe
   {:ok, _free_plan} =
-    Kyozo.Billing.Plan
+    Dirup.Billing.Plan
     |> Ash.Changeset.for_action(:create, %{
       code: "FREE",
       name: "Free",
@@ -417,7 +417,7 @@ end
 
 if stripe_configured do
   # Pro plan
-  Kyozo.Billing.Plan.create_with_stripe!(%{
+  Dirup.Billing.Plan.create_with_stripe!(%{
     code: "PRO_MONTHLY",
     name: "Pro",
     description: "For professional developers",
@@ -444,7 +444,7 @@ if stripe_configured do
   })
 
   # Team plan
-  Kyozo.Billing.Plan.create_with_stripe!(%{
+  Dirup.Billing.Plan.create_with_stripe!(%{
     code: "TEAM_MONTHLY",
     name: "Team",
     description: "For growing teams",
@@ -473,7 +473,7 @@ if stripe_configured do
   })
 
   # Enterprise plan
-  Kyozo.Billing.Plan.create_with_stripe!(%{
+  Dirup.Billing.Plan.create_with_stripe!(%{
     code: "ENTERPRISE",
     name: "Enterprise",
     description: "For large organizations",

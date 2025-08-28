@@ -1,24 +1,28 @@
-defmodule Kyozo.WorkspacesFixtures do
+defmodule Dirup.WorkspacesFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `Kyozo.Workspaces` context.
+  entities via the `Dirup.Workspaces` context.
   """
 
-  import Kyozo.AccountsFixtures
-  alias Kyozo.Workspaces
+  import Dirup.AccountsFixtures
+  alias Dirup.Workspaces
   # TODO: Update blob system to work with new File architecture
-  # alias Kyozo.Workspaces.{DocumentBlobRef, Blob}
+  # alias Dirup.Workspaces.{DocumentBlobRef, Blob}
 
   @doc """
   Generate a workspace.
   """
   def workspace_fixture(attrs \\ %{}) do
     user = attrs[:user] || user_fixture()
-    
-    {:ok, team} = Kyozo.Accounts.create_team(%{
-      name: "Test Team #{System.unique_integer()}",
-      description: "A test team"
-    }, actor: user)
+
+    {:ok, team} =
+      Dirup.Accounts.create_team(
+        %{
+          name: "Test Team #{System.unique_integer()}",
+          description: "A test team"
+        },
+        actor: user
+      )
 
     base_attrs = %{
       name: "Test Workspace #{System.unique_integer()}",
@@ -55,27 +59,30 @@ defmodule Kyozo.WorkspacesFixtures do
   Generate a document with content stored in blob.
   """
   def document_with_content_fixture(attrs \\ %{}) do
-    content = attrs[:content] || """
-    # Test Document
+    content =
+      attrs[:content] ||
+        """
+        # Test Document
 
-    This is a test document with some content.
+        This is a test document with some content.
 
-    ```python
-    print("Hello, World!")
-    ```
+        ```python
+        print("Hello, World!")
+        ```
 
-    ## Section 2
+        ## Section 2
 
-    More content here.
-    """
+        More content here.
+        """
 
     document = document_fixture(attrs)
 
-    {:ok, _blob_ref} = DocumentBlobRef.create_content_ref(
-      document.id,
-      content,
-      attrs[:content_type] || "text/markdown"
-    )
+    {:ok, _blob_ref} =
+      DocumentBlobRef.create_content_ref(
+        document.id,
+        content,
+        attrs[:content_type] || "text/markdown"
+      )
 
     document
   end
@@ -86,12 +93,14 @@ defmodule Kyozo.WorkspacesFixtures do
   def notebook_fixture(attrs \\ %{}) do
     user = attrs[:user] || user_fixture()
     workspace = attrs[:workspace] || workspace_fixture(user: user)
-    
-    document = attrs[:document] || document_with_content_fixture(
-      user: user,
-      workspace: workspace,
-      title: "Notebook Document #{System.unique_integer()}"
-    )
+
+    document =
+      attrs[:document] ||
+        document_with_content_fixture(
+          user: user,
+          workspace: workspace,
+          title: "Notebook Document #{System.unique_integer()}"
+        )
 
     {:ok, notebook} = Workspaces.create_from_document(document.id, actor: user)
     notebook
@@ -101,40 +110,42 @@ defmodule Kyozo.WorkspacesFixtures do
   Generate a notebook with specific content.
   """
   def notebook_with_content_fixture(attrs \\ %{}) do
-    content = attrs[:content] || """
-    # Machine Learning Notebook
+    content =
+      attrs[:content] ||
+        """
+        # Machine Learning Notebook
 
-    ## Data Analysis
+        ## Data Analysis
 
-    ```python
-    import pandas as pd
-    import numpy as np
+        ```python
+        import pandas as pd
+        import numpy as np
 
-    # Load data
-    data = pd.read_csv('data.csv')
-    print(data.shape)
-    ```
+        # Load data
+        data = pd.read_csv('data.csv')
+        print(data.shape)
+        ```
 
-    ## Model Training
+        ## Model Training
 
-    ```python
-    from sklearn.ensemble import RandomForestClassifier
+        ```python
+        from sklearn.ensemble import RandomForestClassifier
 
-    model = RandomForestClassifier()
-    model.fit(X_train, y_train)
-    accuracy = model.score(X_test, y_test)
-    print(f"Accuracy: {accuracy}")
-    ```
+        model = RandomForestClassifier()
+        model.fit(X_train, y_train)
+        accuracy = model.score(X_test, y_test)
+        print(f"Accuracy: {accuracy}")
+        ```
 
-    ## Results
+        ## Results
 
-    The model achieved good performance on the test set.
+        The model achieved good performance on the test set.
 
-    ### Todo
-    - [ ] Feature engineering
-    - [ ] Hyperparameter tuning
-    - [x] Basic model training
-    """
+        ### Todo
+        - [ ] Feature engineering
+        - [ ] Hyperparameter tuning
+        - [x] Basic model training
+        """
 
     attrs_with_content = Map.put(attrs, :content, content)
     notebook_fixture(attrs_with_content)
@@ -148,11 +159,12 @@ defmodule Kyozo.WorkspacesFixtures do
     content_type = attrs[:content_type] || "text/plain"
     encoding = attrs[:encoding] || "utf-8"
 
-    {:ok, blob} = Workspaces.create_blob(
-      content: content,
-      content_type: content_type,
-      encoding: encoding
-    )
+    {:ok, blob} =
+      Workspaces.create_blob(
+        content: content,
+        content_type: content_type,
+        encoding: encoding
+      )
 
     blob
   end
@@ -165,11 +177,12 @@ defmodule Kyozo.WorkspacesFixtures do
     blob = attrs[:blob] || blob_fixture()
     ref_type = attrs[:ref_type] || "content"
 
-    {:ok, ref} = Workspaces.create_ref(%{
-      document_id: document.id,
-      blob_id: blob.id,
-      ref_type: ref_type
-    })
+    {:ok, ref} =
+      Workspaces.create_ref(%{
+        document_id: document.id,
+        blob_id: blob.id,
+        ref_type: ref_type
+      })
 
     ref
   end
@@ -607,26 +620,29 @@ defmodule Kyozo.WorkspacesFixtures do
     workspace = workspace_fixture(user: user, name: "Complete Test Workspace")
 
     # Create documents with different types of content
-    ml_doc = document_with_content_fixture(
-      user: user,
-      workspace: workspace,
-      title: "Machine Learning Notebook",
-      content: sample_markdown_content()
-    )
+    ml_doc =
+      document_with_content_fixture(
+        user: user,
+        workspace: workspace,
+        title: "Machine Learning Notebook",
+        content: sample_markdown_content()
+      )
 
-    design_doc = document_with_content_fixture(
-      user: user,
-      workspace: workspace,
-      title: "Design System",
-      content: sample_design_content()
-    )
+    design_doc =
+      document_with_content_fixture(
+        user: user,
+        workspace: workspace,
+        title: "Design System",
+        content: sample_design_content()
+      )
 
-    project_doc = document_with_content_fixture(
-      user: user,
-      workspace: workspace,
-      title: "Project Plan",
-      content: sample_project_content()
-    )
+    project_doc =
+      document_with_content_fixture(
+        user: user,
+        workspace: workspace,
+        title: "Project Plan",
+        content: sample_project_content()
+      )
 
     # Create notebooks from documents
     {:ok, ml_notebook} = Workspaces.create_from_document(ml_doc.id, actor: user)
@@ -646,8 +662,9 @@ defmodule Kyozo.WorkspacesFixtures do
   """
   def binary_blob_fixture(attrs \\ %{}) do
     # Create some binary data (simulating an image or file)
-    binary_content = :crypto.strong_rand_bytes(1024)  # 1KB of random data
-    
+    # 1KB of random data
+    binary_content = :crypto.strong_rand_bytes(1024)
+
     base_attrs = %{
       content: binary_content,
       content_type: "application/octet-stream"

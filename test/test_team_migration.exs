@@ -3,8 +3,8 @@
 
 require Logger
 
-alias Kyozo.Accounts
-alias Kyozo.Accounts.{Team, UserTeam, Invitation}
+alias Dirup.Accounts
+alias Dirup.Accounts.{Team, UserTeam, Invitation}
 
 Logger.info("🧪 Testing Team Migration Functionality")
 
@@ -82,20 +82,24 @@ Logger.info("✅ Team now has #{length(team_members)} member(s)")
 # Test role change
 if length(team_members) >= 2 do
   user2_membership = Enum.find(team_members, &(&1.user_id == user2.id))
-  
+
   Logger.info("1️⃣1️⃣ Changing member role...")
-  {:ok, _} = Accounts.change_member_role(%{id: user2_membership.id, role: "admin"}, 
-                                        actor: user, tenant: team.id)
+
+  {:ok, _} =
+    Accounts.change_member_role(%{id: user2_membership.id, role: "admin"},
+      actor: user,
+      tenant: team.id
+    )
+
   Logger.info("✅ Changed user2 role to admin")
 end
 
 # Clean up - leave team
 if length(team_members) >= 2 do
   user2_membership = Enum.find(team_members, &(&1.user_id == user2.id))
-  
+
   Logger.info("1️⃣2️⃣ User2 leaving team...")
-  {:ok, _} = Accounts.leave_team(%{id: user2_membership.id}, 
-                                actor: user2, tenant: team.id)
+  {:ok, _} = Accounts.leave_team(%{id: user2_membership.id}, actor: user2, tenant: team.id)
   Logger.info("✅ User2 left the team")
 end
 

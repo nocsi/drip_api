@@ -1,8 +1,8 @@
-defmodule Kyozo.Containers.WorkersTest do
+defmodule Dirup.Containers.WorkersTest do
   use ExUnit.Case, async: true
-  use Oban.Testing, repo: Kyozo.Repo
+  use Oban.Testing, repo: Dirup.Repo
 
-  alias Kyozo.Containers.Workers.{
+  alias Dirup.Containers.Workers.{
     TopologyAnalysisWorker,
     ContainerHealthMonitor,
     MetricsCollector,
@@ -10,7 +10,7 @@ defmodule Kyozo.Containers.WorkersTest do
     CleanupWorker
   }
 
-  alias Kyozo.{Containers, Workspaces}
+  alias Dirup.{Containers, Workspaces}
 
   describe "TopologyAnalysisWorker" do
     setup do
@@ -77,7 +77,7 @@ defmodule Kyozo.Containers.WorkersTest do
       args = %{"topology_detection_id" => detection.id}
 
       # Mock error condition
-      with_mock Containers, [:passthrough], [get_workspace: fn(_) -> nil end] do
+      with_mock Containers, [:passthrough], get_workspace: fn _ -> nil end do
         assert {:error, _} = perform_job(TopologyAnalysisWorker, args)
 
         # Verify detection was marked as failed
@@ -153,11 +153,11 @@ defmodule Kyozo.Containers.WorkersTest do
       args = %{"service_instance_id" => service.id}
 
       # Mock event publishing
-      with_mock Kyozo.Events, [:passthrough], [publish_event: fn(_, _) -> :ok end] do
+      with_mock Dirup.Events, [:passthrough], publish_event: fn _, _ -> :ok end do
         assert {:ok, _} = perform_job(ContainerHealthMonitor, args)
 
         # Verify alert was triggered for unhealthy service
-        assert called Kyozo.Events.publish_event("service_health_alert", :_)
+        assert called(Dirup.Events.publish_event("service_health_alert", :_))
       end
     end
   end
@@ -234,7 +234,7 @@ defmodule Kyozo.Containers.WorkersTest do
       args = %{"service_instance_id" => service.id}
 
       # Mock event publishing
-      with_mock Kyozo.Events, [:passthrough], [publish_event: fn(_, _) -> :ok end] do
+      with_mock Dirup.Events, [:passthrough], publish_event: fn _, _ -> :ok end do
         assert {:ok, _} = perform_job(MetricsCollector, args)
 
         # Verify alerts may be triggered for threshold violations
@@ -370,14 +370,16 @@ defmodule Kyozo.Containers.WorkersTest do
       }
 
       # Force a failure by mocking
-      with_mock Containers, [:passthrough], [
-        get_workspace: fn(_) -> {:error, :workspace_not_found} end
-      ] do
+      with_mock Containers, [:passthrough],
+        get_workspace: fn _ -> {:error, :workspace_not_found} end do
         assert {:error, _} = perform_job(ContainerDeploymentWorker, args)
 
         # Verify rollback was attempted
         updated_service = Containers.get_service_instance(service.id)
-        rollback_attempted = get_in(updated_service.deployment_metadata, ["rollback_attempted_at"])
+
+        rollback_attempted =
+          get_in(updated_service.deployment_metadata, ["rollback_attempted_at"])
+
         assert rollback_attempted != nil
       end
     end
@@ -393,7 +395,8 @@ defmodule Kyozo.Containers.WorkersTest do
     test "performs metrics cleanup" do
       args = %{
         "cleanup_type" => "metrics",
-        "max_age_hours" => 168  # 1 week
+        # 1 week
+        "max_age_hours" => 168
       }
 
       assert {:ok, result} = perform_job(CleanupWorker, args)
@@ -403,7 +406,8 @@ defmodule Kyozo.Containers.WorkersTest do
     test "performs deployment events cleanup" do
       args = %{
         "cleanup_type" => "deployment_events",
-        "max_age_hours" => 720  # 30 days
+        # 30 days
+        "max_age_hours" => 720
       }
 
       assert {:ok, result} = perform_job(CleanupWorker, args)
@@ -448,6 +452,7 @@ defmodule Kyozo.Containers.WorkersTest do
         "action" => "deploy",
         "service_instance_id" => service.id
       }
+
       assert {:ok, _} = perform_job(ContainerDeploymentWorker, args)
 
       # Verify health check was scheduled
@@ -462,7 +467,7 @@ defmodule Kyozo.Containers.WorkersTest do
       service = create_mock_service_instance()
 
       # Mock event publishing to capture alerts
-      with_mock Kyozo.Events, [:passthrough], [publish_event: fn(_, _) -> :ok end] do
+      with_mock Dirup.Events, [:passthrough], publish_event: fn _, _ -> :ok end do
         args = %{"service_instance_id" => service.id}
         assert {:ok, _} = perform_job(MetricsCollector, args)
 
@@ -481,9 +486,8 @@ defmodule Kyozo.Containers.WorkersTest do
       }
 
       # Mock critical failure
-      with_mock Containers, [:passthrough], [
-        get_workspace: fn(_) -> raise "Database connection lost" end
-      ] do
+      with_mock Containers, [:passthrough],
+        get_workspace: fn _ -> raise "Database connection lost" end do
         assert {:error, _} = perform_job(ContainerDeploymentWorker, args)
 
         # Verify error was handled gracefully

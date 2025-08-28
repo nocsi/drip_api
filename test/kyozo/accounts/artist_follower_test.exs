@@ -1,9 +1,9 @@
-defmodule Kyozo.Accounts.ArtistFollowerTest do
-  use Kyozo.DataCase, async: true
+defmodule Dirup.Accounts.ArtistFollowerTest do
+  use Dirup.DataCase, async: true
 
-  alias Kyozo.Music, warn: false
+  alias Dirup.Music, warn: false
 
-  describe "Kyozo.Music.follow_artist/2" do
+  describe "Dirup.Music.follow_artist/2" do
     test "creates a specific ArtistFollower record" do
       # Create some extra records so we can assert that only the correct link is created
       [artist_one, artist_two] = generate_many(artist(), 2)
@@ -19,7 +19,7 @@ defmodule Kyozo.Accounts.ArtistFollowerTest do
     end
   end
 
-  describe "Kyozo.Music.unfollow_artist/2" do
+  describe "Dirup.Music.unfollow_artist/2" do
     test "deletes a specific ArtistFollower record" do
       # Create some extra records so we can assert that only the correct link is deleted
       [artist_one, artist_two] = generate_many(artist(), 2)

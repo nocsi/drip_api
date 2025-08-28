@@ -11,7 +11,7 @@ defmodule AuthVerifier do
   """
 
   def verify_all do
-    IO.puts("🔍 Verifying Authentication Configuration for Kyozo...")
+    IO.puts("🔍 Verifying Authentication Configuration for Dirup...")
     IO.puts("=" |> String.duplicate(60))
 
     results = [
@@ -113,9 +113,9 @@ defmodule AuthVerifier do
         {"Email Confirmation", String.contains?(content, "confirm_route")},
         {"Magic Link", String.contains?(content, "magic_sign_in_route")},
         {"OAuth Google",
-         String.contains?(content, "oauth_sign_in_route(Kyozo.Accounts.User, :google")},
+         String.contains?(content, "oauth_sign_in_route(Dirup.Accounts.User, :google")},
         {"OAuth GitHub",
-         String.contains?(content, "oauth_sign_in_route(Kyozo.Accounts.User, :github")},
+         String.contains?(content, "oauth_sign_in_route(Dirup.Accounts.User, :github")},
         {"Sign Out", String.contains?(content, "sign_out_route")}
       ]
 

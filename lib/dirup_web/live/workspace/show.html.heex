@@ -1,0 +1,86 @@
+<.svelte
+  name="workspace/show"
+  class="flex min-h-0"
+  props={
+    %{
+      workspace: @workspace,
+      documents: @documents,
+      notebooks: @notebooks
+    }
+  }
+  socket={@socket}
+/>
+
+<.modal
+  :if={@live_action in [:delete_document]}
+  show
+  on_cancel={JS.patch(~p"/workspaces/#{@workspace.id}")}
+>
+  <:title>
+    Delete document?
+  </:title>
+  <:content>
+    Are you sure you want to delete this document? This action cannot be undone.
+  </:content>
+  <:actions :let={{on_cancel, _}}>
+    <.button variant="secondary" phx-click={on_cancel}>Cancel</.button>
+    <.button
+      variant="danger"
+      phx-click="delete_document"
+      phx-value-id={@document.id}
+      type="submit"
+      aria-label="Confirm delete document"
+    >
+      Delete
+    </.button>
+  </:actions>
+</.modal>
+
+<.modal
+  :if={@live_action in [:delete_notebook]}
+  show
+  on_cancel={JS.patch(~p"/workspaces/#{@workspace.id}")}
+>
+  <:title>
+    Delete notebook?
+  </:title>
+  <:content>
+    Are you sure you want to delete this notebook? This action cannot be undone.
+  </:content>
+  <:actions :let={{on_cancel, _}}>
+    <.button variant="secondary" phx-click={on_cancel}>Cancel</.button>
+    <.button
+      variant="danger"
+      phx-click="delete_notebook"
+      phx-value-id={@notebook.id}
+      type="submit"
+      aria-label="Confirm delete notebook"
+    >
+      Delete
+    </.button>
+  </:actions>
+</.modal>
+
+<.modal
+  :if={@live_action in [:archive]}
+  show
+  on_cancel={JS.patch(~p"/workspaces/#{@workspace.id}")}
+>
+  <:title>
+    Archive workspace?
+  </:title>
+  <:content>
+    Are you sure you want to archive this workspace? You can restore it later from the archived workspaces section.
+  </:content>
+  <:actions :let={{on_cancel, _}}>
+    <.button variant="secondary" phx-click={on_cancel}>Cancel</.button>
+    <.button
+      variant="warning"
+      phx-click="archive_workspace"
+      type="submit"
+      aria-label="Confirm archive workspace"
+    >
+      Archive
+    </.button>
+  </:actions>
+</.modal>

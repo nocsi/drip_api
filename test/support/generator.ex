@@ -1,4 +1,4 @@
-defmodule Kyozo.Generator do
+defmodule Dirup.Generator do
   @moduledoc "Data generation for tests"
 
   use Ash.Generator
@@ -12,7 +12,7 @@ defmodule Kyozo.Generator do
   """
   def user(opts \\ []) do
     changeset_generator(
-      Kyozo.Accounts.User,
+      Dirup.Accounts.User,
       :register_with_password,
       defaults: [
         # Generates unique values using an auto-incrementing sequence
@@ -36,7 +36,7 @@ defmodule Kyozo.Generator do
     owner = opts[:owner] || once(:default_owner, fn -> generate(user()) end)
 
     changeset_generator(
-      Kyozo.Accounts.Team,
+      Dirup.Accounts.Team,
       :create,
       defaults: [
         name: sequence(:team_name, &"Team #{&1}"),
@@ -60,7 +60,7 @@ defmodule Kyozo.Generator do
     owner = opts[:owner] || team.owner
 
     changeset_generator(
-      Kyozo.Workspaces.Workspace,
+      Dirup.Workspaces.Workspace,
       :create,
       defaults: [
         name: sequence(:workspace_name, &"Workspace #{&1}"),
@@ -87,7 +87,7 @@ defmodule Kyozo.Generator do
     actor = opts[:actor] || team.owner
 
     changeset_generator(
-      Kyozo.Workspaces.File,
+      Dirup.Workspaces.File,
       :create,
       defaults: [
         name: sequence(:file_name, &"test_file_#{&1}.md"),
@@ -113,7 +113,7 @@ defmodule Kyozo.Generator do
   """
   def storage_resource(opts \\ []) do
     changeset_generator(
-      Kyozo.Storage.StorageResource,
+      Dirup.Storage.StorageResource,
       :create_from_content,
       defaults: [
         content: opts[:content] || "Test content",
@@ -137,7 +137,7 @@ defmodule Kyozo.Generator do
     user_id = opts[:user_id] || once(:default_user_id, fn -> generate(user()).id end)
 
     changeset_generator(
-      Kyozo.Accounts.Notification,
+      Dirup.Accounts.Notification,
       :create,
       defaults: [
         title: sequence(:notification_title, &"Notification #{&1}"),

@@ -1,5 +1,5 @@
-defmodule KyozoWeb.JsonApi.UserTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.JsonApi.UserTest do
+  use DirupWeb.ConnCase, async: true
 
   import AshJsonApi.Test
 
@@ -8,12 +8,12 @@ defmodule KyozoWeb.JsonApi.UserTest do
 
     response =
       post(
-        Kyozo.Accounts,
+        Dirup.Accounts,
         "/users/sign-in",
         %{
           data: %{attributes: %{email: "one@example.com", password: "password"}}
         },
-        router: KyozoWeb.AshJsonApiRouter,
+        router: DirupWeb.AshJsonApiRouter,
         status: 201
       )
 
@@ -23,7 +23,7 @@ defmodule KyozoWeb.JsonApi.UserTest do
   test "can register a new account" do
     response =
       post(
-        Kyozo.Accounts,
+        Dirup.Accounts,
         "/users/register",
         %{
           data: %{
@@ -34,7 +34,7 @@ defmodule KyozoWeb.JsonApi.UserTest do
             }
           }
         },
-        router: KyozoWeb.AshJsonApiRouter,
+        router: DirupWeb.AshJsonApiRouter,
         status: 201
       )
 

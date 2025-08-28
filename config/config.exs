@@ -7,13 +7,13 @@
 # General application configuration
 import Config
 
-config :kyozo, :env, config_env()
+config :dirup, :env, config_env()
 
 config :ash_oban, pro?: false
 
-config :ash_oban, :actor_persister, Kyozo.Storage.ActorPersister
+config :ash_oban, :actor_persister, Dirup.Storage.ActorPersister
 
-config :kyozo, Oban,
+config :dirup, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
   queues: [
@@ -34,27 +34,27 @@ config :kyozo, Oban,
     storage_resource_version_creation: 2,
     storage_resource_weekly_health_check: 1
   ],
-  repo: Kyozo.Repo,
+  repo: Dirup.Repo,
   plugins: [
     {Oban.Plugins.Cron,
      crontab: [
        # Health monitoring: batch check every 2 minutes
-       {"*/2 * * * *", Kyozo.Containers.Workers.ContainerHealthMonitor,
+       {"*/2 * * * *", Dirup.Containers.Workers.ContainerHealthMonitor,
         args: %{"batch_check" => true}},
 
        # Metrics: batch collection every 5 minutes
-       {"*/5 * * * *", Kyozo.Containers.Workers.MetricsCollector,
+       {"*/5 * * * *", Dirup.Containers.Workers.MetricsCollector,
         args: %{"batch_collection" => true}},
 
        # Metrics: daily cleanup at 1 AM UTC
-       {"0 1 * * *", Kyozo.Containers.Workers.MetricsCollector,
+       {"0 1 * * *", Dirup.Containers.Workers.MetricsCollector,
         args: %{"cleanup_old_metrics" => true, "retention_days" => 30, "batch_size" => 1000}},
 
        # Containers: daily full cleanup at 2 AM UTC
-       {"0 2 * * *", Kyozo.Containers.Workers.CleanupWorker, args: %{"type" => "full_cleanup"}},
+       {"0 2 * * *", Dirup.Containers.Workers.CleanupWorker, args: %{"type" => "full_cleanup"}},
 
        # DB maintenance: weekly vacuum analyze on Sunday 3 AM UTC
-       {"0 3 * * 0", Kyozo.Containers.Workers.CleanupWorker, args: %{"type" => "vacuum_analyze"}}
+       {"0 3 * * 0", Dirup.Containers.Workers.CleanupWorker, args: %{"type" => "vacuum_analyze"}}
      ]}
   ]
 
@@ -121,28 +121,28 @@ config :spark,
     ]
   ]
 
-config :kyozo,
-  ecto_repos: [Kyozo.Repo],
+config :dirup,
+  ecto_repos: [Dirup.Repo],
   generators: [timestamp_type: :utc_datetime],
   ash_domains: [
-    Kyozo.Accounts,
-    Kyozo.Workspaces,
-    Kyozo.Projects,
-    Kyozo.Storage,
-    Kyozo.Containers,
-    Kyozo.Billing,
-    Kyozo.Collaboration
+    Dirup.Accounts,
+    Dirup.Workspaces,
+    Dirup.Projects,
+    Dirup.Storage,
+    Dirup.Containers,
+    Dirup.Billing,
+    Dirup.Collaboration
   ]
 
 # Configures the endpoint
-config :kyozo, KyozoWeb.Endpoint,
+config :dirup, DirupWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: KyozoWeb.ErrorHTML, json: KyozoWeb.ErrorJSON],
+    formats: [html: DirupWeb.ErrorHTML, json: DirupWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: Kyozo.PubSub,
+  pubsub_server: Dirup.PubSub,
   live_view: [signing_salt: "2gskVQkA"]
 
 # Configures the mailer
@@ -152,12 +152,12 @@ config :kyozo, KyozoWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :kyozo, Kyozo.Mailer, adapter: Swoosh.Adapters.Local
+config :dirup, Dirup.Mailer, adapter: Swoosh.Adapters.Local
 
 # Configure esbuild (the version is required)
 # config :esbuild,
 #   version: "0.17.11",
-#   kyozo: [
+#   topo: [
 #     args:
 #       ~w(js/app.ts --bundle --target=es2020 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
 #     cd: Path.expand("../assets", __DIR__),
@@ -167,7 +167,7 @@ config :kyozo, Kyozo.Mailer, adapter: Swoosh.Adapters.Local
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "4.1.4",
-  kyozo: [
+  dirup: [
     args: ~w(
       --input=assets/css/app.css
       --output=priv/static/assets/app.css
@@ -184,13 +184,13 @@ config :logger, :default_formatter,
 config :phoenix, :json_library, Jason
 
 # Blob storage configuration
-config :kyozo,
+config :dirup,
   # :disk or :s3
   blob_storage_backend: :disk,
   blob_storage_root: Path.join([File.cwd!(), "priv", "storage", "blobs"])
 
 # S3 storage configuration
-config :kyozo, :s3_storage,
+config :dirup, :s3_storage,
   # Set in environment-specific config
   bucket: nil,
   region: "us-east-1",
@@ -216,25 +216,55 @@ config :stripity_stripe,
 
 # Stripe Configuration
 # Apple App Store Configuration
-config :kyozo,
+config :dirup,
   apple_app_store_shared_secret: System.get_env("APPLE_APP_STORE_SHARED_SECRET")
 
 config :ex_cldr,
-  default_backend: Kyozo.Cldr
+  default_backend: Dirup.Cldr
 
 config :ex_money,
-  default_cldr_backend: Kyozo.Cldr
+  default_cldr_backend: Dirup.Cldr
+
+# AI Configuration
+config :dirup, :ai,
+  enabled: true,
+  providers: [
+    anthropic: [
+      api_key: System.get_env("ANTHROPIC_API_KEY"),
+      model: "claude-3-opus-20240229",
+      max_tokens: 4000,
+      timeout: 30_000
+    ],
+    openai: [
+      api_key: System.get_env("OPENAI_API_KEY"),
+      model: "gpt-4-turbo-preview",
+      max_tokens: 4000,
+      timeout: 30_000
+    ],
+    xai: [
+      api_key: System.get_env("XAI_API_KEY"),
+      model: "grok-2",
+      max_tokens: 4000,
+      timeout: 30_000
+    ]
+  ],
+  load_balancing: [
+    strategy: :least_loaded,
+    health_check_interval: 30_000,
+    circuit_breaker_threshold: 5,
+    circuit_breaker_timeout: 60_000
+  ]
 
 # VFS Configuration
-config :kyozo, Kyozo.Storage.VFS,
+config :dirup, Dirup.Storage.VFS,
   cache_ttl: :timer.minutes(5),
   max_virtual_files_per_dir: 10,
   generators: [
-    Kyozo.Storage.VFS.Generators.ElixirProject,
-    Kyozo.Storage.VFS.Generators.NodeProject,
-    Kyozo.Storage.VFS.Generators.PythonProject,
-    Kyozo.Storage.VFS.Generators.DockerProject,
-    Kyozo.Storage.VFS.Generators.WorkspaceOverview
+    Dirup.Storage.VFS.Generators.ElixirProject,
+    Dirup.Storage.VFS.Generators.NodeProject,
+    Dirup.Storage.VFS.Generators.PythonProject,
+    Dirup.Storage.VFS.Generators.DockerProject,
+    Dirup.Storage.VFS.Generators.WorkspaceOverview
   ]
 
 # Import environment specific config. This must remain at the bottom

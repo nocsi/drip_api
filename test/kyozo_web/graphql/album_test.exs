@@ -1,5 +1,5 @@
-defmodule KyozoWeb.Graphql.AlbumTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.Graphql.AlbumTest do
+  use DirupWeb.ConnCase, async: true
 
   describe "mutations" do
     test "createAlbum" do
@@ -15,7 +15,7 @@ defmodule KyozoWeb.Graphql.AlbumTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{
                    "input" => %{
                      "artistId" => artist.id,
@@ -43,7 +43,7 @@ defmodule KyozoWeb.Graphql.AlbumTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{"id" => album.id, "input" => %{"name" => "A different name"}},
                  context: %{actor: user}
                )
@@ -65,7 +65,7 @@ defmodule KyozoWeb.Graphql.AlbumTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{"id" => album.id},
                  context: %{actor: user}
                )

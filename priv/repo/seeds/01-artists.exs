@@ -4,21 +4,21 @@
 require Ash.Query
 import Ecto.Query
 
-data = Kyozo.Seeder.artists()
+data = Dirup.Seeder.artists()
 names = Enum.map(data, & &1.name)
 
 # Delete the existing records for the seed data artists
 # This may be run before the `destroy` action is defined on the resource,
 # so may need to use Ecto directly.
-if Ash.Resource.Info.action(Kyozo.Music.Artist, :destroy) do
-  Kyozo.Music.Artist
+if Ash.Resource.Info.action(Dirup.Music.Artist, :destroy) do
+  Dirup.Music.Artist
   |> Ash.Query.filter(name in ^names)
   |> Ash.bulk_destroy!(:destroy, %{}, strategy: :stream, authorize?: false)
 else
-  from(a in Kyozo.Music.Artist, where: a.name in ^names)
-  |> Kyozo.Repo.delete_all()
+  from(a in Dirup.Music.Artist, where: a.name in ^names)
+  |> Dirup.Repo.delete_all()
 end
 
 # And re-insert fresh copies of them
 data
-|> Ash.bulk_create!(Kyozo.Music.Artist, :create, return_errors?: true, authorize?: false)
+|> Ash.bulk_create!(Dirup.Music.Artist, :create, return_errors?: true, authorize?: false)

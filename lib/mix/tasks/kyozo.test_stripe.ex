@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Kyozo.TestStripe do
+defmodule Mix.Tasks.Dirup.TestStripe do
   use Mix.Task
 
   @shortdoc "Test Stripe integration with Ash"
@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Kyozo.TestStripe do
       mix kyozo.test_stripe test@example.com
   """
 
-  alias Kyozo.Billing.StripeTest
+  alias Dirup.Billing.StripeTest
 
   @impl Mix.Task
   def run(args) do

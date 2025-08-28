@@ -1,7 +1,7 @@
-defmodule KyozoWeb.Artists.FormLiveTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.Artists.FormLiveTest do
+  use DirupWeb.ConnCase, async: true
 
-  alias Kyozo.Music, warn: false
+  alias Dirup.Music, warn: false
 
   describe "creating a new artist" do
     test "errors for forbidden users", %{conn: conn} do
@@ -20,7 +20,7 @@ defmodule KyozoWeb.Artists.FormLiveTest do
       |> click_button("Save")
       |> assert_has(flash(:info), text: "Artist saved successfully")
 
-      assert get_by_name(Kyozo.Music.Artist, "Temperance")
+      assert get_by_name(Dirup.Music.Artist, "Temperance")
     end
 
     test "fails when invalid details are entered", %{conn: conn} do

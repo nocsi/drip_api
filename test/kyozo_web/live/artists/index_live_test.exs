@@ -1,5 +1,5 @@
-defmodule KyozoWeb.Artists.IndexLiveTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.Artists.IndexLiveTest do
+  use DirupWeb.ConnCase, async: true
 
   describe "render/1" do
     test "can view a list of artists", %{conn: conn} do

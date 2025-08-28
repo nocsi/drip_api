@@ -1,5 +1,5 @@
-defmodule KyozoWeb.Graphql.UserTest do
-  use KyozoWeb.ConnCase, async: true
+defmodule DirupWeb.Graphql.UserTest do
+  use DirupWeb.ConnCase, async: true
 
   describe "queries" do
     test "signInUser" do
@@ -14,7 +14,7 @@ defmodule KyozoWeb.Graphql.UserTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{"email" => "test@test.com", "password" => "password"}
                )
 
@@ -36,7 +36,7 @@ defmodule KyozoWeb.Graphql.UserTest do
                  }
                }
                """
-               |> Absinthe.run(KyozoWeb.GraphqlSchema,
+               |> Absinthe.run(DirupWeb.GraphqlSchema,
                  variables: %{
                    "input" => %{
                      "email" => "test2@test.com",

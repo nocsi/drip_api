@@ -1,4 +1,4 @@
-defmodule Kyozo.DataCase do
+defmodule Dirup.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -10,7 +10,7 @@ defmodule Kyozo.DataCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use Kyozo.DataCase, async: true`, although
+  by setting `use Dirup.DataCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -18,20 +18,20 @@ defmodule Kyozo.DataCase do
 
   using do
     quote do
-      alias Kyozo.Repo
+      alias Dirup.Repo
 
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
       import Ash.Test
-      import Kyozo.DataCase
-      import Kyozo.Generator
-      import Kyozo.Support.Helpers
+      import Dirup.DataCase
+      import Dirup.Generator
+      import Dirup.Support.Helpers
     end
   end
 
   setup tags do
-    Kyozo.DataCase.setup_sandbox(tags)
+    Dirup.DataCase.setup_sandbox(tags)
     :ok
   end
 
@@ -39,7 +39,7 @@ defmodule Kyozo.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Kyozo.Repo, shared: not tags[:async])
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(Dirup.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
   end
 
