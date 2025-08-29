@@ -57,10 +57,10 @@ defmodule Dirup.Workspaces.ImageStorage do
     end
 
     custom_indexes do
-      index [:file_id, :storage_resource_id], unique: true
+      # index [:file_id, :storage_resource_id], unique: true
       index [:file_id, :is_primary]
       index [:file_id, :relationship_type]
-      index [:storage_resource_id]
+      # index [:storage_resource_id]
       index [:media_type, :relationship_type]
       index [:processing_status]
       index [:created_at]

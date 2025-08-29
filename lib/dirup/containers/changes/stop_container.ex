@@ -33,30 +33,12 @@ defmodule Dirup.Containers.Changes.StopContainer do
     # 5. Update container status
     # 6. Stop health checks
 
-    # For now, simulate container stop
-    Task.start(fn ->
-      # Simulate graceful shutdown time
-      Process.sleep(2000)
-
-      # Broadcast container stopped event
-      Dirup.Containers.broadcast(
-        service_instance.id,
-        :container_stopped,
-        %{
-          service_instance_id: service_instance.id,
-          container_id: service_instance.container_id,
-          stopped_at: DateTime.utc_now(),
-          exit_code: 0
-        }
-      )
-
-      # Create final stop event
-      create_deployment_event(service_instance, :service_stopped, %{
-        completed_at: DateTime.utc_now(),
-        exit_code: 0,
-        cleanup_performed: true
-      })
-    end)
+    # Enqueue real stop via Oban worker
+    Dirup.Containers.Workers.ContainerDeploymentWorker.enqueue_stop(
+      service_instance.id,
+      graceful: true,
+      tenant: service_instance.team_id
+    )
 
     {:ok, service_instance}
   end

@@ -24,29 +24,11 @@ defmodule Dirup.Containers.Changes.StartContainer do
       container_id: service_instance.container_id
     })
 
-    # In a full implementation, this would:
-    # 1. Validate container exists
-    # 2. Start the Docker container
-    # 3. Wait for container to be ready
-    # 4. Update health check status
-    # 5. Restore networking and volume mounts
-
-    # For now, simulate container start
-    Task.start(fn ->
-      # Simulate startup time
-      Process.sleep(500)
-
-      # Broadcast container started event
-      Dirup.Containers.broadcast(
-        service_instance.id,
-        :container_started,
-        %{
-          service_instance_id: service_instance.id,
-          container_id: service_instance.container_id,
-          started_at: DateTime.utc_now()
-        }
-      )
-    end)
+    # Enqueue real start via deployment (will start or redeploy as needed)
+    Dirup.Containers.Workers.ContainerDeploymentWorker.enqueue_deploy(
+      service_instance.id,
+      tenant: service_instance.team_id
+    )
 
     {:ok, service_instance}
   end

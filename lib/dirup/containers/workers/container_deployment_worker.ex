@@ -40,14 +40,13 @@ defmodule Dirup.Containers.Workers.ContainerDeploymentWorker do
          {:ok, workspace} <- get_workspace(service.workspace_id, tenant),
          {:ok, updated_service} <- mark_deploying(service, tenant),
          {:ok, deployment_config} <- prepare_deployment_config(updated_service, workspace, args),
-         {:ok, image_info} <- build_or_pull_image(deployment_config),
-         {:ok, container_info} <- deploy_container(deployment_config, image_info),
+         {:ok, container_info} <- deploy_container(deployment_config),
          {:ok, final_service} <- finalize_deployment(updated_service, container_info, tenant),
          :ok <- verify_deployment_health(final_service) do
       Logger.info("Container deployment completed successfully",
         service_instance_id: service_id,
         container_id: container_info.container_id,
-        image: image_info.image_name
+        image: get_in(container_info, [:image_info, :image_name])
       )
 
       # Record successful deployment
@@ -56,7 +55,10 @@ defmodule Dirup.Containers.Workers.ContainerDeploymentWorker do
         "deployment_completed",
         %{
           container_id: container_info.container_id,
-          image: image_info.image_name,
+          image:
+            (container_info[:image_info] && container_info.image_info[:image_name]) ||
+              (container_info[:image_info] && container_info.image_info["image_name"]) ||
+              nil,
           deployment_duration_ms: calculate_deployment_duration(updated_service)
         },
         tenant
@@ -374,60 +376,10 @@ defmodule Dirup.Containers.Workers.ContainerDeploymentWorker do
     {:ok, config}
   end
 
-  defp build_or_pull_image(config) do
-    Logger.info("Building/pulling Docker image",
-      image: "#{config.image_name}:#{config.image_tag}",
-      dockerfile: config.dockerfile_path
-    )
+  # Image build/pull is handled inside ContainerManager now. No-op stubs removed.
 
-    # ContainerManager handles the full deployment including image building/pulling
-    # For now, return mock image info to maintain existing flow
-    {:ok,
-     %{
-       image_name: config.image_name,
-       image_tag: config.image_tag,
-       image_id: generate_mock_image_id(),
-       build_time: DateTime.utc_now(),
-       size_mb: :rand.uniform(500) + 100
-     }}
-  end
-
-  defp build_custom_image(config) do
-    Logger.info("Building custom Docker image", image: config.image_name)
-
-    # This is now handled by ContainerManager
-    {:ok,
-     %{
-       image_name: config.image_name,
-       image_tag: config.image_tag,
-       image_id: generate_mock_image_id(),
-       build_time: DateTime.utc_now(),
-       size_mb: :rand.uniform(500) + 100
-     }}
-  end
-
-  defp pull_base_image(config) do
-    # Use default base image based on service type
-    base_image = determine_base_image(config.service)
-
-    Logger.info("Using base Docker image", image: base_image)
-
-    image_info = %{
-      image_name: base_image,
-      image_tag: "latest",
-      image_id: generate_mock_image_id(),
-      pulled_at: DateTime.utc_now(),
-      size_mb: :rand.uniform(200) + 50
-    }
-
-    {:ok, image_info}
-  end
-
-  defp deploy_container(config, image_info) do
-    Logger.info("Deploying container",
-      container_name: config.container_name,
-      image: "#{image_info.image_name}:#{image_info.image_tag}"
-    )
+  defp deploy_container(config) do
+    Logger.info("Deploying container", container_name: config.container_name)
 
     # Use ContainerManager for actual deployment
     case Dirup.Containers.ContainerManager.deploy_service(config.service) do

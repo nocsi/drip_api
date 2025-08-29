@@ -6,7 +6,7 @@ config :dirup, Dirup.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "kyozo_dev",
+  database: "dirup_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -81,7 +81,7 @@ config :dirup, DirupWeb.Endpoint,
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/kyozo_web/(controllers|live|components)/.*(ex|heex)$"
+      ~r"lib/dirup_web/(controllers|live|components)/.*(ex|heex)$"
     ]
   ]
 
@@ -153,7 +153,7 @@ config :dirup,
 
 # S3 development configuration
 config :dirup, :s3_storage,
-  bucket: System.get_env("S3_BUCKET", "kyozo-dev-storage"),
+  bucket: System.get_env("S3_BUCKET", "dirup-dev-storage"),
   region: System.get_env("AWS_REGION", "us-east-1")
 
 # Use disk storage by default in development, set BLOB_STORAGE_BACKEND=s3 to test S3

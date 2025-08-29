@@ -186,7 +186,7 @@ defmodule Dirup.Billing.StripeTest do
              }
            }) do
       # Create local plan record
-      Billing.Plan.create_with_stripe!(%{
+      Billing.Plan.create_with_stripe(%{
         code: "PRO_MONTHLY",
         name: "Pro Monthly",
         description: "Test Pro Plan",

@@ -23,8 +23,11 @@ defmodule Dirup.Accounts.Team.Changes.AssociateUserToTeam do
 
         {:ok, _user_team} =
           Dirup.Accounts.UserTeam
-          |> Ash.Changeset.for_create(:add_team_member, params)
-          |> Ash.create(tenant: team)
+          |> Ash.Changeset.for_create(:add_team_member, %{
+            user_id: owner_user_id,
+            role: "owner"
+          })
+          |> Ash.create(tenant: team.id)
 
         {:ok, team}
     end

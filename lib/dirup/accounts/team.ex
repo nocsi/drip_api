@@ -54,7 +54,7 @@ defmodule Dirup.Accounts.Team do
 
     read :list_user_teams do
       description "List all teams that a user is a member of"
-      filter expr(users.id == ^actor(:id))
+      # filter expr(users.id == ^actor(:user_id))
     end
 
     update :update_team do
@@ -79,11 +79,11 @@ defmodule Dirup.Accounts.Team do
   end
 
   attributes do
-    uuid_v7_primary_key :id
+    uuid_primary_key :id
     attribute :name, :string, allow_nil?: false, public?: true
     attribute :domain, :string, allow_nil?: false, public?: true
     attribute :description, :string, allow_nil?: true, public?: true
-    attribute :owner_user_id, :uuid
+    # attribute :owner_id, :uuid
 
     timestamps()
   end
@@ -101,20 +101,20 @@ defmodule Dirup.Accounts.Team do
 
     has_many :invitations, Dirup.Accounts.Invitation
 
-    has_many :user_teams, Dirup.Accounts.UserTeam
+    # has_many :user_teams, Dirup.Accounts.UserTeam
   end
 end
 
-defimpl Ash.ToTenant, for: Dirup.Accounts.Team do
-  def to_tenant(resource, %{:domain => domain, :id => id}) do
-    if Ash.Resource.Info.data_layer(resource) == AshPostgres.DataLayer &&
-         Ash.Resource.Info.multitenancy_strategy(resource) == :context do
-      domain
-    else
-      id
-    end
-  end
+# defimpl Ash.ToTenant, for: Dirup.Accounts.Team do
+#   def to_tenant(resource, %{:domain => domain, :id => id}) do
+#     if Ash.Resource.Info.data_layer(resource) == AshPostgres.DataLayer &&
+#          Ash.Resource.Info.multitenancy_strategy(resource) == :context do
+#       domain
+#     else
+#       id
+#     end
+#   end
 
-  def to_tenant(%{id: id} = _tenant, _resource) when is_map(_tenant), do: id
-  def to_tenant(id, _resource) when is_binary(id), do: id
-end
+#   def to_tenant(%{id: id} = _tenant, _resource) when is_map(_tenant), do: id
+#   def to_tenant(id, _resource) when is_binary(id), do: id
+# end

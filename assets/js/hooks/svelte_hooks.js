@@ -2,7 +2,7 @@ import { mount } from 'svelte'
 import WorkspacesApp from '../../svelte/apps/WorkspacesApp.svelte'
 import TeamsApp from '../../svelte/apps/TeamsApp.svelte'
 import PortalApp from '../../svelte/apps/PortalApp.svelte'
-import ContainerDashboard from '../../svelte/services/ContainerDashboard.svelte'
+// import ContainerDashboard from '../../svelte/services/ContainerDashboard.svelte'
 
 export const SvelteWorkspaces = {
   mounted() {
@@ -90,14 +90,14 @@ export const SvelteWorkspaceIndex = {
     const workspaces = JSON.parse(this.el.dataset.workspaces || '[]')
     const teams = JSON.parse(this.el.dataset.teams || '[]')
     const currentTeam = JSON.parse(this.el.dataset.currentTeam || 'null')
-    
+
     // Create mock live object for existing components
     const mockLive = {
       pushEvent: (event, data) => {
         this.pushEvent(event, data)
       }
     }
-    
+
     // For now, we can use the existing workspace components
     // but in the future they should be replaced with the full app
     this.liveSocket = mockLive
@@ -116,7 +116,7 @@ export const SvelteWorkspaceDashboard = {
         this.pushEvent(event, data)
       }
     }
-    
+
     this.liveSocket = mockLive
   },
 
@@ -141,83 +141,83 @@ function createMockLive(hook) {
   }
 }
 
-export const SvelteContainerDashboard = {
-  mounted() {
-    console.log('SvelteContainerDashboard hook mounted');
-    
-    // Get initial data from Phoenix assigns
-    const teamId = this.el.dataset.teamId;
-    const workspaceId = this.el.dataset.workspaceId;
-    const services = JSON.parse(this.el.dataset.services || '[]');
-    const stats = JSON.parse(this.el.dataset.stats || '{}');
-    const loading = this.el.dataset.loading === 'true';
-    const error = this.el.dataset.error;
-    const filter = JSON.parse(this.el.dataset.filter || '{}');
+// export const SvelteContainerDashboard = {
+//   mounted() {
+//     console.log('SvelteContainerDashboard hook mounted');
 
-    // Configure API for this hook
-    const apiConfig = {
-      baseUrl: '/api/v1',
-      apiToken: window.userToken || '',
-      csrfToken: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-      teamId: teamId
-    };
+//     // Get initial data from Phoenix assigns
+//     const teamId = this.el.dataset.teamId;
+//     const workspaceId = this.el.dataset.workspaceId;
+//     const services = JSON.parse(this.el.dataset.services || '[]');
+//     const stats = JSON.parse(this.el.dataset.stats || '{}');
+//     const loading = this.el.dataset.loading === 'true';
+//     const error = this.el.dataset.error;
+//     const filter = JSON.parse(this.el.dataset.filter || '{}');
 
-    // Import and configure the API
-    import('../../svelte/services/api.ts').then(({ configureDefaultApi }) => {
-      configureDefaultApi(apiConfig);
-    }).catch(console.error);
+//     // Configure API for this hook
+//     const apiConfig = {
+//       baseUrl: '/api/v1',
+//       apiToken: window.userToken || '',
+//       csrfToken: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+//       teamId: teamId
+//     };
 
-    // Create the Svelte component
-    this.app = mount(ContainerDashboard, {
-      target: this.el,
-      props: {
-        teamId,
-        workspaceId
-      }
-    });
+//     // Import and configure the API
+//     import('../../svelte/services/api.ts').then(({ configureDefaultApi }) => {
+//       configureDefaultApi(apiConfig);
+//     }).catch(console.error);
 
-    // Handle events from Svelte component
-    this.app.$on('service-action', (event) => {
-      const { action, serviceId, params } = event.detail;
-      
-      this.pushEvent('service_action', {
-        action,
-        service_id: serviceId,
-        ...params
-      });
-    });
+//     // Create the Svelte component
+//     this.app = mount(ContainerDashboard, {
+//       target: this.el,
+//       props: {
+//         teamId,
+//         workspaceId
+//       }
+//     });
 
-    this.app.$on('load-services', () => {
-      this.pushEvent('load_services', {});
-    });
+//     // Handle events from Svelte component
+//     this.app.$on('service-action', (event) => {
+//       const { action, serviceId, params } = event.detail;
 
-    this.app.$on('filter-change', (event) => {
-      this.pushEvent('filter_services', {
-        filter: event.detail
-      });
-    });
+//       this.pushEvent('service_action', {
+//         action,
+//         service_id: serviceId,
+//         ...params
+//       });
+//     });
 
-    console.log('SvelteContainerDashboard initialized');
-  },
+//     this.app.$on('load-services', () => {
+//       this.pushEvent('load_services', {});
+//     });
 
-  updated() {
-    console.log('SvelteContainerDashboard hook updated');
-  },
+//     this.app.$on('filter-change', (event) => {
+//       this.pushEvent('filter_services', {
+//         filter: event.detail
+//       });
+//     });
 
-  reconnected() {
-    console.log('SvelteContainerDashboard hook reconnected');
-    this.pushEvent('load_services', {});
-  },
+//     console.log('SvelteContainerDashboard initialized');
+//   },
 
-  destroyed() {
-    console.log('SvelteContainerDashboard hook destroyed');
-    
-    if (this.app) {
-      this.app.$destroy();
-      this.app = null;
-    }
-  }
-}
+//   updated() {
+//     console.log('SvelteContainerDashboard hook updated');
+//   },
+
+//   reconnected() {
+//     console.log('SvelteContainerDashboard hook reconnected');
+//     this.pushEvent('load_services', {});
+//   },
+
+//   destroyed() {
+//     console.log('SvelteContainerDashboard hook destroyed');
+
+//     if (this.app) {
+//       this.app.$destroy();
+//       this.app = null;
+//     }
+//   }
+// }
 
 // Export all hooks
 export default {
@@ -226,5 +226,5 @@ export default {
   SveltePortal,
   SvelteWorkspaceIndex,
   SvelteWorkspaceDashboard,
-  SvelteContainerDashboard
+  // SvelteContainerDashboard
 }

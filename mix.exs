@@ -21,7 +21,7 @@ defmodule Dirup.MixProject do
   def application do
     [
       mod: {Dirup.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :oban]
     ]
   end
 
@@ -92,7 +92,6 @@ defmodule Dirup.MixProject do
       {:gen_smtp, "~> 1.3"},
       {:mail, ">= 0.0.0"},
       {:yaml_elixir, "~> 2.11"},
-      {:tidewave, "~> 0.4.1", only: :dev},
       {:jsonld_ex, "~> 0.4.0"},
       {:markdown_ld, "~> 0.4.0"},
       {:httpoison, "~> 2.0"}

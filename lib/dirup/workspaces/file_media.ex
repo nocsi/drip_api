@@ -60,7 +60,7 @@ defmodule Dirup.Workspaces.FileMedia do
       index [:file_id, :is_primary]
       index [:file_id, :relationship_type]
       index [:media_id]
-      index [:storage_resource_id]
+      # index [:storage_resource_id]
       index [:relationship_type]
       index [:created_at]
     end

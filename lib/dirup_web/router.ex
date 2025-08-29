@@ -87,11 +87,11 @@ defmodule DirupWeb.Router do
 
     # Markdown Intelligence Services
     # PromptSpect security scanning
-    post "/markdown/scan", MarkdownController, :scan
-    # Impromptu prompt enhancement  
-    post "/markdown/rally", MarkdownController, :rally
+    # post "/markdown/scan", MarkdownController, :scan
+    # Impromptu prompt enhancement
+    # post "/markdown/rally", MarkdownController, :rally
     # Polyglot translations
-    post "/markdown/polyglot", MarkdownController, :polyglot
+    # post "/markdown/polyglot", MarkdownController, :polyglot
 
     # SafeMD Security Scanning (public with API key)
     post "/scan", ScanController, :scan
@@ -99,10 +99,10 @@ defmodule DirupWeb.Router do
     get "/scan/async/:job_id", ScanController, :async_scan_result
 
     # SafeMD Billing (public)
-    get "/safemd/pricing", SafeMDController, :pricing
-    post "/safemd/checkout", SafeMDController, :create_checkout_session
-    get "/safemd/checkout/success", SafeMDController, :checkout_success
-    get "/safemd/checkout/cancel", SafeMDController, :checkout_cancel
+    # get "/safemd/pricing", SafeMDController, :pricing
+    # post "/safemd/checkout", SafeMDController, :create_checkout_session
+    # get "/safemd/checkout/success", SafeMDController, :checkout_success
+    # get "/safemd/checkout/cancel", SafeMDController, :checkout_cancel
   end
 
   # ===============================
@@ -353,6 +353,7 @@ defmodule DirupWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
+      live "/lsp", DirupWeb.Live.Landing, :index
       live_dashboard "/dashboard", metrics: DirupWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end

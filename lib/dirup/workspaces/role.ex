@@ -9,6 +9,25 @@ defmodule Dirup.Workspaces.Role do
     repo Dirup.Repo
   end
 
+  code_interface do
+    define :create
+    define :read
+    define :get, args: [:name], get?: true
+  end
+
+  actions do
+    defaults [:create, :read, :update, :destroy]
+
+    read :get do
+      argument :name, :string do
+        allow_nil? false
+      end
+
+      get? true
+      filter expr(name == ^arg(:name))
+    end
+  end
+
   attributes do
     attribute :name, :string do
       primary_key? true

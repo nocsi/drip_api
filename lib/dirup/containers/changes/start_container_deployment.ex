@@ -41,22 +41,11 @@ defmodule Dirup.Containers.Changes.StartContainerDeployment do
     # 5. Configure health checks
     # 6. Update service instance with container details
 
-    # For now, simulate a quick deployment
-    Task.start(fn ->
-      # Simulate deployment time
-      Process.sleep(1000)
-
-      # Update service instance to running state
-      # This would be done by the container manager in a real implementation
-      update_service_status(service_instance.id, :running)
-
-      # Create deployment completed event
-      create_deployment_event(service_instance, :deployment_completed, %{
-        completed_at: DateTime.utc_now(),
-        container_id: "mock_container_#{:rand.uniform(1000)}",
-        image_id: "mock_image_#{:rand.uniform(1000)}"
-      })
-    end)
+    # Enqueue real deployment via Oban worker (ContainerManager handles runtime)
+    Dirup.Containers.Workers.ContainerDeploymentWorker.enqueue_deploy(
+      service_instance.id,
+      tenant: service_instance.team_id
+    )
 
     {:ok, service_instance}
   end

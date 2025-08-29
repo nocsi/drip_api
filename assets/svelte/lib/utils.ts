@@ -6,9 +6,9 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-// export const getIcon = (iconName?: keyof typeof Icons) => {
-// 	return Icons[iconName || 'arrowRight'];
-// };
+export const getIcon = (iconName?: keyof typeof Icons) => {
+	return Icons[iconName || 'arrowRight'];
+};
 
 export const browser = ( () => {
   try {

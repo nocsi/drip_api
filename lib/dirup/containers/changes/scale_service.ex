@@ -74,35 +74,12 @@ defmodule Dirup.Containers.Changes.ScaleService do
     # 6. Monitor scaling progress
     # 7. Update service instance configuration
 
-    # For now, simulate scaling operation
-    Task.start(fn ->
-      # Simulate scaling time (longer for scale up than scale down)
-      scaling_time = if target_replicas > 1, do: 3000, else: 1500
-      Process.sleep(scaling_time)
-
-      # Update service instance status back to running
-      update_service_status(service_instance.id, :running)
-
-      # Broadcast scaling completed event
-      Dirup.Containers.broadcast(
-        service_instance.id,
-        :service_scaled,
-        %{
-          service_instance_id: service_instance.id,
-          target_replicas: target_replicas,
-          completed_at: DateTime.utc_now(),
-          success: true
-        }
-      )
-
-      # Create scaling completed event
-      create_deployment_event(service_instance, :service_scaled, %{
-        completed_at: DateTime.utc_now(),
-        final_replicas: target_replicas,
-        scaling_duration_ms: scaling_time,
-        success: true
-      })
-    end)
+    # Enqueue real scaling via Oban worker
+    Dirup.Containers.Workers.ContainerDeploymentWorker.enqueue_scale(
+      service_instance.id,
+      target_replicas,
+      tenant: service_instance.team_id
+    )
 
     {:ok, service_instance}
   end

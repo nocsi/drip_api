@@ -53,7 +53,7 @@ defmodule Dirup.Containers.TopologyDetection do
 
       trigger :analyze do
         action :analyze_folder
-        queue(:diruplogy_analysis)
+        queue(:topology_analysis)
       end
     end
   end

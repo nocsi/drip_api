@@ -57,11 +57,11 @@ defmodule Dirup.Workspaces.FileNotebook do
     end
 
     custom_indexes do
-      index [:file_id, :notebook_id], unique: true
+      # index [:file_id, :notebook_id], unique: true
       index [:file_id, :is_primary]
       index [:file_id, :relationship_type]
-      index [:notebook_id]
-      index [:storage_resource_id]
+      # index [:notebook_id]
+      # index [:storage_resource_id]
       index [:relationship_type]
       index [:created_at]
     end
@@ -333,7 +333,7 @@ defmodule Dirup.Workspaces.FileNotebook do
     # Define create action for JSON API
     create :create do
       accept [
-        :storage_resource_id,
+        # :storage_resource_id,
         :file_id,
         :notebook_id,
         :relationship_type,

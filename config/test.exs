@@ -12,7 +12,7 @@ config :dirup, Dirup.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "kyozo_test#{System.get_env("MIX_TEST_PARTITION")}",
+  database: "dirup_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
@@ -44,7 +44,7 @@ config :phoenix_test, :endpoint, DirupWeb.Endpoint
 # Blob storage configuration for testing
 config :dirup,
   blob_storage_backend: :disk,
-  blob_storage_root: Path.join([System.tmp_dir!(), "kyozo_test_blobs"])
+  blob_storage_root: Path.join([System.tmp_dir!(), "dirup_test_blobs"])
 
 # S3 storage configuration for testing (disabled by default)
 config :dirup, :s3_storage,

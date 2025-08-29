@@ -62,7 +62,6 @@ defmodule Dirup.Workspaces.Media do
 
     custom_indexes do
       index [:team_id, :media_type]
-      index [:team_id, :processing_status]
       index [:team_id, :created_at]
       index [:mime_type]
       index [:file_size]
@@ -112,7 +111,6 @@ defmodule Dirup.Workspaces.Media do
 
     update :update_metadata do
       accept [:title, :description, :alt_text, :accessibility_features]
-
     end
 
     # Regenerate variants (thumbnails, formats, etc.)
@@ -284,7 +282,6 @@ defmodule Dirup.Workspaces.Media do
       allow_nil? false
       attribute_writable? true
     end
-
 
     # Reverse relationship to files (one media can be referenced by multiple files)
     many_to_many :files, Dirup.Workspaces.File do

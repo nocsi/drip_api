@@ -1,7 +1,7 @@
 # This file ensures UUID v7 everywhere
 import Config
 
-config :dirup, Dirup.Repo,
+config :kyozo, Kyozo.Repo,
   migration_primary_key: [
     name: :id,
     type: :uuid,

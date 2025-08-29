@@ -27,7 +27,7 @@ defmodule Dirup.Containers.ServiceInstance do
       reference :workspace, on_delete: :delete, index?: true
       reference :team, on_delete: :delete, index?: true
       reference :created_by, on_delete: :nilify
-      reference :diruplogy_detection, on_delete: :nilify, index?: true
+      reference :topology_detection, on_delete: :nilify, index?: true
     end
 
     custom_indexes do
@@ -357,7 +357,7 @@ defmodule Dirup.Containers.ServiceInstance do
       public? true
     end
 
-    belongs_to :diruplogy_detection, Dirup.Containers.TopologyDetection do
+    belongs_to :topology_detection, Dirup.Containers.TopologyDetection do
       public? true
     end
 

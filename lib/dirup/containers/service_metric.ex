@@ -150,7 +150,8 @@ defmodule Dirup.Containers.ServiceMetric do
   end
 
   multitenancy do
-    strategy :context
+    strategy :attribute
+    attribute :team_id
   end
 
   attributes do
@@ -174,6 +175,11 @@ defmodule Dirup.Containers.ServiceMetric do
 
     attribute :metadata, :map do
       default %{}
+      public? true
+    end
+
+    attribute :team_id, :uuid do
+      allow_nil? false
       public? true
     end
 

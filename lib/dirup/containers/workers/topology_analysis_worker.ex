@@ -11,7 +11,7 @@ defmodule Dirup.Containers.Workers.TopologyAnalysisWorker do
   """
 
   use Oban.Worker,
-    queue: :diruplogy_analysis,
+    queue: :topology_analysis,
     max_attempts: 3,
     tags: ["topology", "analysis", "ai"]
 
@@ -495,14 +495,47 @@ defmodule Dirup.Containers.Workers.TopologyAnalysisWorker do
 
   defp maybe_trigger_deployment_suggestions(detection, analysis_result) do
     if length(analysis_result.services) > 0 do
-      # Queue deployment suggestion jobs
+      tenant = detection.team_id
+
+      # Create service instances from detected services and enqueue deployment
       Enum.each(analysis_result.services, fn service ->
         if service.confidence > 0.7 do
-          Dirup.Containers.Workers.ContainerDeploymentWorker.enqueue(
-            detection.workspace_id,
-            service,
-            priority: 1
-          )
+          attrs = %{
+            workspace_id: detection.workspace_id,
+            topology_detection_id: detection.id,
+            name: service.name,
+            folder_path: service.path,
+            service_type: service.type,
+            detection_confidence: service.confidence,
+            port_mappings: generate_port_mappings(service.ports || []),
+            environment_variables: service.environment_vars || %{},
+            # Populate from AI recommendations if available
+            resource_limits: service.resource_recommendations || %{},
+            folder_manifest_ld: %{detected_patterns: service.detected_patterns}
+          }
+
+          case Dirup.Containers.create_service_instance(attrs, tenant: tenant) do
+            {:ok, service_instance} ->
+              Logger.info(
+                "Created service instance from topology detection, enqueuing deployment.",
+                service_instance_id: service_instance.id,
+                topology_id: detection.id
+              )
+
+              # Automatically enqueue deployment for the new service instance
+              Dirup.Containers.Workers.ContainerDeploymentWorker.enqueue_deploy(
+                service_instance.id,
+                priority: 1,
+                tenant: tenant
+              )
+
+            {:error, changeset} ->
+              Logger.error("Failed to create service instance from detection",
+                topology_id: detection.id,
+                service_name: service.name,
+                errors: changeset.errors
+              )
+          end
         end
       end)
     end

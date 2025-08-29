@@ -8,7 +8,7 @@
       {assigns[:page_title] || "Hello!"}
     </.live_title>
 
-    <%!-- <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} /> --%>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
 
     <link :if={@env === :prod} rel="stylesheet" href={Vite.path("css/app.css")} />
     <script :if={@env === :dev} type="module" src="http://localhost:5180/@vite/client">
